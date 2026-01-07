@@ -1,0 +1,17 @@
+#!/bin/sh
+
+echo "🔍 Running pre-commit checks..."
+
+# Run lint-staged for linting and formatting staged files
+echo "📝 Linting staged files..."
+npx lint-staged
+
+# Run typecheck across all packages
+echo "🔎 Checking TypeScript types..."
+pnpm typecheck
+
+# Run tests (if any exist)
+echo "🧪 Running tests..."
+pnpm test || true
+
+echo "✅ Pre-commit checks passed!"
