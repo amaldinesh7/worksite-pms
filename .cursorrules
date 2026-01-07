@@ -1,0 +1,129 @@
+# Worksite - AI Coding Rules
+
+**IMPORTANT**: This file works with `agents.md` for dynamic context.
+- Check `agents.md` for: tool registry, @agents, project patterns
+- Check `docs/*.md` for: auto-generated factual docs
+
+---
+
+## Project Overview
+
+Universal full-stack app with React Native mobile, React web, and Node.js backend in Turborepo monorepo.
+
+## Tech Stack
+
+- **Monorepo**: Turborepo + pnpm
+- **Mobile**: React Native 0.76 + Expo 52 + Expo Router
+- **Web**: React 18 + Vite 6
+- **Backend**: Node.js 20+ + Fastify 5 + Prisma + PostgreSQL
+- **UI**: Tamagui (universal components)
+- **State**: Zustand (client) + TanStack Query (server)
+- **Forms**: React Hook Form + Zod
+- **Language**: TypeScript (strict, no `any`)
+
+**For tool details, see `agents.md > Tool Registry`**
+
+---
+
+## Code Style Rules
+
+### General
+1. TypeScript for ALL files - no JavaScript
+2. Functional components with hooks only
+3. Named exports for components, default for pages/routes
+4. `const` over `let`, never `var`
+5. `async/await` over `.then()` promises
+6. Explicit error handling with try-catch
+7. No `any` types - use proper types or `unknown`
+
+### File Naming
+- **Components**: PascalCase (`UserProfile.tsx`)
+- **Utilities**: camelCase (`formatDate.ts`)
+- **Hooks**: camelCase with "use" (`useAuth.ts`)
+- **Types**: PascalCase (`User.ts`)
+- **Routes**: kebab-case (`user-profile.tsx`)
+
+### Import Order
+```typescript
+// 1. React
+import { useState, useEffect } from 'react';
+// 2. External
+import { useQuery } from '@tanstack/react-query';
+// 3. Workspace
+import { Button, YStack } from '@worksite/ui';
+// 4. Relative
+import { useAuth } from '@/hooks/useAuth';
+// 5. Types
+import type { User } from '@worksite/types';
+```
+
+---
+
+## Tamagui Rules (CRITICAL)
+
+- ✅ ALWAYS use Tamagui from `@worksite/ui`
+- ❌ NEVER use `View`, `Text`, `TouchableOpacity` directly
+- ❌ NEVER use `div`, `span`, `button` directly
+- ✅ ALWAYS use theme tokens (`$primary`, `$4`, `$background`)
+
+```typescript
+// ✅ CORRECT
+<YStack padding="$4" gap="$3" backgroundColor="$background">
+  <Text color="$text">Hello</Text>
+</YStack>
+
+// ❌ WRONG
+<View style={{padding: 16}}>
+  <Text style={{color: '#000'}}>Hello</Text>
+</View>
+```
+
+---
+
+## AI Development Workflow
+
+### Before Any Task
+1. Check `agents.md` for relevant tool rules
+2. Check `agents.md` for similar patterns
+3. Use specialized @agent if applicable
+
+### Feature Creation
+**See `agents.md > feature_creation` pattern**
+
+1. Types → 2. Database → 3. API → 4. Services → 5. Hooks → 6. UI → 7. Mobile → 8. Web → 9. `pnpm docs:generate`
+
+### Adding Tools
+1. Install: `pnpm add [package]`
+2. Update `agents.md > Tool Registry`
+3. Tell AI: "Added [package], read agents.md"
+
+### Using @Agents
+```
+@architect  → Design decisions
+@frontend   → UI with Tamagui
+@backend    → API with Fastify
+@mobile     → React Native specifics
+@web        → Web specifics
+@database   → Prisma/PostgreSQL
+```
+
+---
+
+## Security (NEVER VIOLATE)
+
+- ❌ Never commit `.env`
+- ❌ Never hardcode secrets
+- ✅ Always validate with Zod
+- ✅ Use Prisma for queries
+
+---
+
+## Context Files Summary
+
+| File | Purpose | Update |
+|------|---------|--------|
+| `.cursorrules` | Static rules | Rarely |
+| `agents.md` | Tools, @agents, patterns | When adding tools |
+| `docs/*.md` | Auto-generated docs | `pnpm docs:generate` |
+
+**Remember: `.cursorrules` + `agents.md` + `docs/*.md` = Complete AI context**

@@ -1,0 +1,16 @@
+language: "en"
+reviews:
+  auto_review:
+    enabled: true
+    drafts: false
+  path_instructions:
+    - path: "apps/api/**"
+      instructions: "Focus on security, error handling, and Fastify best practices"
+    - path: "apps/mobile/**"
+      instructions: "Check for React Native performance issues and Expo compatibility"
+    - path: "apps/web/**"
+      instructions: "Review for accessibility and React best practices"
+    - path: "packages/ui/**"
+      instructions: "Ensure Tamagui patterns are followed correctly"
+chat:
+  auto_reply: true

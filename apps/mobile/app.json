@@ -1,0 +1,9 @@
+{
+  "expo": {
+    "name": "Worksite",
+    "slug": "worksite",
+    "version": "1.0.0",
+    "plugins": ["expo-router"],
+    "scheme": "worksite"
+  }
+}

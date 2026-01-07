@@ -1,0 +1,5 @@
+{
+  "name": "@worksite/types",
+  "main": "./src/index.ts",
+  "dependencies": { "zod": "^3.24.1" }
+}

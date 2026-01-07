@@ -1,0 +1,46 @@
+---
+description: Generate GitHub PR creation command from current changes
+globs: 
+alwaysApply: false
+---
+
+# Create PR Rule
+
+When the user says "create PR", "make PR", or "generate PR command":
+
+1. First, check the current git status and diff by examining:
+   - What files have been changed
+   - What branch we're on
+   - The nature of the changes (feature, fix, refactor, etc.)
+
+2. Generate a conventional commit style title:
+   - feat: for new features
+   - fix: for bug fixes
+   - refactor: for code refactoring
+   - docs: for documentation
+   - chore: for maintenance tasks
+
+3. Create a summary that includes:
+   - Brief description of what the PR does
+   - Key files changed
+   - Any breaking changes or notes
+
+4. Output the complete `gh pr create` command:
+
+```bash
+gh pr create --title "type: descriptive title" --body "## Summary
+Brief description of changes
+
+## Changes
+- Change 1
+- Change 2
+
+## Testing
+- How to test these changes"
+```
+
+5. Also show how to push and create in one go if not pushed yet:
+
+```bash
+git push -u origin HEAD && gh pr create --title "..." --body "..."
+```
