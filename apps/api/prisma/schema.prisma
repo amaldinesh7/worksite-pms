@@ -270,6 +270,10 @@ model Document {
   fileName       String
   fileType       String
   fileUrl        String
+  storagePath    String   // Path in storage bucket
+  mimeType       String   // Detected MIME type
+  originalSize   Int      // Size before compression (bytes)
+  compressedSize Int      // Size after compression (bytes)
   uploadedAt     DateTime @default(now())
 
   // Relations
