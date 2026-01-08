@@ -180,6 +180,37 @@ export const testData = {
       },
     });
   },
+
+  /**
+   * Create a test document
+   */
+  async createDocument(
+    organizationId: string,
+    projectId: string,
+    data?: Partial<{
+      fileName: string;
+      fileType: string;
+      fileUrl: string;
+      storagePath: string;
+      mimeType: string;
+      originalSize: number;
+      compressedSize: number;
+    }>
+  ) {
+    return prisma.document.create({
+      data: {
+        organizationId,
+        projectId,
+        fileName: data?.fileName || 'test-file.pdf',
+        fileType: data?.fileType || 'pdf',
+        fileUrl: data?.fileUrl || 'http://localhost:9000/documents/test-file.pdf',
+        storagePath: data?.storagePath || 'test/test-file.pdf',
+        mimeType: data?.mimeType || 'application/pdf',
+        originalSize: data?.originalSize || 1024000,
+        compressedSize: data?.compressedSize || 512000,
+      },
+    });
+  },
 };
 
 /**

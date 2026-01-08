@@ -11,6 +11,7 @@ import partyRoutes from './routes/parties/index';
 import expenseRoutes from './routes/expenses/index';
 import paymentRoutes from './routes/payments/index';
 import stageRoutes from './routes/stages/index';
+import documentRoutes from './routes/documents/index';
 
 // Prisma
 import { disconnectPrisma } from './lib/prisma';
@@ -52,6 +53,7 @@ export async function buildApp(options: AppOptions = {}) {
       '/api/expenses',
       '/api/payments',
       '/api/stages',
+      '/api/documents',
     ],
   }));
 
@@ -64,6 +66,7 @@ export async function buildApp(options: AppOptions = {}) {
   await fastify.register(expenseRoutes, { prefix: '/api/expenses' });
   await fastify.register(paymentRoutes, { prefix: '/api/payments' });
   await fastify.register(stageRoutes, { prefix: '/api/stages' });
+  await fastify.register(documentRoutes, { prefix: '/api/documents' });
 
   // Global error handler
   fastify.setErrorHandler((error: FastifyError, request, reply) => {
