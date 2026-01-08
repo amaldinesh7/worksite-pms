@@ -1,19 +1,40 @@
 {
   "name": "worksite",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
+    "lint:fix": "turbo run lint -- --fix",
+    "typecheck": "turbo run typecheck",
     "docs:generate": "npx tsx scripts/generate-docs.ts",
-    "postinstall": "pnpm docs:generate || true"
+    "postinstall": "pnpm docs:generate || true",
+    "prepare": "husky"
   },
   "devDependencies": {
     "turbo": "^2.3.3",
     "prettier": "^3.4.2",
     "typescript": "^5.7.2",
-    "tsx": "^4.19.2"
+    "tsx": "^4.19.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.11",
+    "eslint": "^9.17.0",
+    "@eslint/js": "^9.17.0",
+    "typescript-eslint": "^8.18.2",
+    "eslint-plugin-react": "^7.37.3",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "globals": "^15.14.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "prettier --write"
+    ]
   },
   "packageManager": "pnpm@9.15.0"
 }

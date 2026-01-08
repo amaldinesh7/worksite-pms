@@ -8,9 +8,10 @@ const tokens = createTokens({
     text: '#000000',
     textSecondary: '#8E8E93',
   },
-  space: { 1: 4, 2: 8, 3: 12, 4: 16, 6: 24, 8: 32 },
-  size: { 1: 4, 2: 8, 3: 12, 4: 16, 6: 24, 8: 32 },
-  radius: { 2: 4, 3: 8, 4: 12 },
+  space: { 1: 4, 2: 8, 3: 12, 4: 16, true: 16, 6: 24, 8: 32 },
+  size: { 1: 4, 2: 8, 3: 12, 4: 16, true: 16, 6: 24, 8: 32 },
+  radius: { 2: 4, 3: 8, 4: 12, true: 8 },
+  zIndex: { 0: 0, 1: 100, 2: 200, 3: 300, 4: 400, 5: 500 },
 });
 
 export const config = createTamagui({

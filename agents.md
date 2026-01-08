@@ -15,7 +15,7 @@ tools:
   # UI / Components
   # ============================================
   - name: tamagui
-    version: "^1.112.21"
+    version: '^1.112.21'
     context: Universal UI components for mobile and web
     rules: |
       - ALWAYS use from @worksite/ui, not directly
@@ -29,8 +29,8 @@ tools:
   # ============================================
   # State Management
   # ============================================
-  - name: "@tanstack/react-query"
-    version: "^5.62.11"
+  - name: '@tanstack/react-query'
+    version: '^5.62.11'
     context: Server state management (data fetching, caching)
     rules: |
       - Use for ALL server data fetching
@@ -41,7 +41,7 @@ tools:
     docs: https://tanstack.com/query
 
   - name: zustand
-    version: "^5.0.0"
+    version: '^5.0.0'
     context: Client state management (UI state, user preferences)
     rules: |
       - Use ONLY for client-side state (not server data)
@@ -55,7 +55,7 @@ tools:
   # Forms & Validation
   # ============================================
   - name: react-hook-form
-    version: "^7.54.0"
+    version: '^7.54.0'
     context: Form state management
     rules: |
       - Use with Zod for validation
@@ -65,7 +65,7 @@ tools:
     docs: https://react-hook-form.com
 
   - name: zod
-    version: "^3.24.1"
+    version: '^3.24.1'
     context: Schema validation and TypeScript type inference
     rules: |
       - Define ALL API schemas in packages/types
@@ -79,7 +79,7 @@ tools:
   # Backend
   # ============================================
   - name: fastify
-    version: "^5.2.2"
+    version: '^5.2.2'
     context: Backend API framework
     rules: |
       - Use TypeBox or Zod for request/response schemas
@@ -90,7 +90,7 @@ tools:
     docs: https://fastify.dev
 
   - name: prisma
-    version: "^6.1.0"
+    version: '^6.1.0'
     context: Database ORM for PostgreSQL
     rules: |
       - Always use transactions for multiple operations
@@ -104,7 +104,7 @@ tools:
   # Mobile
   # ============================================
   - name: expo
-    version: "~52.0.23"
+    version: '~52.0.23'
     context: React Native development platform
     rules: |
       - Use expo-router for navigation
@@ -113,7 +113,7 @@ tools:
     docs: https://docs.expo.dev
 
   - name: expo-router
-    version: "~4.0.15"
+    version: '~4.0.15'
     context: File-based routing for React Native
     rules: |
       - Files in app/ directory are routes
@@ -121,6 +121,21 @@ tools:
       - Use [...path].tsx for catch-all routes
     examples: apps/mobile/app/**/*
     docs: https://expo.github.io/router
+
+  # ============================================
+  # Testing
+  # ============================================
+  - name: vitest
+    version: '^4.0.16'
+    context: Fast unit and integration testing for API
+    rules: |
+      - Use for ALL API endpoint tests
+      - Every new endpoint MUST have a test
+      - Use app.inject() for testing routes (no server startup)
+      - Test both success and error cases
+      - Use createTestApp() helper from src/tests/helper.ts
+    examples: apps/api/src/**/*.test.ts
+    docs: https://vitest.dev
 ```
 
 ---
@@ -130,6 +145,7 @@ tools:
 Use these prefixes to get focused assistance:
 
 ### @architect
+
 **Role**: System design and architecture decisions
 **Context**: Full codebase structure, tech stack, scaling, security
 **Use when**: Designing features, making architectural decisions, planning refactors
@@ -141,6 +157,7 @@ Use these prefixes to get focused assistance:
 ```
 
 ### @frontend
+
 **Role**: UI development with Tamagui
 **Context**: Component design, styling, responsiveness, accessibility
 **Use when**: Building UI components, fixing styling issues, creating animations
@@ -152,6 +169,7 @@ Use these prefixes to get focused assistance:
 ```
 
 ### @backend
+
 **Role**: API development with Fastify
 **Context**: API endpoints, business logic, database queries, authentication
 **Use when**: Creating endpoints, handling requests, implementing business logic
@@ -163,6 +181,7 @@ Use these prefixes to get focused assistance:
 ```
 
 ### @mobile
+
 **Role**: React Native / Expo specialist
 **Context**: Mobile-specific features, native modules, platform differences
 **Use when**: Mobile navigation, native features, platform-specific code
@@ -174,6 +193,7 @@ Use these prefixes to get focused assistance:
 ```
 
 ### @web
+
 **Role**: Web-specific development
 **Context**: Browser APIs, SSR, SEO, web performance
 **Use when**: Web-only features, browser compatibility, PWA features
@@ -185,6 +205,7 @@ Use these prefixes to get focused assistance:
 ```
 
 ### @database
+
 **Role**: Database and Prisma specialist
 **Context**: Schema design, queries, migrations, performance
 **Use when**: Designing schemas, writing complex queries, optimizing performance
@@ -200,6 +221,7 @@ Use these prefixes to get focused assistance:
 ## Project Patterns
 
 ### feature_creation
+
 **Workflow for creating new features end-to-end:**
 
 ```yaml
@@ -216,6 +238,7 @@ steps:
 ```
 
 ### form_pattern
+
 **Standard form implementation:**
 
 ```typescript
@@ -236,11 +259,11 @@ function CreatePostForm() {
   const form = useForm<CreatePostInput>({
     resolver: zodResolver(CreatePostSchema),
   });
-  
+
   const onSubmit = async (data: CreatePostInput) => {
     await createPost(data);
   };
-  
+
   return (
     <YStack gap="$3">
       <Input {...form.register('title')} placeholder="Title" />
@@ -252,6 +275,7 @@ function CreatePostForm() {
 ```
 
 ### api_pattern
+
 **Standard API endpoint structure:**
 
 ```typescript
@@ -283,6 +307,7 @@ export default async function (fastify: FastifyInstance) {
 ```
 
 ### data_fetching_pattern
+
 **TanStack Query usage:**
 
 ```typescript
@@ -299,14 +324,14 @@ export const queryKeys = {
 export function usePosts() {
   return useQuery({
     queryKey: queryKeys.posts,
-    queryFn: () => api.get('/posts').then(r => r.data),
+    queryFn: () => api.get('/posts').then((r) => r.data),
   });
 }
 
 // Write hook with cache invalidation
 export function useCreatePost() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (data: CreatePostInput) => api.post('/posts', data),
     onSuccess: () => {
@@ -314,6 +339,53 @@ export function useCreatePost() {
     },
   });
 }
+```
+
+### api_test_pattern
+
+**Standard API endpoint test (REQUIRED for every new endpoint):**
+
+```typescript
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { createTestApp } from '../tests/helper';
+import type { FastifyInstance } from 'fastify';
+
+describe('POST /api/resource', () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await createTestApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  // SUCCESS CASE - verify response shape
+  it('creates resource and returns expected shape', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/resource',
+      payload: { name: 'test' },
+    });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({
+      data: { id: expect.any(String), name: 'test' },
+    });
+  });
+
+  // ERROR CASE - verify error handling
+  it('returns 400 for invalid input', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/resource',
+      payload: {},
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+});
 ```
 
 ---
@@ -324,9 +396,12 @@ Keep track of significant changes to help AI understand project evolution.
 
 ```yaml
 updates:
-  - date: "2026-01-07"
-    change: "Initial project setup"
-    details: "Created monorepo with mobile, web, and API apps"
+  - date: '2026-01-07'
+    change: 'Added API testing with Vitest'
+    details: 'Minimal test setup with Vitest + Fastify inject(). Every new endpoint needs a test.'
+  - date: '2026-01-07'
+    change: 'Initial project setup'
+    details: 'Created monorepo with mobile, web, and API apps'
 ```
 
 ---
