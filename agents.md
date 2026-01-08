@@ -136,6 +136,46 @@ tools:
       - Use createTestApp() helper from src/tests/helper.ts
     examples: apps/api/src/**/*.test.ts
     docs: https://vitest.dev
+
+  # ============================================
+  # Code Review
+  # ============================================
+  - name: coderabbit-cli
+    version: '0.3.5'
+    context: AI-powered code review before commits
+    rules: |
+      - Run `coderabbit --prompt-only` for AI agent integration
+      - Use `--type uncommitted` for reviewing only staged/unstaged changes
+      - Use `--base main` if comparing against main branch
+      - Fix critical and high priority issues before committing
+      - Run review loop max 2 times to avoid infinite iterations
+      - Config file: .coderabbit.yaml in project root
+    examples: .cursor/rules/coderabbit-review.mdc
+    docs: https://docs.coderabbit.ai/cli/overview
+
+  # ============================================
+  # File Compression
+  # ============================================
+  - name: sharp
+    version: '^0.34.5'
+    context: High-performance image compression
+    rules: |
+      - Use for all image processing (JPEG, PNG, WebP)
+      - Resize images > 2000px to reduce size
+      - Convert PNG to WebP for better compression
+      - Quality 80% is good balance of size/quality
+    examples: apps/api/src/services/compression.service.ts
+    docs: https://sharp.pixelplumbing.com
+
+  - name: pdf-lib
+    version: '^1.17.1'
+    context: PDF manipulation and compression
+    rules: |
+      - Use for PDF metadata removal
+      - Enable object streams for better compression
+      - Handle encrypted PDFs gracefully
+    examples: apps/api/src/services/compression.service.ts
+    docs: https://pdf-lib.js.org
 ```
 
 ---
@@ -215,6 +255,26 @@ Use these prefixes to get focused assistance:
 @database Optimize the posts feed query
 @database Add a migration for the new comments feature
 ```
+
+### @reviewer
+
+**Role**: Code review specialist using CodeRabbit CLI
+**Context**: Security, performance, best practices, code quality
+**Use when**: Before committing, before creating PRs, after implementing features
+
+```
+@reviewer Review my uncommitted changes and fix critical issues
+@reviewer Run a full code review against main branch before PR
+@reviewer Check this feature implementation for security vulnerabilities
+```
+
+**Workflow:**
+
+1. Run `coderabbit --prompt-only --type uncommitted`
+2. Evaluate findings (critical > high > medium > low)
+3. Fix critical and high priority issues
+4. Run CodeRabbit again to verify
+5. Stop after 2 iterations if no critical issues remain
 
 ---
 
@@ -388,6 +448,38 @@ describe('POST /api/resource', () => {
 });
 ```
 
+### code_review_pattern
+
+**CodeRabbit CLI review workflow (before commits/PRs):**
+
+```bash
+# Step 1: Review uncommitted changes
+coderabbit --prompt-only --type uncommitted
+
+# Step 2: If comparing against specific branch
+coderabbit --prompt-only --base main --type all
+
+# Step 3: After fixing issues, verify
+coderabbit --prompt-only --type uncommitted
+```
+
+**AI Agent Integration Prompt:**
+
+```
+Implement [feature] and then run coderabbit --prompt-only.
+Let it run in the background and fix any critical or high priority issues.
+Run CodeRabbit again to verify fixes.
+Only run the loop twice - if no critical issues remain, you're done.
+Give me a summary of what was completed.
+```
+
+**Priority Handling:**
+
+- **Critical**: Fix immediately (security, data loss, crashes)
+- **High**: Fix before commit (memory leaks, race conditions)
+- **Medium**: Fix if time permits (best practices)
+- **Low**: Ignore unless pattern is widespread (style nits)
+
 ---
 
 ## Update Log
@@ -396,6 +488,12 @@ Keep track of significant changes to help AI understand project evolution.
 
 ```yaml
 updates:
+  - date: '2026-01-09'
+    change: 'Added CodeRabbit CLI integration'
+    details: 'AI-powered code review before commits. Use "coderabbit --prompt-only" for automated review loops.'
+  - date: '2026-01-09'
+    change: 'Added file compression system'
+    details: 'Documents API with Sharp (images), pdf-lib (PDFs), adm-zip (Office docs). Storage via MinIO/Supabase.'
   - date: '2026-01-07'
     change: 'Added API testing with Vitest'
     details: 'Minimal test setup with Vitest + Fastify inject(). Every new endpoint needs a test.'
