@@ -1,16 +1,80 @@
-language: "en"
+# CodeRabbit Configuration
+# https://docs.coderabbit.ai/configure/configuration-via-yaml-file
+
+language: en-US
+
+# Review settings
 reviews:
-  auto_review:
-    enabled: true
-    drafts: false
+  # Enable high-level summary
+  high_level_summary: true
+
+  # Enable poem in review (fun touch)
+  poem: false
+
+  # Review status (when to trigger)
+  review_status: true
+
+  # Collapse walkthrough details by default
+  collapse_walkthrough: false
+
+  # Path-based instructions
   path_instructions:
-    - path: "apps/api/**"
-      instructions: "Focus on security, error handling, and Fastify best practices"
-    - path: "apps/mobile/**"
-      instructions: "Check for React Native performance issues and Expo compatibility"
-    - path: "apps/web/**"
-      instructions: "Review for accessibility and React best practices"
-    - path: "packages/ui/**"
-      instructions: "Ensure Tamagui patterns are followed correctly"
+    - path: 'apps/api/**/*.ts'
+      instructions: |
+        - Verify Fastify route handlers follow the controller pattern
+        - Check for proper error handling with createErrorHandler
+        - Ensure Zod schemas are used for validation
+        - Verify Prisma queries use proper transactions where needed
+        - Check for SQL injection vulnerabilities
+        - Ensure proper TypeScript types (no 'any')
+
+    - path: 'apps/api/src/services/**/*.ts'
+      instructions: |
+        - Services should be stateless and injectable
+        - Check for proper error handling
+        - Verify async operations are properly awaited
+        - Look for potential memory leaks
+
+    - path: 'apps/api/src/routes/**/*.ts'
+      instructions: |
+        - Routes must use organization middleware for multi-tenancy
+        - Verify proper HTTP status codes
+        - Check response format consistency (success/error pattern)
+        - Ensure pagination is implemented correctly
+
+    - path: 'packages/ui/**/*.tsx'
+      instructions: |
+        - Use Tamagui components, never raw React Native or HTML
+        - Use theme tokens ($primary, $background, $4)
+        - Check for accessibility (a11y) issues
+        - Verify dark mode support
+
+    - path: 'apps/mobile/**/*.tsx'
+      instructions: |
+        - Use expo-router for navigation
+        - Verify proper React Native patterns
+        - Check for platform-specific issues
+
+    - path: '**/*.test.ts'
+      instructions: |
+        - Tests should cover success and error cases
+        - Verify proper cleanup in afterAll/afterEach
+        - Check for flaky test patterns
+        - Ensure meaningful assertions
+
+# Chat settings
 chat:
   auto_reply: true
+
+# Early access features
+early_access: false
+
+# Tone settings
+tone_instructions: |
+  Be direct and actionable. Focus on:
+  - Security vulnerabilities (critical)
+  - Performance issues (high priority)
+  - Best practices (medium priority)
+  - Code style (low priority, only if significant)
+
+  Skip minor nits unless they impact maintainability.

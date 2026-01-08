@@ -5,6 +5,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // Run tests sequentially to avoid database conflicts
+    fileParallelism: false,
     coverage: {
       reporter: ['text', 'html'],
       include: ['src/**/*.ts'],

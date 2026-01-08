@@ -1,0 +1,56 @@
+import type { FastifyInstance } from 'fastify';
+import type { ZodTypeProvider } from 'fastify-type-provider-zod';
+import { organizationMiddleware } from '../../middleware/organization.middleware';
+import * as controller from './party.controller';
+import {
+  createPartySchema,
+  updatePartySchema,
+  partyQuerySchema,
+  partyParamsSchema,
+} from './party.schema';
+
+export default async function partyRoutes(fastify: FastifyInstance) {
+  const app = fastify.withTypeProvider<ZodTypeProvider>();
+
+  // Apply organization middleware to all routes
+  app.addHook('preHandler', organizationMiddleware);
+
+  // GET /api/parties - List all parties
+  app.get('/', {
+    schema: { querystring: partyQuerySchema },
+    handler: controller.listParties,
+  });
+
+  // GET /api/parties/:id - Get party by ID
+  app.get('/:id', {
+    schema: { params: partyParamsSchema },
+    handler: controller.getParty,
+  });
+
+  // GET /api/parties/:id/stats - Get party statistics
+  app.get('/:id/stats', {
+    schema: { params: partyParamsSchema },
+    handler: controller.getPartyStats,
+  });
+
+  // POST /api/parties - Create party
+  app.post('/', {
+    schema: { body: createPartySchema },
+    handler: controller.createParty,
+  });
+
+  // PUT /api/parties/:id - Update party
+  app.put('/:id', {
+    schema: {
+      params: partyParamsSchema,
+      body: updatePartySchema,
+    },
+    handler: controller.updateParty,
+  });
+
+  // DELETE /api/parties/:id - Delete party
+  app.delete('/:id', {
+    schema: { params: partyParamsSchema },
+    handler: controller.deleteParty,
+  });
+}
