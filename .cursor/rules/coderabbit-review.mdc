@@ -1,0 +1,79 @@
+---
+description: Run CodeRabbit CLI review and fix issues automatically
+globs: 
+alwaysApply: false
+---
+
+# CodeRabbit Review Rule
+
+When the user says "review code", "coderabbit review", "cr review", or "check my code":
+
+## Workflow
+
+1. **Run CodeRabbit CLI** in prompt-only mode for efficient AI processing:
+
+```bash
+coderabbit --prompt-only --type uncommitted
+```
+
+Or for all changes (committed + uncommitted):
+
+```bash
+coderabbit --prompt-only --type all
+```
+
+2. **Evaluate the findings** and categorize by severity:
+   - **Critical**: Security vulnerabilities, data loss risks, race conditions
+   - **High**: Memory leaks, performance issues, logic errors
+   - **Medium**: Best practice violations, maintainability issues
+   - **Low**: Style issues, minor improvements (can ignore)
+
+3. **Fix critical and high priority issues** immediately
+
+4. **Run CodeRabbit again** to verify fixes didn't introduce new issues:
+
+```bash
+coderabbit --prompt-only --type uncommitted
+```
+
+5. **Stop after 2 iterations** - if no critical issues remain, the code is ready
+
+## Example Prompts
+
+### Quick Review
+```
+Review my uncommitted changes with CodeRabbit and fix any critical issues.
+```
+
+### Full Feature Review
+```
+I've implemented [feature]. Run coderabbit --prompt-only in the background, 
+evaluate the findings, fix critical and high priority issues, then run it 
+again to verify. Give me a summary when complete.
+```
+
+### Pre-PR Review
+```
+Before I create a PR, review all my changes against the main branch:
+coderabbit --prompt-only --base main --type all
+Fix any issues found.
+```
+
+## Command Reference
+
+| Command | Description |
+|---------|-------------|
+| `coderabbit --prompt-only` | Token-efficient output for AI agents |
+| `coderabbit --plain` | Detailed human-readable output |
+| `coderabbit --type uncommitted` | Review only uncommitted changes |
+| `coderabbit --type committed` | Review only committed changes |
+| `coderabbit --type all` | Review all changes (default) |
+| `coderabbit --base develop` | Compare against develop branch |
+| `cr` | Short alias for coderabbit |
+
+## Notes
+
+- CodeRabbit reviews can take 7-30+ minutes depending on scope
+- Run in background and check periodically for large changesets
+- The `.coderabbit.yaml` config in project root customizes review behavior
+- CodeRabbit automatically reads this cursor rules file for context
