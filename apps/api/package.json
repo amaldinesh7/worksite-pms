@@ -4,23 +4,37 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "start": "node dist/index.js",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:prod": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:reset": "prisma migrate reset",
+    "db:push": "prisma db push"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",
     "@prisma/client": "^6.1.0",
     "dotenv": "^16.4.7",
-    "fastify": "^5.2.2"
+    "fastify": "^5.2.2",
+    "fastify-type-provider-zod": "4",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.2.0",
     "@vitest/coverage-v8": "^4.0.16",
     "prisma": "^6.1.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^4.0.16"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }

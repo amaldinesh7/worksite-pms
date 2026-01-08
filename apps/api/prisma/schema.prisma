@@ -7,10 +7,276 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============================================
+// Enums
+// ============================================
+
+enum OrganizationRole {
+  ADMIN
+  MANAGER
+  ACCOUNTANT
+}
+
+enum PartyType {
+  VENDOR
+  LABOUR
+  SUBCONTRACTOR
+}
+
+// ============================================
+// Organizations & Users (Multi-tenant Foundation)
+// ============================================
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  // Relations
+  members        OrganizationMember[]
+  projects       Project[]
+  categoryTypes  CategoryType[]
+  categoryItems  CategoryItem[]
+  parties        Party[]
+  expenses       Expense[]
+  payments       Payment[]
+  documents      Document[]
+  stages         Stage[]
+
+  @@map("organizations")
+}
+
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
+  name      String
+  phone     String   @unique
   createdAt DateTime @default(now())
+
+  // Relations
+  memberships OrganizationMember[]
+
   @@map("users")
+}
+
+model OrganizationMember {
+  id             String           @id @default(cuid())
+  organizationId String
+  userId         String
+  role           OrganizationRole
+  createdAt      DateTime         @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("organization_members")
+}
+
+// ============================================
+// Categories System (Master Data)
+// ============================================
+
+model CategoryType {
+  id             String   @id @default(cuid())
+  organizationId String
+  key            String   // project_type | expense_category | material_type | labour_type | sub_work_type
+  label          String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  items        CategoryItem[]
+
+  @@unique([organizationId, key])
+  @@index([organizationId])
+  @@map("category_types")
+}
+
+model CategoryItem {
+  id             String   @id @default(cuid())
+  organizationId String
+  categoryTypeId String
+  name           String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  categoryType CategoryType @relation(fields: [categoryTypeId], references: [id], onDelete: Cascade)
+
+  // Reverse relations for expenses
+  projectsAsType        Project[]  @relation("ProjectType")
+  expensesAsCategory    Expense[]  @relation("ExpenseCategory")
+  expensesAsMaterial    Expense[]  @relation("MaterialType")
+  expensesAsLabour      Expense[]  @relation("LabourType")
+  expensesAsSubWork     Expense[]  @relation("SubWorkType")
+
+  @@unique([categoryTypeId, name])
+  @@index([organizationId])
+  @@index([categoryTypeId])
+  @@map("category_items")
+}
+
+// ============================================
+// Projects
+// ============================================
+
+model Project {
+  id                String   @id @default(cuid())
+  organizationId    String
+  name              String
+  clientName        String
+  location          String
+  startDate         DateTime
+  projectTypeItemId String
+  createdAt         DateTime @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projectType  CategoryItem @relation("ProjectType", fields: [projectTypeItemId], references: [id])
+  stages       Stage[]
+  expenses     Expense[]
+  payments     Payment[]
+  documents    Document[]
+
+  @@index([organizationId])
+  @@index([projectTypeItemId])
+  @@map("projects")
+}
+
+// ============================================
+// Stages
+// ============================================
+
+model Stage {
+  id           String   @id @default(cuid())
+  organizationId String
+  projectId    String
+  name         String
+  budgetAmount Decimal  @db.Decimal(15, 2)
+  createdAt    DateTime @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  expenses     Expense[]
+
+  @@unique([projectId, name])
+  @@index([organizationId])
+  @@index([projectId])
+  @@map("stages")
+}
+
+// ============================================
+// Parties
+// ============================================
+
+model Party {
+  id             String    @id @default(cuid())
+  organizationId String
+  name           String
+  phone          String?
+  type           PartyType
+  createdAt      DateTime  @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  expenses     Expense[]
+  payments     Payment[]
+
+  @@index([organizationId])
+  @@index([type])
+  @@map("parties")
+}
+
+// ============================================
+// Expenses
+// ============================================
+
+model Expense {
+  id                    String   @id @default(cuid())
+  organizationId        String
+  projectId             String
+  partyId               String
+  stageId               String?
+  expenseCategoryItemId String
+  materialTypeItemId    String?
+  labourTypeItemId      String?
+  subWorkTypeItemId     String?
+  amount                Decimal  @db.Decimal(15, 2)
+  expenseDate           DateTime
+  paymentMode           String
+  notes                 String?  @db.Text
+  createdAt             DateTime @default(now())
+
+  // Relations
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project         Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  party           Party         @relation(fields: [partyId], references: [id])
+  stage           Stage?        @relation(fields: [stageId], references: [id])
+  expenseCategory CategoryItem  @relation("ExpenseCategory", fields: [expenseCategoryItemId], references: [id])
+  materialType    CategoryItem? @relation("MaterialType", fields: [materialTypeItemId], references: [id])
+  labourType      CategoryItem? @relation("LabourType", fields: [labourTypeItemId], references: [id])
+  subWorkType     CategoryItem? @relation("SubWorkType", fields: [subWorkTypeItemId], references: [id])
+
+  @@index([organizationId])
+  @@index([projectId])
+  @@index([partyId])
+  @@index([stageId])
+  @@index([expenseDate])
+  @@map("expenses")
+}
+
+// ============================================
+// Payments
+// ============================================
+
+model Payment {
+  id             String   @id @default(cuid())
+  organizationId String
+  projectId      String
+  partyId        String?
+  amount         Decimal  @db.Decimal(15, 2)
+  paymentDate    DateTime
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  party        Party?       @relation(fields: [partyId], references: [id])
+
+  @@index([organizationId])
+  @@index([projectId])
+  @@index([partyId])
+  @@index([paymentDate])
+  @@map("payments")
+}
+
+// ============================================
+// Documents
+// ============================================
+
+model Document {
+  id             String   @id @default(cuid())
+  organizationId String
+  projectId      String
+  fileName       String
+  fileType       String
+  fileUrl        String
+  uploadedAt     DateTime @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([projectId])
+  @@map("documents")
 }

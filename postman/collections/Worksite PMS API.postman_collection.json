@@ -1,0 +1,2520 @@
+{
+  "info": {
+    "_postman_id": "4641a117-4830-49df-81de-6a768fa8afe3",
+    "name": "Worksite PMS API",
+    "description": "Complete API collection for Construction Project Management System.\n\n## Overview\nThis collection contains all endpoints for managing:\n- Organizations\n- Users & Organization Members\n- Projects\n- Stages\n- Parties (Vendors, Labour, Subcontractors)\n- Expenses\n- Payments\n- Categories (Types and Items)\n\n## Authentication Headers\nThe following headers are automatically added to all requests via pre-request script:\n- `x-organization-id`: Organization context (from `organizationId` env var)\n- `x-user-id`: User context (from `userId` env var)\n- `x-user-role`: User role - ADMIN, MANAGER, or ACCOUNTANT (from `userRole` env var)\n\n## Quick Start with Demo Data\nThe Development environment comes pre-populated with demo data IDs. Simply:\n1. Import the collection and environment\n2. Select 'Worksite PMS - Development' environment\n3. Start testing - headers are auto-added!\n\n## Testing Flow (Order to Populate All Tables)\n1. **Organizations** - Create an organization first\n2. **Users** - Create users\n3. **Organization Members** - Add users to organization\n4. **Category Types** - Create category types (project_type, expense_category, etc.)\n5. **Category Items** - Create items for each type\n6. **Projects** - Create projects (requires organization & category items)\n7. **Stages** - Create stages for projects\n8. **Parties** - Create parties (vendors, labour, subcontractors)\n9. **Expenses** - Create expenses (requires project, party, stage, category items)\n10. **Payments** - Create payments (requires project, party)\n\n## Environment Variables\n- `baseUrl`: API base URL (default: http://localhost:3000)\n- `organizationId`: Organization ID → x-organization-id header\n- `userId`: User ID → x-user-id header\n- `userRole`: User role → x-user-role header (ADMIN, MANAGER, ACCOUNTANT)\n- `projectId`: Current project ID\n- `partyId`: Current party ID\n- `stageId`: Current stage ID\n- `expenseId`: Current expense ID\n- `paymentId`: Current payment ID\n- `categoryTypeId`: Current category type ID\n- `categoryItemId`: Current category item ID",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health & Info",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has status ok', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('ok');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Check API health status"
+          },
+          "response": []
+        },
+        {
+          "name": "API Info",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has API info', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.exist;",
+                  "    pm.expect(jsonData.endpoints).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api",
+              "host": ["{{baseUrl}}"],
+              "path": ["api"]
+            },
+            "description": "Get API information and list of available endpoints"
+          },
+          "response": []
+        }
+      ],
+      "description": "Health check and API information endpoints"
+    },
+    {
+      "name": "1. Organizations",
+      "item": [
+        {
+          "name": "Create Organization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has created organization', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('name');",
+                  "    ",
+                  "    // Save organization ID for subsequent requests",
+                  "    pm.environment.set('organizationId', jsonData.data.id);",
+                  "    console.log('Created organization ID:', jsonData.data.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Construction Company\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations"]
+            },
+            "description": "Create a new organization. This should be called FIRST as all other entities belong to an organization.\n\n**Required fields:**\n- `name`: Organization name (1-255 characters)"
+          },
+          "response": []
+        },
+        {
+          "name": "List Organizations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has data array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "// Save first organization ID if not already set",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0 && !pm.environment.get('organizationId')) {",
+                  "    pm.environment.set('organizationId', jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page (default: 10, max: 100)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search by organization name",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get a paginated list of all organizations"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Organization by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has organization data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('name');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}"]
+            },
+            "description": "Get a single organization by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Organization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has updated organization', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Company Name\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}"]
+            },
+            "description": "Update an existing organization\n\n**Optional fields:**\n- `name`: Organization name (1-255 characters)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Organization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}"]
+            },
+            "description": "Delete an organization by ID. **Warning:** This will cascade delete all related data."
+          },
+          "response": []
+        }
+      ],
+      "description": "Manage organizations. **Create an organization FIRST** as all other entities belong to an organization."
+    },
+    {
+      "name": "2. Users",
+      "item": [
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has created user', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('name');",
+                  "    pm.expect(jsonData.data).to.have.property('phone');",
+                  "    ",
+                  "    // Save user ID for subsequent requests",
+                  "    pm.environment.set('userId', jsonData.data.id);",
+                  "    console.log('Created user ID:', jsonData.data.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"phone\": \"+1234567890\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Create a new user. Users can be added as members to organizations.\n\n**Required fields:**\n- `name`: User's full name (1-255 characters)\n- `phone`: Phone number (unique, format: +1234567890)"
+          },
+          "response": []
+        },
+        {
+          "name": "List Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has data array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "// Save first user ID if not already set",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0 && !pm.environment.get('userId')) {",
+                  "    pm.environment.set('userId', jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page (default: 10, max: 100)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search by name or phone",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get a paginated list of all users"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has user data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('name');",
+                  "    pm.expect(jsonData.data).to.have.property('phone');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            },
+            "description": "Get a single user by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by Phone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has user data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('phone');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/by-phone?phone=+1234567890",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "by-phone"],
+              "query": [
+                {
+                  "key": "phone",
+                  "value": "+1234567890",
+                  "description": "Phone number to search for"
+                }
+              ]
+            },
+            "description": "Get a user by their phone number (useful for login/authentication)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Organizations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has organizations array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/organizations",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}", "organizations"]
+            },
+            "description": "Get all organizations that a user is a member of"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has updated user', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Smith\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            },
+            "description": "Update an existing user\n\n**Optional fields:**\n- `name`: User's full name (1-255 characters)\n- `phone`: Phone number (must be unique)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            },
+            "description": "Delete a user by ID"
+          },
+          "response": []
+        }
+      ],
+      "description": "Manage users. Create users after creating an organization, then add them as members."
+    },
+    {
+      "name": "3. Organization Members",
+      "item": [
+        {
+          "name": "Add Member to Organization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has member data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('role');",
+                  "    console.log('Added member with role:', jsonData.data.role);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"role\": \"ADMIN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}", "members"]
+            },
+            "description": "Add a user as a member of an organization.\n\n**Required fields:**\n- `userId`: ID of the user to add\n- `role`: Member role - one of: `ADMIN`, `MANAGER`, `ACCOUNTANT`"
+          },
+          "response": []
+        },
+        {
+          "name": "List Organization Members",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has members array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}/members",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}", "members"]
+            },
+            "description": "Get all members of an organization"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Member Role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has updated member', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('role');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"MANAGER\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}/members/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}", "members", "{{userId}}"]
+            },
+            "description": "Update a member's role in an organization\n\n**Required fields:**\n- `role`: New role - one of: `ADMIN`, `MANAGER`, `ACCOUNTANT`"
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Member from Organization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/organizations/{{organizationId}}/members/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "organizations", "{{organizationId}}", "members", "{{userId}}"]
+            },
+            "description": "Remove a user from an organization"
+          },
+          "response": []
+        }
+      ],
+      "description": "Manage organization members. Add users to organizations with specific roles."
+    },
+    {
+      "name": "4. Categories",
+      "item": [
+        {
+          "name": "Category Types",
+          "item": [
+            {
+              "name": "Create Category Type",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 201', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "const jsonData = pm.response.json();",
+                      "if (jsonData.data) {",
+                      "    pm.environment.set('categoryTypeId', jsonData.data.id);",
+                      "    pm.environment.set('categoryTypeKey', jsonData.data.key);",
+                      "    console.log('Created category type:', jsonData.data.key);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"key\": \"PROJECT_TYPE\",\n  \"label\": \"Project Type\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories/types",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "categories", "types"]
+                },
+                "description": "Create a new category type. Create types like:\n- `PROJECT_TYPE` - Types of projects (Residential, Commercial, etc.)\n- `EXPENSE_CATEGORY` - Expense categories (Materials, Labour, etc.)\n- `MATERIAL_TYPE` - Types of materials\n- `LABOUR_TYPE` - Types of labour\n- `SUB_WORK_TYPE` - Types of sub-contracted work\n\n**Required fields:**\n- `key`: Unique key (e.g., PROJECT_TYPE)\n- `label`: Display label"
+              },
+              "response": []
+            },
+            {
+              "name": "List Category Types",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "const jsonData = pm.response.json();",
+                      "if (jsonData.data && jsonData.data.length > 0) {",
+                      "    pm.environment.set('categoryTypeId', jsonData.data[0].id);",
+                      "    pm.environment.set('categoryTypeKey', jsonData.data[0].key);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories/types",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "categories", "types"],
+                  "query": [
+                    {
+                      "key": "includeInactive",
+                      "value": "false",
+                      "description": "Include inactive category types",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Get all category types"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Category Type by ID",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories/types/{{categoryTypeId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "categories", "types", "{{categoryTypeId}}"]
+                },
+                "description": "Get a category type by ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Category Type by Key",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories/types/key/{{categoryTypeKey}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "categories", "types", "key", "{{categoryTypeKey}}"]
+                },
+                "description": "Get a category type by its unique key"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Category Type",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"label\": \"Updated Category Type Label\",\n  \"isActive\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories/types/{{categoryTypeId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "categories", "types", "{{categoryTypeId}}"]
+                },
+                "description": "Update a category type"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Category Type",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200 or 204', function () {",
+                      "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories/types/{{categoryTypeId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "categories", "types", "{{categoryTypeId}}"]
+                },
+                "description": "Delete a category type by ID"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Category Items",
+          "item": [
+            {
+              "name": "Create Category Item",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 201', function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "const jsonData = pm.response.json();",
+                      "if (jsonData.data) {",
+                      "    pm.environment.set('categoryItemId', jsonData.data.id);",
+                      "    // Also save as projectTypeItemId for project creation",
+                      "    pm.environment.set('projectTypeItemId', jsonData.data.id);",
+                      "    console.log('Created category item:', jsonData.data.name);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"categoryTypeId\": \"{{categoryTypeId}}\",\n  \"name\": \"Residential Building\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories/items",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "categories", "items"]
+                },
+                "description": "Create a new category item\n\n**Required fields:**\n- `categoryTypeId`: Parent category type ID\n- `name`: Item name"
+              },
+              "response": []
+            },
+            {
+              "name": "List Category Items by Type Key",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "const jsonData = pm.response.json();",
+                      "if (jsonData.data && jsonData.data.length > 0) {",
+                      "    pm.environment.set('categoryItemId', jsonData.data[0].id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories/items/type/{{categoryTypeKey}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "categories", "items", "type", "{{categoryTypeKey}}"],
+                  "query": [
+                    {
+                      "key": "includeInactive",
+                      "value": "false",
+                      "description": "Include inactive category items",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Get all category items for a specific type key"
+              },
+              "response": []
+            },
+            {
+              "name": "Get Category Item by ID",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories/items/{{categoryItemId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "categories", "items", "{{categoryItemId}}"]
+                },
+                "description": "Get a category item by ID"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Category Item",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Category Item Name\",\n  \"isActive\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories/items/{{categoryItemId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "categories", "items", "{{categoryItemId}}"]
+                },
+                "description": "Update a category item"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Category Item",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Status code is 200 or 204', function () {",
+                      "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categories/items/{{categoryItemId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "categories", "items", "{{categoryItemId}}"]
+                },
+                "description": "Delete a category item by ID"
+              },
+              "response": []
+            }
+          ]
+        }
+      ],
+      "description": "Manage category types and items. Create category types first, then create items for each type."
+    },
+    {
+      "name": "5. Projects",
+      "item": [
+        {
+          "name": "Create Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has created project', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.environment.set('projectId', jsonData.data.id);",
+                  "    console.log('Created project ID:', jsonData.data.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Construction Project\",\n  \"clientName\": \"ABC Construction Ltd\",\n  \"location\": \"123 Main Street, City\",\n  \"startDate\": \"{{$isoTimestamp}}\",\n  \"projectTypeItemId\": \"{{projectTypeItemId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects"]
+            },
+            "description": "Create a new project\n\n**Required fields:**\n- `name`: Project name\n- `clientName`: Client name\n- `location`: Project location\n- `startDate`: Start date (ISO 8601 format)\n- `projectTypeItemId`: Category item ID for project type"
+          },
+          "response": []
+        },
+        {
+          "name": "List Projects",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has data array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.environment.set('projectId', jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page (default: 10, max: 100)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search by project name",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get a paginated list of all projects"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has project data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('name');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}"]
+            },
+            "description": "Get a single project by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}", "stats"]
+            },
+            "description": "Get statistics for a specific project"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Project Name\",\n  \"clientName\": \"Updated Client Name\",\n  \"location\": \"456 New Street, City\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}"]
+            },
+            "description": "Update an existing project. All fields are optional."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "projects", "{{projectId}}"]
+            },
+            "description": "Delete a project by ID"
+          },
+          "response": []
+        }
+      ],
+      "description": "Manage construction projects"
+    },
+    {
+      "name": "6. Stages",
+      "item": [
+        {
+          "name": "Create Stage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data) {",
+                  "    pm.environment.set('stageId', jsonData.data.id);",
+                  "    console.log('Created stage ID:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"name\": \"Foundation Work\",\n  \"budgetAmount\": 50000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stages"]
+            },
+            "description": "Create a new stage\n\n**Required fields:**\n- `projectId`: Associated project ID\n- `name`: Stage name\n- `budgetAmount`: Budget amount (must be >= 0)"
+          },
+          "response": []
+        },
+        {
+          "name": "List Stages",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.environment.set('stageId', jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stages?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stages"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "description": "Filter by project ID",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get a paginated list of all stages"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Stages by Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stages/project/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stages", "project", "{{projectId}}"]
+            },
+            "description": "Get all stages for a specific project"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Stage by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stages/{{stageId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stages", "{{stageId}}"]
+            },
+            "description": "Get a single stage by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Stage Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stages/{{stageId}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stages", "{{stageId}}", "stats"]
+            },
+            "description": "Get statistics for a specific stage"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Stage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Stage Name\",\n  \"budgetAmount\": 75000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/stages/{{stageId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stages", "{{stageId}}"]
+            },
+            "description": "Update an existing stage"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Stage",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stages/{{stageId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "stages", "{{stageId}}"]
+            },
+            "description": "Delete a stage by ID"
+          },
+          "response": []
+        }
+      ],
+      "description": "Manage project stages/phases"
+    },
+    {
+      "name": "7. Parties",
+      "item": [
+        {
+          "name": "Create Party (Vendor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data) {",
+                  "    pm.environment.set('partyId', jsonData.data.id);",
+                  "    console.log('Created party ID:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ABC Suppliers\",\n  \"phone\": \"+1234567890\",\n  \"type\": \"VENDOR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/parties",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "parties"]
+            },
+            "description": "Create a new vendor party\n\n**Required fields:**\n- `name`: Party name\n- `type`: VENDOR, LABOUR, or SUBCONTRACTOR\n\n**Optional fields:**\n- `phone`: Contact phone number"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Party (Labour)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John's Labour Team\",\n  \"phone\": \"+1234567891\",\n  \"type\": \"LABOUR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/parties",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "parties"]
+            },
+            "description": "Create a new labour party"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Party (Subcontractor)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"XYZ Electrical Works\",\n  \"phone\": \"+1234567892\",\n  \"type\": \"SUBCONTRACTOR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/parties",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "parties"]
+            },
+            "description": "Create a new subcontractor party"
+          },
+          "response": []
+        },
+        {
+          "name": "List Parties",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.environment.set('partyId', jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/parties?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "parties"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search by party name",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "VENDOR",
+                  "description": "Filter by type: VENDOR, LABOUR, SUBCONTRACTOR",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get a paginated list of all parties"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Party by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/parties/{{partyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "parties", "{{partyId}}"]
+            },
+            "description": "Get a single party by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Party Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/parties/{{partyId}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "parties", "{{partyId}}", "stats"]
+            },
+            "description": "Get statistics for a specific party"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Party",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Party Name\",\n  \"phone\": \"+9876543210\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/parties/{{partyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "parties", "{{partyId}}"]
+            },
+            "description": "Update an existing party"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Party",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/parties/{{partyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "parties", "{{partyId}}"]
+            },
+            "description": "Delete a party by ID"
+          },
+          "response": []
+        }
+      ],
+      "description": "Manage parties (vendors, labour, subcontractors)"
+    },
+    {
+      "name": "8. Expenses",
+      "item": [
+        {
+          "name": "Create Expense",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data) {",
+                  "    pm.environment.set('expenseId', jsonData.data.id);",
+                  "    console.log('Created expense ID:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"partyId\": \"{{partyId}}\",\n  \"stageId\": \"{{stageId}}\",\n  \"expenseCategoryItemId\": \"{{expenseCategoryItemId}}\",\n  \"materialTypeItemId\": \"{{materialTypeItemId}}\",\n  \"labourTypeItemId\": null,\n  \"subWorkTypeItemId\": null,\n  \"amount\": 5000,\n  \"expenseDate\": \"{{$isoTimestamp}}\",\n  \"paymentMode\": \"CASH\",\n  \"notes\": \"Material purchase for foundation\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses"]
+            },
+            "description": "Create a new expense\n\n**Required fields:**\n- `projectId`: Associated project ID\n- `partyId`: Associated party ID\n- `expenseCategoryItemId`: Expense category item ID\n- `amount`: Expense amount (positive number)\n- `expenseDate`: Expense date (ISO 8601)\n- `paymentMode`: Payment mode (e.g., CASH, BANK)\n\n**Optional fields:**\n- `stageId`: Associated stage ID\n- `materialTypeItemId`: Material type category item ID\n- `labourTypeItemId`: Labour type category item ID\n- `subWorkTypeItemId`: Sub-work type category item ID\n- `notes`: Additional notes"
+          },
+          "response": []
+        },
+        {
+          "name": "List Expenses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.environment.set('expenseId', jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "description": "Filter by project ID",
+                  "disabled": true
+                },
+                {
+                  "key": "partyId",
+                  "value": "{{partyId}}",
+                  "description": "Filter by party ID",
+                  "disabled": true
+                },
+                {
+                  "key": "stageId",
+                  "value": "{{stageId}}",
+                  "description": "Filter by stage ID",
+                  "disabled": true
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01T00:00:00.000Z",
+                  "description": "Filter from date (ISO 8601)",
+                  "disabled": true
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31T23:59:59.999Z",
+                  "description": "Filter to date (ISO 8601)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get a paginated list of all expenses with optional filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Expenses Summary by Category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/summary/by-category",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", "summary", "by-category"],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "description": "Filter by project ID",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get expense summary grouped by category"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Expense by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/{{expenseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", "{{expenseId}}"]
+            },
+            "description": "Get a single expense by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Expense",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 7500,\n  \"notes\": \"Updated expense notes\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/{{expenseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", "{{expenseId}}"]
+            },
+            "description": "Update an existing expense"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Expense",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/expenses/{{expenseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "expenses", "{{expenseId}}"]
+            },
+            "description": "Delete an expense by ID"
+          },
+          "response": []
+        }
+      ],
+      "description": "Manage project expenses"
+    },
+    {
+      "name": "9. Payments",
+      "item": [
+        {
+          "name": "Create Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data) {",
+                  "    pm.environment.set('paymentId', jsonData.data.id);",
+                  "    console.log('Created payment ID:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"partyId\": \"{{partyId}}\",\n  \"amount\": 10000,\n  \"paymentDate\": \"{{$isoTimestamp}}\",\n  \"notes\": \"Advance payment for materials\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments"]
+            },
+            "description": "Create a new payment\n\n**Required fields:**\n- `projectId`: Associated project ID\n- `amount`: Payment amount (positive number)\n- `paymentDate`: Payment date (ISO 8601)\n\n**Optional fields:**\n- `partyId`: Associated party ID\n- `notes`: Additional notes"
+          },
+          "response": []
+        },
+        {
+          "name": "List Payments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.environment.set('paymentId', jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "description": "Filter by project ID",
+                  "disabled": true
+                },
+                {
+                  "key": "partyId",
+                  "value": "{{partyId}}",
+                  "description": "Filter by party ID",
+                  "disabled": true
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01T00:00:00.000Z",
+                  "description": "Filter from date (ISO 8601)",
+                  "disabled": true
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31T23:59:59.999Z",
+                  "description": "Filter to date (ISO 8601)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get a paginated list of all payments with optional filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payments Summary",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "summary"],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "description": "Filter by project ID",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get payments summary"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/{{paymentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "{{paymentId}}"]
+            },
+            "description": "Get a single payment by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 15000,\n  \"notes\": \"Updated payment notes\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/{{paymentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "{{paymentId}}"]
+            },
+            "description": "Update an existing payment"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Payment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/{{paymentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "payments", "{{paymentId}}"]
+            },
+            "description": "Delete a payment by ID"
+          },
+          "response": []
+        }
+      ],
+      "description": "Manage project payments"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set organization context headers for all requests",
+          "const orgId = pm.environment.get('organizationId');",
+          "const userId = pm.environment.get('userId');",
+          "const userRole = pm.environment.get('userRole') || 'ADMIN';",
+          "",
+          "if (orgId) {",
+          "    pm.request.headers.add({",
+          "        key: 'x-organization-id',",
+          "        value: orgId",
+          "    });",
+          "}",
+          "",
+          "if (userId) {",
+          "    pm.request.headers.add({",
+          "        key: 'x-user-id',",
+          "        value: userId",
+          "    });",
+          "}",
+          "",
+          "if (userRole) {",
+          "    pm.request.headers.add({",
+          "        key: 'x-user-role',",
+          "        value: userRole",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}

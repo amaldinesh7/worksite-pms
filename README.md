@@ -151,7 +151,7 @@ curl http://localhost:3000/health
 Create `.env` in root:
 
 ```bash
-DATABASE_URL=postgresql://myuser:mypassword@localhost:5432/mydb
+DATABASE_URL=postgresql://myuser:mypassword@localhost:5433/worksite
 ```
 
 ---

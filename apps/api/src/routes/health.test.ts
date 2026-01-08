@@ -20,11 +20,12 @@ describe('Health endpoint', () => {
     });
 
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ status: 'ok' });
+    expect(res.json().status).toBe('ok');
+    expect(res.json().timestamp).toBeDefined();
   });
 });
 
-describe('Hello endpoint', () => {
+describe('API info endpoint', () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
@@ -35,20 +36,21 @@ describe('Hello endpoint', () => {
     await app.close();
   });
 
-  it('GET /api/hello returns greeting message', async () => {
+  it('GET /api returns API info', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/api/hello',
+      url: '/api',
     });
 
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ message: 'Hello from API!' });
+    expect(res.json().name).toBe('Construction PMS API');
+    expect(res.json().endpoints).toContain('/api/projects');
   });
 
   it('returns correct content-type', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/api/hello',
+      url: '/api',
     });
 
     expect(res.headers['content-type']).toContain('application/json');

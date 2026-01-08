@@ -5,9 +5,9 @@ services:
     environment:
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: mydb
+      POSTGRES_DB: worksite
     ports:
-      - '5432:5432'
+      - '5433:5433'
     volumes:
       - postgres_data:/var/lib/postgresql/data
 volumes:

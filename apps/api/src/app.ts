@@ -1,24 +1,106 @@
-import Fastify from 'fastify';
+import Fastify, { FastifyError, FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
+
+// Route imports
+import organizationRoutes from './routes/organizations/index';
+import userRoutes from './routes/users/index';
+import projectRoutes from './routes/projects/index';
+import categoryRoutes from './routes/categories/index';
+import partyRoutes from './routes/parties/index';
+import expenseRoutes from './routes/expenses/index';
+import paymentRoutes from './routes/payments/index';
+import stageRoutes from './routes/stages/index';
+
+// Prisma
+import { disconnectPrisma } from './lib/prisma';
 
 export interface AppOptions {
   logger?: boolean;
 }
 
 export async function buildApp(options: AppOptions = {}) {
-  const fastify = Fastify({
+  const app = Fastify({
     logger: options.logger ?? true,
   });
 
+  // Configure Zod type provider BEFORE anything else
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
+
+  // Get typed fastify instance
+  const fastify = app.withTypeProvider<ZodTypeProvider>();
+
+  // CORS configuration
   await fastify.register(cors, {
     origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
   });
 
   // Health check
-  fastify.get('/health', async () => ({ status: 'ok' }));
+  fastify.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 
-  // API routes
-  fastify.get('/api/hello', async () => ({ message: 'Hello from API!' }));
+  // API info
+  fastify.get('/api', async () => ({
+    name: 'Construction PMS API',
+    version: '1.0.0',
+    endpoints: [
+      '/api/organizations',
+      '/api/users',
+      '/api/projects',
+      '/api/categories',
+      '/api/parties',
+      '/api/expenses',
+      '/api/payments',
+      '/api/stages',
+    ],
+  }));
 
-  return fastify;
+  // Register routes
+  await fastify.register(organizationRoutes, { prefix: '/api/organizations' });
+  await fastify.register(userRoutes, { prefix: '/api/users' });
+  await fastify.register(projectRoutes, { prefix: '/api/projects' });
+  await fastify.register(categoryRoutes, { prefix: '/api/categories' });
+  await fastify.register(partyRoutes, { prefix: '/api/parties' });
+  await fastify.register(expenseRoutes, { prefix: '/api/expenses' });
+  await fastify.register(paymentRoutes, { prefix: '/api/payments' });
+  await fastify.register(stageRoutes, { prefix: '/api/stages' });
+
+  // Global error handler
+  fastify.setErrorHandler((error: FastifyError, request, reply) => {
+    fastify.log.error(error);
+
+    // Handle Zod validation errors from fastify-type-provider-zod
+    if (error.validation) {
+      return reply.code(400).send({
+        success: false,
+        error: {
+          message: 'Validation failed',
+          code: 'VALIDATION_ERROR',
+          details: error.validation,
+        },
+      });
+    }
+
+    // Handle other errors
+    return reply.code(error.statusCode || 500).send({
+      success: false,
+      error: {
+        message: error.message || 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      },
+    });
+  });
+
+  // Graceful shutdown
+  app.addHook('onClose', async () => {
+    await disconnectPrisma();
+  });
+
+  return app;
 }
+
+// For backwards compatibility
+export const build = buildApp;
+
+// Export type for use in routes
+export type FastifyZod = ReturnType<typeof buildApp> extends Promise<infer T> ? T : never;

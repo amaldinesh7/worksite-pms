@@ -58,7 +58,16 @@ importers:
       fastify:
         specifier: ^5.2.2
         version: 5.6.2
+      fastify-type-provider-zod:
+        specifier: '4'
+        version: 4.0.2(fastify@5.6.2)(zod@3.25.76)
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
     devDependencies:
+      '@faker-js/faker':
+        specifier: ^10.2.0
+        version: 10.2.0
       '@vitest/coverage-v8':
         specifier: ^4.0.16
         version: 4.0.16(vitest@4.0.16(@types/node@25.0.3)(jiti@2.6.1)(lightningcss@1.27.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.8.2))
@@ -2027,6 +2036,13 @@ packages:
         integrity: sha512-ReZxZ8pdnoI3tP/dNnJdnmAk7uLT4FjsKDGW7YeDdvdOMz2XCQSmSCM9IWlrXuWtMF9zeSB6WJtEhCQ41gQOfw==,
       }
     hasBin: true
+
+  '@faker-js/faker@10.2.0':
+    resolution:
+      {
+        integrity: sha512-rTXwAsIxpCqzUnZvrxVh3L0QA0NzToqWBLAhV+zDV3MIIwiQhAZHMdPCIaj5n/yADu/tyk12wIPgL6YHGXJP+g==,
+      }
+    engines: { node: ^20.19.0 || ^22.13.0 || ^23.5.0 || >=24.0.0, npm: '>=10' }
 
   '@fastify/ajv-compiler@4.0.5':
     resolution:
@@ -6031,6 +6047,15 @@ packages:
       {
         integrity: sha512-FAIDA8eovSt5qcDgcBvDuX/v0Cjz0ohGhENZ/wpc3y+oZCY2afZ9Baqql3g/lC+OHRnciQol4ww7tuthOb9idw==,
       }
+
+  fastify-type-provider-zod@4.0.2:
+    resolution:
+      {
+        integrity: sha512-FDRzSL3ZuoZ+4YDevR1YOinmDKkxOdy3QB9dDR845sK+bQvDroPKhHAXLEAOObDxL7SMA0OZN/A4osrNBTdDTQ==,
+      }
+    peerDependencies:
+      fastify: ^5.0.0
+      zod: ^3.14.2
 
   fastify@5.6.2:
     resolution:
@@ -10657,6 +10682,14 @@ packages:
       }
     engines: { node: '>=10' }
 
+  zod-to-json-schema@3.25.1:
+    resolution:
+      {
+        integrity: sha512-pM/SU9d3YAggzi6MtR4h7ruuQlqKtad8e9S0fmxcMi+ueAK5Korys/aWcV9LIIHTVbj01NdzxcnXSN+O74ZIVA==,
+      }
+    peerDependencies:
+      zod: ^3.25 || ^4
+
   zod@3.25.76:
     resolution:
       {
@@ -12100,6 +12133,8 @@ snapshots:
       chalk: 4.1.2
       find-up: 5.0.0
       js-yaml: 4.1.1
+
+  '@faker-js/faker@10.2.0': {}
 
   '@fastify/ajv-compiler@4.0.5':
     dependencies:
@@ -15574,6 +15609,13 @@ snapshots:
 
   fastify-plugin@5.1.0: {}
 
+  fastify-type-provider-zod@4.0.2(fastify@5.6.2)(zod@3.25.76):
+    dependencies:
+      '@fastify/error': 4.2.0
+      fastify: 5.6.2
+      zod: 3.25.76
+      zod-to-json-schema: 3.25.1(zod@3.25.76)
+
   fastify@5.6.2:
     dependencies:
       '@fastify/ajv-compiler': 4.0.5
@@ -18517,5 +18559,9 @@ snapshots:
       yargs-parser: 21.1.1
 
   yocto-queue@0.1.0: {}
+
+  zod-to-json-schema@3.25.1(zod@3.25.76):
+    dependencies:
+      zod: 3.25.76
 
   zod@3.25.76: {}
