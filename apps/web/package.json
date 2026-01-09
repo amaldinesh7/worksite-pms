@@ -8,8 +8,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
     "@worksite/ui": "workspace:*",
     "@worksite/types": "workspace:*",
     "@worksite/data": "workspace:*",
