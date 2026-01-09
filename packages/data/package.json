@@ -1,0 +1,8 @@
+{
+  "name": "@worksite/data",
+  "main": "./src/index.ts",
+  "dependencies": {
+    "@tanstack/react-query": "^5.62.11",
+    "@worksite/types": "workspace:*"
+  }
+}
