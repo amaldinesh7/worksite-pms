@@ -157,8 +157,8 @@ curl -X POST "http://localhost:3000/api/documents?projectId=xxx" \
 - [ ] Used `@agent` for focused help
 - [ ] Ran CodeRabbit before committing
 - [ ] Ran `pnpm docs:generate` after changes
-- [ ] Used Tamagui, not primitives
-- [ ] Used theme tokens, not hardcoded values
+- [ ] Used Tailwind classes, not inline styles
+- [ ] Used theme tokens from @worksite/ui
 - [ ] Added tests for new API endpoints
 
 ---
@@ -176,7 +176,7 @@ worksite/
 │   ├── mobile/           # Expo mobile app
 │   └── web/              # Vite web app
 ├── packages/
-│   ├── ui/               # Shared Tamagui components
+│   ├── ui/               # Shared design tokens
 │   └── types/            # Shared Zod types
 ├── docs/                 # Auto-generated
 ├── agents.md             # AI context (update this!)

@@ -12,19 +12,51 @@ When you add a new npm package, add it here so the AI knows how to use it.
 ```yaml
 tools:
   # ============================================
-  # UI / Components
+  # UI / Styling (Hybrid Architecture)
   # ============================================
-  - name: tamagui
-    version: '^1.112.21'
-    context: Universal UI components for mobile and web
+  - name: '@worksite/ui'
+    version: '1.0.0'
+    context: Shared design tokens for consistent aesthetics across platforms
     rules: |
-      - ALWAYS use from @worksite/ui, not directly
-      - ALWAYS use theme tokens ($primary, $background, $4)
-      - NEVER use View, Text, TouchableOpacity directly
-      - NEVER use div, span, button directly
-      - Support dark mode automatically with tokens
-    examples: packages/ui/src/components/**/*
-    docs: https://tamagui.dev
+      - Import tokens from @worksite/ui/tokens
+      - Use tailwindTheme from @worksite/ui/tokens for Tailwind config
+      - Tokens include: colors, spacing, fontSize, borderRadius, shadows
+      - Single source of truth for design system
+    examples: packages/ui/src/tokens.ts
+    docs: See packages/ui/src/tokens.ts
+
+  - name: tailwindcss
+    version: '^3.4.17'
+    context: Utility-first CSS framework for web styling
+    rules: |
+      - Use for ALL web styling in apps/web
+      - Import tailwindTheme from @worksite/ui/tokens
+      - Use semantic color names: bg-primary, text-foreground
+      - Prefer Tailwind classes over inline styles
+    examples: apps/web/src/**/*
+    docs: https://tailwindcss.com
+
+  - name: nativewind
+    version: '^4.1.23'
+    context: Tailwind CSS for React Native (mobile styling)
+    rules: |
+      - Use for ALL mobile styling in apps/mobile
+      - Same class names as web Tailwind
+      - Import global.css in _layout.tsx
+      - Use className prop on RN components
+    examples: apps/mobile/app/**/*
+    docs: https://www.nativewind.dev
+
+  - name: shadcn/ui
+    version: 'latest'
+    context: Copy-paste React components for web
+    rules: |
+      - Components live in apps/web/src/components/ui/
+      - Use cn() helper for conditional classes
+      - Customize variants in component files
+      - NEVER use on mobile - web only
+    examples: apps/web/src/components/ui/**/*
+    docs: https://ui.shadcn.com
 
   # ============================================
   # State Management
@@ -198,13 +230,13 @@ Use these prefixes to get focused assistance:
 
 ### @frontend
 
-**Role**: UI development with Tamagui
-**Context**: Component design, styling, responsiveness, accessibility
+**Role**: UI development with hybrid architecture (Tailwind + shadcn for web, NativeWind for mobile)
+**Context**: Component design, styling, responsiveness, accessibility, platform-specific UI
 **Use when**: Building UI components, fixing styling issues, creating animations
 
 ```
-@frontend Create a responsive card component for user profiles
-@frontend Fix the dark mode styling on the settings screen
+@frontend Create a responsive card component for user profiles (web)
+@frontend Build a native-feeling list component (mobile)
 @frontend Add loading states to the feed component
 ```
 
@@ -290,12 +322,13 @@ steps:
   2. Database: Add Prisma models if needed (npx prisma migrate dev)
   3. API: Create routes in apps/api/src/routes
   4. Services: Business logic in apps/api/src/services
-  5. Hooks: TanStack Query hooks in apps/*/hooks
-  6. UI: Shared components in packages/ui (if reusable)
-  7. Mobile: Screens in apps/mobile/app
-  8. Web: Pages in apps/web/src
-  9. Docs: Run `pnpm docs:generate`
+  5. Hooks: TanStack Query hooks in packages/data
+  6. Mobile: Screens in apps/mobile/app (NativeWind styling)
+  7. Web: Pages in apps/web/src (Tailwind + shadcn/ui)
+  8. Docs: Run `pnpm docs:generate`
 ```
+
+**Note**: UI components are platform-specific. Share business logic via `@worksite/data` hooks, not UI components.
 
 ### form_pattern
 
@@ -310,26 +343,39 @@ export const CreatePostSchema = z.object({
 });
 export type CreatePostInput = z.infer<typeof CreatePostSchema>;
 
-// 2. Use in component
+// 2. Use in WEB component (shadcn/ui + Tailwind)
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreatePostSchema, type CreatePostInput } from '@worksite/types';
+import { Button } from '@/components/ui/button';
 
 function CreatePostForm() {
   const form = useForm<CreatePostInput>({
     resolver: zodResolver(CreatePostSchema),
   });
 
-  const onSubmit = async (data: CreatePostInput) => {
-    await createPost(data);
-  };
-
   return (
-    <YStack gap="$3">
-      <Input {...form.register('title')} placeholder="Title" />
-      <TextArea {...form.register('content')} placeholder="Content" />
-      <Button onPress={form.handleSubmit(onSubmit)}>Create</Button>
-    </YStack>
+    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-3">
+      <input {...form.register('title')} placeholder="Title" className="border rounded-md p-2" />
+      <textarea {...form.register('content')} placeholder="Content" className="border rounded-md p-2" />
+      <Button type="submit">Create</Button>
+    </form>
+  );
+}
+
+// 3. Use in MOBILE component (NativeWind)
+import { View, TextInput, Pressable, Text } from 'react-native';
+
+function CreatePostForm() {
+  // Same useForm hook...
+  return (
+    <View className="flex-col gap-3">
+      <TextInput placeholder="Title" className="border border-border rounded-md p-2" />
+      <TextInput placeholder="Content" className="border border-border rounded-md p-2" multiline />
+      <Pressable className="bg-primary rounded-md p-3">
+        <Text className="text-white text-center font-semibold">Create</Text>
+      </Pressable>
+    </View>
   );
 }
 ```
@@ -448,6 +494,51 @@ describe('POST /api/resource', () => {
 });
 ```
 
+### hybrid_ui_pattern
+
+**Creating consistent UI across platforms:**
+
+```typescript
+// 1. Use shared tokens for design consistency
+// packages/tokens/src/colors.ts defines the palette
+// Both platforms use the same Tailwind config
+
+// 2. WEB component (apps/web/src/components/ui/card.tsx)
+import { cn } from '@/lib/utils';
+
+interface CardProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function Card({ children, className }: CardProps) {
+  return (
+    <div className={cn('rounded-lg border bg-card p-4 shadow-sm', className)}>
+      {children}
+    </div>
+  );
+}
+
+// 3. MOBILE component (apps/mobile/components/Card.tsx)
+import { View, type ViewProps } from 'react-native';
+
+interface CardProps extends ViewProps {
+  children: React.ReactNode;
+}
+
+export function Card({ children, className, ...props }: CardProps) {
+  return (
+    <View className={`rounded-lg border border-border bg-card p-4 shadow-sm ${className}`} {...props}>
+      {children}
+    </View>
+  );
+}
+
+// Same visual result, platform-native behavior!
+```
+
+**Key principle**: Same class names (`bg-primary`, `rounded-lg`, `p-4`) work on both platforms because they share the same Tailwind config from `@worksite/ui/tokens`.
+
 ### code_review_pattern
 
 **CodeRabbit CLI review workflow (before commits/PRs):**
@@ -488,6 +579,14 @@ Keep track of significant changes to help AI understand project evolution.
 
 ```yaml
 updates:
+  - date: '2026-01-09'
+    change: 'Migrated to hybrid UI architecture'
+    details: |
+      Replaced Tamagui with platform-specific styling:
+      - Web: Tailwind CSS + shadcn/ui
+      - Mobile: NativeWind (Tailwind for RN)
+      - Shared: @worksite/ui/tokens for design tokens
+      UI components are now platform-specific.
   - date: '2026-01-09'
     change: 'Added CodeRabbit CLI integration'
     details: 'AI-powered code review before commits. Use "coderabbit --prompt-only" for automated review loops.'

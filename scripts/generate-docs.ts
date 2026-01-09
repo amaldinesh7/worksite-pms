@@ -9,7 +9,10 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DOCS_DIR = path.join(ROOT_DIR, 'docs');
 
@@ -109,25 +112,87 @@ function generateApiDoc(): void {
   console.log('  ✅ API.md generated');
 }
 
-// COMPONENTS.md Generator
+// COMPONENTS.md Generator - Updated for hybrid architecture
 function generateComponentsDoc(): void {
   console.log('🧩 Generating COMPONENTS.md...');
-  const uiIndexPath = path.join(ROOT_DIR, 'packages/ui/src/index.ts');
+  const tokensPath = path.join(ROOT_DIR, 'packages/ui/src/tokens.ts');
 
-  let markdown = `# UI Components\n\n> Auto-generated from \`packages/ui/src/index.ts\`\n> Last generated: ${new Date().toISOString()}\n\n---\n\n## Usage\n\n\`\`\`typescript\nimport { YStack, Text, Button } from '@worksite/ui';\n\`\`\`\n\n## Available Components\n\n`;
+  let markdown = `# UI Architecture
 
-  if (fs.existsSync(uiIndexPath)) {
-    const content = fs.readFileSync(uiIndexPath, 'utf-8');
-    const exportRegex = /export\s*\{([^}]+)\}/g;
+> Auto-generated
+> Last generated: ${new Date().toISOString()}
+
+---
+
+## Overview
+
+Worksite uses a **hybrid UI architecture** with shared design tokens and platform-specific components:
+
+- **Web**: Tailwind CSS + shadcn/ui
+- **Mobile**: NativeWind (Tailwind for React Native)
+- **Shared**: Design tokens via \`@worksite/ui\`
+
+## Design Tokens
+
+Import tokens from \`@worksite/ui/tokens\`:
+
+\`\`\`typescript
+import { colors, spacing, fontSize, tailwindTheme } from '@worksite/ui/tokens';
+\`\`\`
+
+### Available Exports
+
+`;
+
+  if (fs.existsSync(tokensPath)) {
+    const content = fs.readFileSync(tokensPath, 'utf-8');
+    const exportRegex = /export\s+const\s+(\w+)/g;
     let exportMatch;
 
     while ((exportMatch = exportRegex.exec(content)) !== null) {
-      const exports = exportMatch[1].split(',').map((e) => e.trim().split(' ')[0]).filter(Boolean);
-      for (const exp of exports) {
-        markdown += `- \`${exp}\`\n`;
-      }
+      markdown += `- \`${exportMatch[1]}\`\n`;
     }
   }
+
+  markdown += `
+## Web Components (shadcn/ui)
+
+Located in \`apps/web/src/components/ui/\`
+
+\`\`\`typescript
+import { Button } from '@/components/ui/button';
+\`\`\`
+
+## Mobile Components (NativeWind)
+
+Use React Native components with Tailwind classes:
+
+\`\`\`typescript
+import { View, Text, Pressable } from 'react-native';
+
+<View className="flex-1 bg-background p-4">
+  <Text className="text-foreground font-bold">Hello</Text>
+  <Pressable className="bg-primary rounded-lg px-4 py-2">
+    <Text className="text-white">Click Me</Text>
+  </Pressable>
+</View>
+\`\`\`
+
+## Tailwind Configuration
+
+Both web and mobile use the same Tailwind theme from \`@worksite/ui\`:
+
+\`\`\`javascript
+// tailwind.config.js
+import { tailwindTheme } from '@worksite/ui/tokens';
+
+export default {
+  theme: {
+    extend: tailwindTheme,
+  },
+};
+\`\`\`
+`;
 
   fs.writeFileSync(path.join(DOCS_DIR, 'COMPONENTS.md'), markdown);
   console.log('  ✅ COMPONENTS.md generated');
