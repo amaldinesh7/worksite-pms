@@ -6,15 +6,14 @@ Full-stack monorepo with React Native mobile, React web, and Node.js backend.
 
 ## Tech Stack
 
-| Layer    | Tech                |
-| -------- | ------------------- |
-| Mobile   | React Native + Expo |
-| Web      | React + Vite        |
-| API      | Fastify + Prisma    |
-| Database | PostgreSQL          |
-| Storage  | MinIO / Supabase    |
-| UI       | Tamagui             |
-| Monorepo | Turborepo + pnpm    |
+| Layer    | Tech                           |
+| -------- | ------------------------------ |
+| Mobile   | React Native + Expo + NativeWind |
+| Web      | React + Vite + Tailwind + shadcn/ui |
+| API      | Fastify + Prisma               |
+| Database | PostgreSQL                     |
+| Storage  | MinIO / Supabase               |
+| Monorepo | Turborepo + pnpm               |
 
 ---
 
@@ -119,14 +118,36 @@ worksite/
 │   │       ├── services/     # Compression, Storage
 │   │       └── repositories/ # Database access
 │   ├── mobile/           # Expo + React Native
+│   │   ├── app/              # Expo Router screens
+│   │   ├── components/       # Reusable UI components
+│   │   └── data/             # React Query + mock data
 │   └── web/              # Vite + React
 ├── packages/
-│   ├── ui/               # Shared Tamagui
+│   ├── ui/               # Shared design tokens
 │   └── types/            # Shared TypeScript
 ├── docs/                 # Documentation
 ├── postman/              # API collections
 └── scripts/              # Utilities
 ```
+
+---
+
+## Mobile App (Construction PMS)
+
+The mobile app is a Construction Project Management System with the following features:
+
+### Running Mobile Only
+
+```bash
+# From project root
+pnpm dev --filter=@worksite/mobile
+
+# Or directly
+cd apps/mobile
+pnpm dev
+```
+
+Then scan the QR code with Expo Go or press `w` for web preview.
 
 ---
 
@@ -335,7 +356,7 @@ See `AI_GUIDE.md` for AI-powered development tips.
 
 ```
 @architect  → System design decisions
-@frontend   → UI components with Tamagui
+@frontend   → UI (Tailwind + shadcn for web, NativeWind for mobile)
 @backend    → API endpoints with Fastify
 @mobile     → React Native / Expo
 @database   → Prisma / PostgreSQL

@@ -7,16 +7,26 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "expo": "~52.0.23",
-    "expo-router": "~4.0.15",
-    "react": "18.3.1",
-    "react-native": "0.76.6",
-    "tamagui": "^1.112.21",
+    "@expo/metro-runtime": "~6.1.2",
+    "@tanstack/react-query": "^5.62.11",
+    "@worksite/data": "workspace:*",
     "@worksite/ui": "workspace:*",
-    "@tanstack/react-query": "^5.62.11"
+    "@worksite/types": "workspace:*",
+    "expo": "~54.0.0",
+    "expo-constants": "~18.0.0",
+    "expo-linking": "~8.0.0",
+    "expo-router": "~6.0.21",
+    "expo-status-bar": "~3.0.0",
+    "nativewind": "^4.2.1",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-reanimated": "~4.1.1",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.2",
-    "@types/react": "^18.3.1"
+    "@types/react": "~19.1.10",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
   }
 }

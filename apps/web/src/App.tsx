@@ -1,25 +1,15 @@
-import { YStack, Text, Button } from '@worksite/ui';
+import { Button } from '@/components/ui/button';
 
 export default function App() {
   return (
-    <YStack
-      flex={1}
-      padding="$4"
-      gap="$4"
-      alignItems="center"
-      justifyContent="center"
-      minHeight="100vh"
-      backgroundColor="$background"
-    >
-      <Text fontSize={32} fontWeight="bold" color="$text">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-4">
+      <h1 className="text-3xl font-bold text-foreground">
         Welcome to Worksite Web
-      </Text>
-      <Text fontSize={16} color="$textSecondary">
+      </h1>
+      <p className="text-foreground-secondary">
         Your universal app is running!
-      </Text>
-      <Button size="$4" theme="active" onPress={() => alert('Hello from Worksite!')}>
-        Click Me
-      </Button>
-    </YStack>
+      </p>
+      <Button onClick={() => alert('Hello from Worksite!')}>Click Me</Button>
+    </div>
   );
 }
