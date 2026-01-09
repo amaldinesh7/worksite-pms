@@ -1,3 +1,6 @@
-export { config } from './tamagui.config';
-export { Stack, XStack, YStack, Text, Button, Input, TamaguiProvider } from 'tamagui';
-export type { TamaguiProviderProps } from 'tamagui';
+/**
+ * @worksite/ui
+ * Shared design tokens for web and mobile
+ */
+
+export * from './tokens';
