@@ -1,7 +1,7 @@
 # Database Schema
 
 > Auto-generated from `apps/api/prisma/schema.prisma`
-> Last generated: 2026-01-10T09:57:06.443Z
+> Last generated: 2026-01-10T10:06:36.325Z
 
 ---
 
@@ -31,6 +31,30 @@
 | `phone` | `String` | @unique |
 | `createdAt` | `DateTime` | @default(now()) |
 | `memberships` | `OrganizationMember[]` | - |
+| `refreshTokens` | `RefreshToken[]` | - |
+
+### OtpVerification
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `phone` | `String` | - |
+| `code` | `String` | // hashed OTP |
+| `expiresAt` | `DateTime` | - |
+| `attempts` | `Int` | @default(0) |
+| `verified` | `Boolean` | @default(false) |
+| `createdAt` | `DateTime` | @default(now()) |
+
+### RefreshToken
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `userId` | `String` | - |
+| `token` | `String` | @unique |
+| `expiresAt` | `DateTime` | - |
+| `createdAt` | `DateTime` | @default(now()) |
+| `user` | `User` | @relation(fields: [userId], references: [id], onDelete: Cascade) |
 
 ### OrganizationMember
 
