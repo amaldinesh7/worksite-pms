@@ -1,7 +1,7 @@
 # API Reference
 
 > Auto-generated
-> Last generated: 2026-01-10T10:06:36.326Z
+> Last generated: 2026-01-10T10:18:07.602Z
 
 ---
 
