@@ -1,0 +1,32 @@
+import { NavItemButton } from './NavItemButton';
+import type { NavSection as NavSectionType } from './navigation';
+
+interface NavSectionProps {
+  section: NavSectionType;
+  isCollapsed: boolean;
+  activePath: string;
+  onItemClick?: (href: string) => void;
+}
+
+export function NavSection({ section, isCollapsed, activePath, onItemClick }: NavSectionProps) {
+  return (
+    <div className="pt-4 border-t border-neutral-200">
+      {!isCollapsed && (
+        <h4 className="px-3 text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">
+          {section.title}
+        </h4>
+      )}
+      <nav className="space-y-1">
+        {section.items.map((item) => (
+          <NavItemButton
+            key={item.id}
+            item={item}
+            isCollapsed={isCollapsed}
+            isActive={activePath === item.href}
+            onClick={onItemClick}
+          />
+        ))}
+      </nav>
+    </div>
+  );
+}

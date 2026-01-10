@@ -48,7 +48,7 @@ built as a Turborepo monorepo.
 
 ## 3. File Size & Modularity (CRITICAL)
 
-- Soft limit: 150 lines per file
+- Soft limit: 200 lines per file
 - Hard rule: no monolithic screens or components
 - If file grows:
   - extract hooks
@@ -123,7 +123,6 @@ Example:
 
 ### Layout Discipline
 Prefer shadcn primitives:
-- Card
 - Table
 - Tabs
 - Dialog

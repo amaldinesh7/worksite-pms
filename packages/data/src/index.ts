@@ -71,4 +71,9 @@ export {
   useDeleteCategory,
   useCreateCreditAccount,
   useCreateTeamMember,
+  useSendOtp,
+  useVerifyOtp,
+  useLogout,
+  initAuthMutations,
 } from './mutations';
+export type { SendOtpParams, VerifyOtpParams } from './mutations';

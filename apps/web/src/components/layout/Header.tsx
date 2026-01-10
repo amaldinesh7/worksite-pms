@@ -1,11 +1,10 @@
 import type { ReactNode } from 'react';
 import { List, MagnifyingGlass, Bell, Plus } from '@phosphor-icons/react';
+
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { useSidebarStore } from '@/stores/sidebar';
 
-/* ========================================
-   TYPE DEFINITIONS
-   ======================================== */
 interface HeaderProps {
   /** Page title displayed in the header */
   title?: string;
@@ -27,9 +26,6 @@ interface HeaderProps {
   className?: string;
 }
 
-/* ========================================
-   HEADER COMPONENT
-   ======================================== */
 export function Header({
   title = 'Dashboard Overview',
   subtitle,
@@ -82,7 +78,6 @@ export function Header({
 
         {/* Right Section */}
         <div className="flex items-center space-x-3">
-          {/* Custom Actions or Default */}
           {actions ? (
             actions
           ) : (
@@ -119,7 +114,6 @@ export function Header({
                 aria-label="View notifications"
               >
                 <Bell className="h-5 w-5" />
-                {/* Notification Indicator */}
                 <span
                   className={cn('absolute top-1 right-1', 'w-2 h-2 rounded-full', 'bg-neutral-500')}
                 />
@@ -137,50 +131,6 @@ export function Header({
         </div>
       </div>
     </header>
-  );
-}
-
-/* ========================================
-   BUTTON COMPONENT (shadcn-style)
-   ======================================== */
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
-  children: ReactNode;
-}
-
-export function Button({
-  variant = 'primary',
-  size = 'md',
-  className,
-  children,
-  ...props
-}: ButtonProps) {
-  return (
-    <button
-      className={cn(
-        'inline-flex items-center justify-center font-medium',
-        'rounded-lg transition-colors duration-150',
-        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-400',
-        'disabled:opacity-50 disabled:pointer-events-none',
-        // Variants
-        variant === 'primary' && ['bg-neutral-800 text-white', 'hover:bg-neutral-900'],
-        variant === 'secondary' && ['bg-neutral-100 text-neutral-800', 'hover:bg-neutral-200'],
-        variant === 'outline' && [
-          'border border-neutral-300 bg-white text-neutral-700',
-          'hover:bg-neutral-50',
-        ],
-        variant === 'ghost' && ['text-neutral-600', 'hover:bg-neutral-100 hover:text-neutral-800'],
-        // Sizes
-        size === 'sm' && 'px-3 py-1.5 text-sm',
-        size === 'md' && 'px-4 py-2 text-sm',
-        size === 'lg' && 'px-5 py-2.5 text-base',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </button>
   );
 }
 

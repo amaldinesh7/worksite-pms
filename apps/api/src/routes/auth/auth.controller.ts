@@ -214,8 +214,8 @@ export const logout = withError('logout', async (request: FastifyRequest, reply:
 export const getCurrentUser = withError(
   'get current user',
   async (request: FastifyRequest, reply: FastifyReply) => {
-    // User is attached by auth middleware
-    const userId = (request as any).user?.userId;
+    // User is attached by auth middleware (typed via @fastify/jwt module augmentation)
+    const userId = request.user?.userId;
 
     if (!userId) {
       return reply.code(401).send({
