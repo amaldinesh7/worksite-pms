@@ -1,15 +1,19 @@
-import { Button } from '@/components/ui/button';
+import { Layout, PageContent, Header } from '@/components/layout';
 
 export default function App() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-4">
-      <h1 className="text-3xl font-bold text-foreground">
-        Welcome to Worksite Web
-      </h1>
-      <p className="text-foreground-secondary">
-        Your universal app is running!
-      </p>
-      <Button onClick={() => alert('Hello from Worksite!')}>Click Me</Button>
-    </div>
+    <Layout>
+      {/* Header */}
+      <Header
+        title="Dashboard Overview"
+        subtitle="Welcome back, John"
+        searchPlaceholder="Search projects..."
+        primaryActionLabel="New Project"
+        onPrimaryAction={() => console.log('New project clicked')}
+      />
+
+      {/* Main Content Area - Ready for other sections */}
+      <PageContent>{/* Content goes here */}</PageContent>
+    </Layout>
   );
 }
