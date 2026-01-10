@@ -1,5 +1,6 @@
 // OTP Service - Generate, store, and verify OTPs
 
+import { randomInt } from 'crypto';
 import bcrypt from 'bcrypt';
 import { prisma } from '../lib/prisma';
 import { smsService } from './sms';
@@ -11,10 +12,14 @@ const DEV_BYPASS_CODE = '123456';
 
 export class OtpService {
   /**
-   * Generate a 6-digit OTP code
+   * Generate a cryptographically secure 6-digit OTP code.
+   * Uses Node's crypto.randomInt() instead of Math.random() for security.
+   * Range: 100000 to 999999 (always 6 digits)
    */
   private generateCode(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    // randomInt(min, max) where min is inclusive and max is exclusive
+    // This generates integers from 100000 to 999999 (6 digits)
+    return randomInt(100000, 1000000).toString();
   }
 
   /**
