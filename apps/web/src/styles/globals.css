@@ -1,0 +1,178 @@
+@import 'tailwindcss';
+
+/* ========================================
+   FONTS
+   ======================================== */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/plusjakartasans/v8/LDIbaomQNQcsA88c7O9yZ4KMCoOg4IA6-91aHEjcWuA_KU7NShXUEKi4Rw.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Geist Sans';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-Variable.woff2') format('woff2');
+}
+
+/* ========================================
+   DESIGN TOKENS (Tailwind v4)
+   Derived from BuildPro reference design
+   ======================================== */
+@theme {
+  /* Neutral Color Scale - Primary palette */
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+
+  /* Semantic Colors */
+  --color-background: #fafafa;
+  --color-foreground: #262626;
+  --color-muted: #f5f5f5;
+  --color-muted-foreground: #737373;
+  --color-card: #ffffff;
+  --color-card-foreground: #262626;
+  --color-border: #e5e5e5;
+  --color-input: #e5e5e5;
+  --color-ring: #a3a3a3;
+  
+  /* Primary - Dark neutral for buttons */
+  --color-primary: #262626;
+  --color-primary-foreground: #ffffff;
+  --color-primary-hover: #171717;
+  
+  /* Secondary - Light backgrounds */
+  --color-secondary: #f5f5f5;
+  --color-secondary-foreground: #262626;
+  
+  /* Accent - Hover states */
+  --color-accent: #f5f5f5;
+  --color-accent-foreground: #171717;
+  
+  /* Destructive */
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+
+  /* Sidebar specific */
+  --color-sidebar-bg: #ffffff;
+  --color-sidebar-foreground: #404040;
+  --color-sidebar-muted: #737373;
+  --color-sidebar-border: #e5e5e5;
+  --color-sidebar-active-bg: #f5f5f5;
+  --color-sidebar-active-text: #171717;
+  --color-sidebar-hover-bg: #f5f5f5;
+  --color-sidebar-icon: #737373;
+  --color-sidebar-icon-active: #404040;
+
+  /* Layout Dimensions */
+  --sidebar-width: 18rem;
+  --sidebar-collapsed-width: 4.5rem;
+  --header-height: 4rem;
+  
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+  
+  /* Fonts */
+  --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Geist Sans', system-ui, sans-serif;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Animations */
+  --transition-fast: 150ms;
+  --transition-normal: 200ms;
+  --transition-slow: 300ms;
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
+* {
+  border-color: var(--color-border);
+}
+
+html {
+  font-family: var(--font-body);
+  color: var(--color-foreground);
+  background-color: var(--color-background);
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Font utilities */
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* ========================================
+   SCROLLBAR STYLES
+   ======================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-300);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-400);
+}
+
+/* ========================================
+   FOCUS STYLES
+   ======================================== */
+*:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   CUSTOM UTILITIES
+   ======================================== */
+.sidebar-transition {
+  transition-property: width, margin, padding, transform;
+  transition-timing-function: var(--ease-default);
+  transition-duration: var(--transition-normal);
+}
