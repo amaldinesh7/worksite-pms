@@ -12,6 +12,10 @@ import expenseRoutes from './routes/expenses/index';
 import paymentRoutes from './routes/payments/index';
 import stageRoutes from './routes/stages/index';
 import documentRoutes from './routes/documents/index';
+import authRoutes from './routes/auth/index';
+
+// Middleware
+import { registerAuthMiddleware } from './middleware/auth.middleware';
 
 // Prisma
 import { disconnectPrisma } from './lib/prisma';
@@ -37,6 +41,9 @@ export async function buildApp(options: AppOptions = {}) {
     origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
   });
 
+  // Register auth middleware (JWT plugin + authenticate decorator)
+  await registerAuthMiddleware(app);
+
   // Health check
   fastify.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 
@@ -45,6 +52,7 @@ export async function buildApp(options: AppOptions = {}) {
     name: 'Construction PMS API',
     version: '1.0.0',
     endpoints: [
+      '/api/auth',
       '/api/organizations',
       '/api/users',
       '/api/projects',
@@ -58,6 +66,7 @@ export async function buildApp(options: AppOptions = {}) {
   }));
 
   // Register routes
+  await fastify.register(authRoutes, { prefix: '/api/auth' });
   await fastify.register(organizationRoutes, { prefix: '/api/organizations' });
   await fastify.register(userRoutes, { prefix: '/api/users' });
   await fastify.register(projectRoutes, { prefix: '/api/projects' });
