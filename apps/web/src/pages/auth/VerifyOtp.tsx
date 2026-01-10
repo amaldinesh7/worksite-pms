@@ -10,7 +10,7 @@ const RESEND_COOLDOWN = 30; // seconds
 
 export default function VerifyOtp() {
   const navigate = useNavigate();
-  const { phoneNumber, countryCode, login, setStep } = useAuthStore();
+  const { phoneNumber, countryCode, loginSuccess, setStep } = useAuthStore();
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,13 +63,13 @@ export default function VerifyOtp() {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
     const newOtp = [...otp];
-    
+
     for (let i = 0; i < pastedData.length; i++) {
       newOtp[i] = pastedData[i];
     }
-    
+
     setOtp(newOtp);
-    
+
     // Focus last filled input or next empty
     const lastFilledIndex = Math.min(pastedData.length - 1, OTP_LENGTH - 1);
     inputRefs.current[lastFilledIndex]?.focus();
@@ -77,7 +77,7 @@ export default function VerifyOtp() {
 
   const handleVerify = async () => {
     const code = otp.join('');
-    
+
     if (code.length !== OTP_LENGTH) {
       setError('Please enter the complete 6-digit code');
       return;
@@ -91,7 +91,8 @@ export default function VerifyOtp() {
     setIsLoading(false);
 
     if (result.success && result.data) {
-      login(result.data.user, result.data.tokens);
+      // Store user and access token (refresh token is handled via httpOnly cookie by server)
+      loginSuccess(result.data.user, result.data.tokens.accessToken);
       navigate('/');
     } else {
       setError(result.error?.message || 'Invalid OTP');

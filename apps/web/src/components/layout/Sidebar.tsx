@@ -22,6 +22,7 @@ import {
   X,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
+import { authApi } from '@/lib/api';
 import { useSidebarStore } from '@/stores/sidebar';
 import { useAuthStore } from '@/stores/auth.store';
 
@@ -250,7 +251,7 @@ interface ProfileMenuProps {
 
 function ProfileMenu({ isOpen, onClose, isCollapsed }: ProfileMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
-  const { logout, tokens } = useAuthStore();
+  const { logoutUser } = useAuthStore();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -269,18 +270,13 @@ function ProfileMenu({ isOpen, onClose, isCollapsed }: ProfileMenuProps) {
   }, [isOpen, onClose]);
 
   const handleLogout = async () => {
-    if (tokens?.refreshToken) {
-      try {
-        await fetch('http://localhost:3000/api/auth/logout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken: tokens.refreshToken }),
-        });
-      } catch {
-        // Ignore logout API errors
-      }
+    try {
+      // Call logout endpoint - uses axios with httpOnly cookie
+      await authApi.logout();
+    } catch {
+      // Ignore logout API errors - still clear local state
     }
-    logout();
+    logoutUser();
     onClose();
   };
 
@@ -544,7 +540,9 @@ export function Sidebar({ className }: SidebarProps) {
               {!effectiveCollapsed && (
                 <>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-800 truncate">{user?.name || 'User'}</p>
+                    <p className="text-sm font-medium text-neutral-800 truncate">
+                      {user?.name || 'User'}
+                    </p>
                     <p className="text-xs text-neutral-500 truncate">{user?.phone || ''}</p>
                   </div>
                   <button

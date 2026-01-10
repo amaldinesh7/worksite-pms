@@ -4,9 +4,67 @@ import { jwtService } from '../../services/jwt.service';
 import { authRepository } from '../../repositories/auth.repository';
 import { createErrorHandler } from '../../lib/error-handler';
 import { sendSuccess, sendCreated } from '../../lib/response.utils';
-import type { SendOtpInput, VerifyOtpInput, RefreshTokenInput } from './auth.schema';
+import type { SendOtpInput, VerifyOtpInput } from './auth.schema';
 
 const withError = createErrorHandler('auth');
+
+// ============================================
+// Cookie Configuration
+// ============================================
+
+/**
+ * SECURITY: Refresh token cookie configuration
+ *
+ * - httpOnly: Prevents JavaScript access (XSS protection)
+ * - secure: Only sent over HTTPS (in production)
+ * - sameSite: 'strict' prevents CSRF by not sending cookie on cross-site requests
+ * - path: '/api/auth' limits cookie to auth endpoints only
+ * - maxAge: 7 days in milliseconds
+ */
+const REFRESH_TOKEN_COOKIE_NAME = 'refresh_token';
+const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+function getRefreshTokenCookieOptions(isProduction: boolean) {
+  return {
+    httpOnly: true,
+    secure: isProduction, // Only HTTPS in production
+    sameSite: 'strict' as const,
+    path: '/api/auth', // Only sent to auth routes
+    maxAge: REFRESH_TOKEN_MAX_AGE_MS,
+  };
+}
+
+/**
+ * Set refresh token as httpOnly cookie
+ */
+function setRefreshTokenCookie(reply: FastifyReply, refreshToken: string) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  reply.setCookie(
+    REFRESH_TOKEN_COOKIE_NAME,
+    refreshToken,
+    getRefreshTokenCookieOptions(isProduction)
+  );
+}
+
+/**
+ * Clear refresh token cookie
+ */
+function clearRefreshTokenCookie(reply: FastifyReply) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  reply.clearCookie(REFRESH_TOKEN_COOKIE_NAME, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'strict' as const,
+    path: '/api/auth',
+  });
+}
+
+/**
+ * Get refresh token from cookie
+ */
+function getRefreshTokenFromCookie(request: FastifyRequest): string | undefined {
+  return request.cookies[REFRESH_TOKEN_COOKIE_NAME];
+}
 
 /**
  * Normalize phone number to E.164 format
@@ -49,6 +107,9 @@ export const sendOtp = withError(
 /**
  * POST /auth/verify-otp
  * Verify OTP and return JWT tokens
+ *
+ * SECURITY: Refresh token is set as httpOnly cookie, not returned in response body.
+ * Only the access token is returned to the client for use in Authorization headers.
  */
 export const verifyOtp = withError(
   'verify OTP',
@@ -65,6 +126,10 @@ export const verifyOtp = withError(
     // Generate JWT tokens
     const tokens = await jwtService.generateTokens(user.id, user.phone);
 
+    // Set refresh token as httpOnly cookie (not accessible via JavaScript)
+    setRefreshTokenCookie(reply, tokens.refreshToken);
+
+    // Return only access token in response body
     return sendCreated(reply, {
       message: isNewUser ? 'Account created successfully' : 'Login successful',
       user: {
@@ -74,7 +139,6 @@ export const verifyOtp = withError(
       },
       tokens: {
         accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
         expiresIn: tokens.expiresIn,
       },
       isNewUser,
@@ -84,18 +148,36 @@ export const verifyOtp = withError(
 
 /**
  * POST /auth/refresh
- * Refresh access token using refresh token
+ * Refresh access token using refresh token from httpOnly cookie
+ *
+ * SECURITY: Refresh token is read from httpOnly cookie, not request body.
+ * New refresh token is set as httpOnly cookie (token rotation).
  */
 export const refreshToken = withError(
   'refresh token',
-  async (request: FastifyRequest<{ Body: RefreshTokenInput }>, reply: FastifyReply) => {
-    const { refreshToken } = request.body;
+  async (request: FastifyRequest, reply: FastifyReply) => {
+    // Read refresh token from httpOnly cookie
+    const refreshTokenValue = getRefreshTokenFromCookie(request);
 
-    const tokens = await jwtService.refreshAccessToken(refreshToken);
+    if (!refreshTokenValue) {
+      return reply.code(401).send({
+        success: false,
+        error: {
+          message: 'No refresh token provided',
+          code: 'UNAUTHORIZED',
+        },
+      });
+    }
 
+    // Refresh tokens (rotates the refresh token)
+    const tokens = await jwtService.refreshAccessToken(refreshTokenValue);
+
+    // Set new refresh token as httpOnly cookie
+    setRefreshTokenCookie(reply, tokens.refreshToken);
+
+    // Return only access token in response body
     return sendSuccess(reply, {
       accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
       expiresIn: tokens.expiresIn,
     });
   }
@@ -103,20 +185,27 @@ export const refreshToken = withError(
 
 /**
  * POST /auth/logout
- * Invalidate refresh token
+ * Invalidate refresh token and clear cookie
+ *
+ * SECURITY: Reads refresh token from httpOnly cookie to revoke it,
+ * then clears the cookie from the client.
  */
-export const logout = withError(
-  'logout',
-  async (request: FastifyRequest<{ Body: RefreshTokenInput }>, reply: FastifyReply) => {
-    const { refreshToken } = request.body;
+export const logout = withError('logout', async (request: FastifyRequest, reply: FastifyReply) => {
+  // Read refresh token from httpOnly cookie
+  const refreshTokenValue = getRefreshTokenFromCookie(request);
 
-    await jwtService.revokeRefreshToken(refreshToken);
-
-    return sendSuccess(reply, {
-      message: 'Logged out successfully',
-    });
+  // Revoke the token if it exists
+  if (refreshTokenValue) {
+    await jwtService.revokeRefreshToken(refreshTokenValue);
   }
-);
+
+  // Clear the refresh token cookie
+  clearRefreshTokenCookie(reply);
+
+  return sendSuccess(reply, {
+    message: 'Logged out successfully',
+  });
+});
 
 /**
  * GET /auth/me

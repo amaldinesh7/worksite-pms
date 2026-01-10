@@ -1,5 +1,6 @@
 import Fastify, { FastifyError, FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 
 // Route imports
@@ -36,9 +37,16 @@ export async function buildApp(options: AppOptions = {}) {
   // Get typed fastify instance
   const fastify = app.withTypeProvider<ZodTypeProvider>();
 
-  // CORS configuration
+  // Cookie plugin - must be registered before routes that use cookies
+  await fastify.register(cookie, {
+    secret: process.env.COOKIE_SECRET || 'your-cookie-secret-change-in-production',
+    parseOptions: {},
+  });
+
+  // CORS configuration - allow credentials for httpOnly cookie auth
   await fastify.register(cors, {
     origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
+    credentials: true, // Allow cookies to be sent cross-origin
   });
 
   // Register auth middleware (JWT plugin + authenticate decorator)

@@ -1,7 +1,7 @@
 # Database Schema
 
 > Auto-generated from `apps/api/prisma/schema.prisma`
-> Last generated: 2026-01-10T10:42:07.250Z
+> Last generated: 2026-01-10T21:49:39.812Z
 
 ---
 
