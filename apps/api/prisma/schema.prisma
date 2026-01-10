@@ -53,9 +53,40 @@ model User {
   createdAt DateTime @default(now())
 
   // Relations
-  memberships OrganizationMember[]
+  memberships   OrganizationMember[]
+  refreshTokens RefreshToken[]
 
   @@map("users")
+}
+
+// ============================================
+// Authentication (OTP & Sessions)
+// ============================================
+
+model OtpVerification {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String   // hashed OTP
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([phone, expiresAt])
+  @@map("otp_verifications")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
 }
 
 model OrganizationMember {

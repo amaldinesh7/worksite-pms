@@ -2,10 +2,9 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "skipLibCheck": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
@@ -15,12 +14,5 @@
     "components/**/*.tsx",
     "nativewind-env.d.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build",
-    ".expo",
-    "babel.config.js",
-    "metro.config.js"
-  ]
+  "exclude": ["node_modules", "dist", "build", ".expo", "babel.config.js", "metro.config.js"]
 }

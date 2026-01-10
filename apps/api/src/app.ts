@@ -1,5 +1,6 @@
 import Fastify, { FastifyError, FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 
 // Route imports
@@ -12,6 +13,10 @@ import expenseRoutes from './routes/expenses/index';
 import paymentRoutes from './routes/payments/index';
 import stageRoutes from './routes/stages/index';
 import documentRoutes from './routes/documents/index';
+import authRoutes from './routes/auth/index';
+
+// Middleware
+import { registerAuthMiddleware } from './middleware/auth.middleware';
 
 // Prisma
 import { disconnectPrisma } from './lib/prisma';
@@ -32,10 +37,20 @@ export async function buildApp(options: AppOptions = {}) {
   // Get typed fastify instance
   const fastify = app.withTypeProvider<ZodTypeProvider>();
 
-  // CORS configuration
+  // Cookie plugin - must be registered before routes that use cookies
+  await fastify.register(cookie, {
+    secret: process.env.COOKIE_SECRET || 'your-cookie-secret-change-in-production',
+    parseOptions: {},
+  });
+
+  // CORS configuration - allow credentials for httpOnly cookie auth
   await fastify.register(cors, {
     origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173'],
+    credentials: true, // Allow cookies to be sent cross-origin
   });
+
+  // Register auth middleware (JWT plugin + authenticate decorator)
+  await registerAuthMiddleware(app);
 
   // Health check
   fastify.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
@@ -45,6 +60,7 @@ export async function buildApp(options: AppOptions = {}) {
     name: 'Construction PMS API',
     version: '1.0.0',
     endpoints: [
+      '/api/auth',
       '/api/organizations',
       '/api/users',
       '/api/projects',
@@ -58,6 +74,7 @@ export async function buildApp(options: AppOptions = {}) {
   }));
 
   // Register routes
+  await fastify.register(authRoutes, { prefix: '/api/auth' });
   await fastify.register(organizationRoutes, { prefix: '/api/organizations' });
   await fastify.register(userRoutes, { prefix: '/api/users' });
   await fastify.register(projectRoutes, { prefix: '/api/projects' });

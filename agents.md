@@ -52,11 +52,14 @@ tools:
     context: Copy-paste React components for web
     rules: |
       - Components live in apps/web/src/components/ui/
-      - Use cn() helper for conditional classes
-      - Customize variants in component files
+      - Install new components: cd apps/web && npx shadcn@latest add [component]
+      - Use cn() helper from @/lib/utils for conditional classes
+      - Customize variants in component files using CSS variables
       - NEVER use on mobile - web only
+      - Check .cursor/rules/shadcn-usage.mdc for component list
+      - Config file: apps/web/components.json
     examples: apps/web/src/components/ui/**/*
-    docs: https://ui.shadcn.com
+    docs: https://ui.shadcn.com/docs/components
 
   # ============================================
   # State Management
@@ -579,6 +582,13 @@ Keep track of significant changes to help AI understand project evolution.
 
 ```yaml
 updates:
+  - date: '2026-01-10'
+    change: 'Added shadcn/ui CLI configuration and Cursor rules'
+    details: |
+      - Created apps/web/components.json for shadcn CLI
+      - Created .cursor/rules/shadcn-usage.mdc with component guide
+      - AI will now prioritize shadcn components when building frontend
+      - Install components: cd apps/web && npx shadcn@latest add [component]
   - date: '2026-01-09'
     change: 'Migrated to hybrid UI architecture'
     details: |

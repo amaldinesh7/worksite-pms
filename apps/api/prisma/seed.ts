@@ -30,8 +30,8 @@ async function main() {
   // Create user
   const user = await prisma.user.create({
     data: {
-      name: 'Demo Admin',
-      phone: '+1234567890',
+      name: 'Narendra Modi',
+      phone: '9745597425',
     },
   });
   console.log(`✅ Created user: ${user.name}`);

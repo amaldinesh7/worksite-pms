@@ -22,7 +22,9 @@ import {
   X,
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
+import { authApi } from '@/lib/api';
 import { useSidebarStore } from '@/stores/sidebar';
+import { useAuthStore } from '@/stores/auth.store';
 
 /* ========================================
    TYPE DEFINITIONS
@@ -249,6 +251,7 @@ interface ProfileMenuProps {
 
 function ProfileMenu({ isOpen, onClose, isCollapsed }: ProfileMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  const { logoutUser } = useAuthStore();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -265,6 +268,17 @@ function ProfileMenu({ isOpen, onClose, isCollapsed }: ProfileMenuProps) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen, onClose]);
+
+  const handleLogout = async () => {
+    try {
+      // Call logout endpoint - uses axios with httpOnly cookie
+      await authApi.logout();
+    } catch {
+      // Ignore logout API errors - still clear local state
+    }
+    logoutUser();
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -299,13 +313,13 @@ function ProfileMenu({ isOpen, onClose, isCollapsed }: ProfileMenuProps) {
         <span>Notifications</span>
       </a>
       <div className="border-t border-neutral-200 my-1" />
-      <a
-        href="/logout"
-        className="flex items-center px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+      <button
+        onClick={handleLogout}
+        className="flex items-center w-full px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
       >
         <SignOut className="mr-3 h-4 w-4 text-neutral-500" />
         <span>Sign Out</span>
-      </a>
+      </button>
     </div>
   );
 }
@@ -327,6 +341,8 @@ export function Sidebar({ className }: SidebarProps) {
     toggleProfileMenu,
     closeProfileMenu,
   } = useSidebarStore();
+
+  const { user } = useAuthStore();
 
   // Track active path
   const [activePath, setActivePath] = useState(() => {
@@ -510,20 +526,24 @@ export function Sidebar({ className }: SidebarProps) {
                 effectiveCollapsed && 'justify-center px-0'
               )}
             >
-              <img
-                src="https://api.dicebear.com/7.x/notionists/svg?scale=200&seed=42857"
-                alt="User avatar"
+              <div
                 className={cn(
-                  'w-8 h-8 rounded-full shrink-0 bg-neutral-100',
+                  'w-8 h-8 rounded-full shrink-0 bg-neutral-200 flex items-center justify-center',
                   !effectiveCollapsed && 'mr-3'
                 )}
-              />
+              >
+                <span className="text-sm font-medium text-neutral-600">
+                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+                </span>
+              </div>
 
               {!effectiveCollapsed && (
                 <>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-800 truncate">John Smith</p>
-                    <p className="text-xs text-neutral-500 truncate">Admin</p>
+                    <p className="text-sm font-medium text-neutral-800 truncate">
+                      {user?.name || 'User'}
+                    </p>
+                    <p className="text-xs text-neutral-500 truncate">{user?.phone || ''}</p>
                   </div>
                   <button
                     onClick={toggleProfileMenu}

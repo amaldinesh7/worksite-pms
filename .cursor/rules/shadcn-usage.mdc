@@ -1,0 +1,144 @@
+---
+description: Guidelines for building frontend with shadcn/ui components
+globs:
+  - apps/web/src/**/*.tsx
+  - apps/web/src/**/*.ts
+alwaysApply: false
+---
+
+# shadcn/ui Component Usage Guide
+
+## When Building Frontend Components
+
+### Priority Order
+1. **Use existing shadcn components** in `apps/web/src/components/ui/`
+2. **Install missing shadcn components** using CLI: `cd apps/web && npx shadcn@latest add [component]`
+3. **Customize with Tailwind** if shadcn doesn't have what you need
+4. **Propose implementation** for complex custom components
+
+### Check Existing Components First
+Before installing, check what's already in `apps/web/src/components/ui/`:
+- `button.tsx` ✓ (installed)
+
+### shadcn Component Reference
+Documentation: https://ui.shadcn.com/docs/components
+
+**Form Components:**
+- `input`, `textarea`, `label`, `form`, `checkbox`, `radio-group`, `switch`, `slider`, `select`, `combobox`
+
+**Layout Components:**
+- `card`, `separator`, `scroll-area`, `aspect-ratio`, `resizable`
+
+**Overlay Components:**
+- `dialog`, `drawer`, `sheet`, `popover`, `tooltip`, `hover-card`, `alert-dialog`
+
+**Navigation Components:**
+- `navigation-menu`, `menubar`, `dropdown-menu`, `context-menu`, `breadcrumb`, `pagination`, `tabs`
+
+**Data Display:**
+- `table`, `data-table`, `avatar`, `badge`, `calendar`, `carousel`
+
+**Feedback Components:**
+- `alert`, `toast`, `sonner`, `progress`, `skeleton`
+
+**Other:**
+- `accordion`, `collapsible`, `command`, `toggle`, `toggle-group`
+
+### Installation Command
+```bash
+cd apps/web && npx shadcn@latest add [component-name]
+```
+
+Example: `cd apps/web && npx shadcn@latest add card dialog form input`
+
+### Style Customization
+Components use CSS variables from `src/styles/globals.css`. Current theme:
+
+```css
+/* Primary - Dark neutral for buttons */
+--color-primary: #262626;
+--color-primary-foreground: #ffffff;
+
+/* Secondary - Light backgrounds */
+--color-secondary: #f5f5f5;
+--color-secondary-foreground: #262626;
+
+/* Muted - Subtle backgrounds */
+--color-muted: #f5f5f5;
+--color-muted-foreground: #737373;
+
+/* Accent - Hover states */
+--color-accent: #f5f5f5;
+--color-accent-foreground: #171717;
+
+/* Destructive */
+--color-destructive: #ef4444;
+--color-destructive-foreground: #ffffff;
+
+/* Cards and surfaces */
+--color-card: #ffffff;
+--color-card-foreground: #262626;
+--color-background: #fafafa;
+--color-foreground: #262626;
+
+/* Borders and inputs */
+--color-border: #e5e5e5;
+--color-input: #e5e5e5;
+--color-ring: #a3a3a3;
+```
+
+### When shadcn Doesn't Have It
+
+1. **Check shadcn blocks**: https://ui.shadcn.com/blocks (pre-built complex UI)
+2. **Use Radix primitives**: https://radix-ui.com/primitives (accessible base components)
+3. **Build with Tailwind**: Use tokens from `@worksite/ui/tokens` and CSS variables
+
+### Code Standards
+
+```typescript
+// ✅ CORRECT - Always use cn() for class merging
+import { cn } from '@/lib/utils';
+
+<Button className={cn('custom-class', isActive && 'active-class')}>
+  Click me
+</Button>
+
+// ✅ CORRECT - Use lucide-react for icons
+import { Plus, Settings, User } from 'lucide-react';
+
+// ✅ CORRECT - Follow existing patterns
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+```
+
+### Example: Building a Feature
+
+```typescript
+// 1. Import shadcn components
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+// 2. Use with theme-aware classes
+export function MyFeature() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-heading">Feature Title</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input id="name" placeholder="Enter name" />
+        </div>
+        <Button>Submit</Button>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### Fonts
+- Headings: `font-heading` (Plus Jakarta Sans)
+- Body: `font-body` (Geist Sans) - default
