@@ -1,7 +1,7 @@
 # External Services
 
 > Auto-generated from `apps/api/src/services/registry.ts`
-> Last generated: 2026-01-10T22:04:53.721Z
+> Last generated: 2026-01-12T21:06:04.891Z
 
 ---
 
