@@ -1,39 +1,35 @@
 /**
  * Auth Store - Zustand store for authentication state
  *
- * SECURITY THREAT MODEL:
- * ----------------------
- * - Access tokens are stored ONLY in memory (this store, not persisted)
- *   This protects against XSS attacks that could steal tokens from localStorage
- *
- * - Refresh tokens are NEVER stored on the client. They are handled via:
- *   1. Server-set httpOnly, Secure, SameSite=Strict cookies
- *   2. The /auth/refresh endpoint reads the cookie and returns a new access token
- *   3. This prevents JavaScript (including XSS payloads) from accessing refresh tokens
- *
- * - Only user profile data is persisted to localStorage for UX (remember who's logged in)
- *   This data is non-sensitive and improves the user experience on page reload
- *
- * - On page load, the app should call /auth/refresh to get a new access token
- *   if the user appears to be logged in (has persisted user data)
+ * Simple token-based auth:
+ * - Single access token stored in localStorage
+ * - Organization context stored alongside user
+ * - On 401, user is redirected to login
  */
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface User {
+export interface User {
   id: string;
   name: string;
   phone: string;
 }
 
-interface AuthState {
-  // Persisted state (safe to store)
-  user: User | null;
-  isAuthenticated: boolean;
+export interface Organization {
+  id: string;
+  name: string;
+}
 
-  // In-memory only state (NEVER persisted)
+export type UserRole = 'ADMIN' | 'MANAGER' | 'ACCOUNTANT';
+
+interface AuthState {
+  // Persisted state
+  user: User | null;
+  organization: Organization | null;
+  userRole: UserRole | null;
   accessToken: string | null;
+  isAuthenticated: boolean;
 
   // Auth flow state (not persisted)
   phoneNumber: string;
@@ -44,8 +40,12 @@ interface AuthState {
   setPhoneNumber: (phone: string) => void;
   setCountryCode: (code: string) => void;
   setStep: (step: 'phone' | 'otp' | 'complete') => void;
-  setAccessToken: (token: string | null) => void;
-  loginSuccess: (user: User, accessToken: string) => void;
+  loginSuccess: (params: {
+    user: User;
+    organization: Organization | null;
+    role: UserRole | null;
+    accessToken: string;
+  }) => void;
   logoutUser: () => void;
 }
 
@@ -54,8 +54,10 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       // Initial state
       user: null,
-      isAuthenticated: false,
+      organization: null,
+      userRole: null,
       accessToken: null,
+      isAuthenticated: false,
       phoneNumber: '',
       countryCode: '+91',
       step: 'phone',
@@ -65,30 +67,28 @@ export const useAuthStore = create<AuthState>()(
       setCountryCode: (code) => set({ countryCode: code }),
       setStep: (step) => set({ step }),
 
-      // Token actions (in-memory only)
-      setAccessToken: (token) => set({ accessToken: token }),
-
       /**
        * Called after successful OTP verification.
-       * - Stores user profile (persisted for UX)
-       * - Stores access token in memory only
-       * - Refresh token is set as httpOnly cookie by the server
+       * Stores user, organization, role, and token.
        */
-      loginSuccess: (user, accessToken) =>
+      loginSuccess: ({ user, organization, role, accessToken }) =>
         set({
           user,
+          organization,
+          userRole: role,
           accessToken,
           isAuthenticated: true,
           step: 'complete',
         }),
 
       /**
-       * Clear all auth state.
-       * Server should also be called to clear the httpOnly refresh token cookie.
+       * Clear all auth state and redirect to login.
        */
       logoutUser: () =>
         set({
           user: null,
+          organization: null,
+          userRole: null,
           accessToken: null,
           isAuthenticated: false,
           phoneNumber: '',
@@ -97,12 +97,12 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      /**
-       * SECURITY: Only persist non-sensitive user profile data.
-       * Tokens are NEVER written to localStorage.
-       */
+      // Persist everything needed for auth
       partialize: (state) => ({
         user: state.user,
+        organization: state.organization,
+        userRole: state.userRole,
+        accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }

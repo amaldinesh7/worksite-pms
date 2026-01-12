@@ -16,11 +16,12 @@ export async function organizationMiddleware(request: FastifyRequest, reply: Fas
   const userId = request.headers['x-user-id'] as string;
   const userRole = request.headers['x-user-role'] as string;
 
+  // 403 Forbidden (not 401) - user IS authenticated but missing org context
   if (!organizationId || !userId) {
-    return reply.code(401).send({
+    return reply.code(403).send({
       success: false,
       error: {
-        message: 'Organization context required',
+        message: 'Organization context required. Please join or create an organization.',
         code: 'MISSING_ORG_CONTEXT',
       },
     });

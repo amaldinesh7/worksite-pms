@@ -1,38 +1,43 @@
 /**
  * Axios Interceptors
  *
- * Handles request/response intercepting for:
- * - Attaching access tokens to requests
- * - Auto-refreshing tokens on 401 responses
+ * Simple auth flow:
+ * - Attaches access token and organization headers to all requests
+ * - On 401 from our API, clears auth state and redirects to login
  */
 
 import type { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../../stores/auth.store';
-import type { ApiSuccessResponse } from './types';
 
-// Flag to prevent multiple refresh attempts
-let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
-
-function subscribeTokenRefresh(cb: (token: string) => void) {
-  refreshSubscribers.push(cb);
-}
-
-function onTokenRefreshed(token: string) {
-  refreshSubscribers.forEach((cb) => cb(token));
-  refreshSubscribers = [];
-}
+// Our API base URL to distinguish from external APIs
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 /**
- * Setup request interceptor to attach access token
+ * Setup request interceptor to attach auth and organization headers
  */
 export function setupRequestInterceptor(api: AxiosInstance) {
   api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-      const accessToken = useAuthStore.getState().accessToken;
-      if (accessToken && config.headers) {
-        config.headers.Authorization = `Bearer ${accessToken}`;
+      const { accessToken, user, organization, userRole } = useAuthStore.getState();
+
+      if (config.headers) {
+        // Add Authorization header
+        if (accessToken) {
+          config.headers.Authorization = `Bearer ${accessToken}`;
+        }
+
+        // Add organization context headers
+        if (organization) {
+          config.headers['x-organization-id'] = organization.id;
+        }
+        if (user) {
+          config.headers['x-user-id'] = user.id;
+        }
+        if (userRole) {
+          config.headers['x-user-role'] = userRole;
+        }
       }
+
       return config;
     },
     (error) => Promise.reject(error)
@@ -40,58 +45,31 @@ export function setupRequestInterceptor(api: AxiosInstance) {
 }
 
 /**
- * Setup response interceptor for token refresh
+ * Check if the request URL is to our API (not external services)
+ */
+function isOurApi(url: string | undefined): boolean {
+  if (!url) return false;
+  // Check if it's a relative URL (starts with /) or matches our API base
+  return url.startsWith('/') || url.startsWith(API_BASE);
+}
+
+/**
+ * Setup response interceptor to handle 401 errors
  */
 export function setupResponseInterceptor(api: AxiosInstance) {
   api.interceptors.response.use(
     (response) => response,
-    async (error: AxiosError) => {
-      const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    (error: AxiosError) => {
+      const requestUrl = error.config?.url;
 
-      // Handle 401 Unauthorized - attempt token refresh
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        // Don't retry refresh endpoint itself
-        if (originalRequest.url?.includes('/auth/refresh')) {
+      // Only handle 401 from OUR API endpoints (not external APIs)
+      if (error.response?.status === 401 && isOurApi(requestUrl)) {
+        // Don't logout for auth endpoints (login flow)
+        const isAuthEndpoint = requestUrl?.includes('/auth/');
+        if (!isAuthEndpoint) {
           useAuthStore.getState().logoutUser();
-          return Promise.reject(error);
-        }
-
-        if (isRefreshing) {
-          // Wait for the refresh to complete
-          return new Promise((resolve) => {
-            subscribeTokenRefresh((token: string) => {
-              if (originalRequest.headers) {
-                originalRequest.headers.Authorization = `Bearer ${token}`;
-              }
-              resolve(api(originalRequest));
-            });
-          });
-        }
-
-        originalRequest._retry = true;
-        isRefreshing = true;
-
-        try {
-          const response =
-            await api.post<ApiSuccessResponse<{ accessToken: string; expiresIn: number }>>(
-              '/auth/refresh'
-            );
-
-          const newAccessToken = response.data.data.accessToken;
-          useAuthStore.getState().setAccessToken(newAccessToken);
-          onTokenRefreshed(newAccessToken);
-
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-          }
-
-          return api(originalRequest);
-        } catch (refreshError) {
-          useAuthStore.getState().logoutUser();
-          refreshSubscribers = [];
-          return Promise.reject(refreshError);
-        } finally {
-          isRefreshing = false;
+          // Redirect to login page
+          window.location.href = '/auth';
         }
       }
 

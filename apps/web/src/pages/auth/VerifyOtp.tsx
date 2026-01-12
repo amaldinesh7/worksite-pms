@@ -51,7 +51,13 @@ export default function VerifyOtp() {
     const result = await verifyOtpMutation.mutateAsync({ phone: phoneNumber, code, countryCode });
 
     if (result.success && result.data) {
-      loginSuccess(result.data.user, result.data.tokens.accessToken);
+      // Store user, organization, role, and token
+      loginSuccess({
+        user: result.data.user,
+        organization: result.data.organization,
+        role: result.data.role,
+        accessToken: result.data.accessToken,
+      });
       navigate('/');
     } else {
       setError(result.error?.message || 'Invalid OTP');
