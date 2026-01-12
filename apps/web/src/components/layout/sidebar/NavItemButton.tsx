@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Tooltip } from './Tooltip';
 import type { NavItem } from './navigation';
@@ -6,18 +7,25 @@ import type { NavItem } from './navigation';
 interface NavItemButtonProps {
   item: NavItem;
   isCollapsed: boolean;
-  isActive: boolean;
+  isActive?: boolean;
   onClick?: (href: string) => void;
 }
 
-export function NavItemButton({ item, isCollapsed, isActive, onClick }: NavItemButtonProps) {
+export function NavItemButton({
+  item,
+  isCollapsed,
+  isActive: isActiveProp,
+  onClick,
+}: NavItemButtonProps) {
   const Icon = item.icon;
   const [isHovered, setIsHovered] = useState(false);
+  const location = useLocation();
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+  // Use prop if provided, otherwise derive from current location
+  const isActive = isActiveProp ?? location.pathname === item.href;
+
+  const handleClick = () => {
     onClick?.(item.href);
-    window.history.pushState({}, '', item.href);
   };
 
   const tooltipContent = (
@@ -30,8 +38,8 @@ export function NavItemButton({ item, isCollapsed, isActive, onClick }: NavItemB
   );
 
   const linkContent = (
-    <a
-      href={item.href}
+    <Link
+      to={item.href}
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -68,7 +76,7 @@ export function NavItemButton({ item, isCollapsed, isActive, onClick }: NavItemB
           )}
         </>
       )}
-    </a>
+    </Link>
   );
 
   if (isCollapsed) {

@@ -4,11 +4,10 @@ import type { NavSection as NavSectionType } from './navigation';
 interface NavSectionProps {
   section: NavSectionType;
   isCollapsed: boolean;
-  activePath: string;
   onItemClick?: (href: string) => void;
 }
 
-export function NavSection({ section, isCollapsed, activePath, onItemClick }: NavSectionProps) {
+export function NavSection({ section, isCollapsed, onItemClick }: NavSectionProps) {
   return (
     <div className="pt-4 border-t border-neutral-200">
       {!isCollapsed && (
@@ -22,7 +21,6 @@ export function NavSection({ section, isCollapsed, activePath, onItemClick }: Na
             key={item.id}
             item={item}
             isCollapsed={isCollapsed}
-            isActive={activePath === item.href}
             onClick={onItemClick}
           />
         ))}

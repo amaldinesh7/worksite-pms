@@ -1,20 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 
 import { useAuthStore } from './stores/auth.store';
 import { Layout, PageContent, Header } from '@/components/layout';
 import PhoneInput from './pages/auth/PhoneInput';
 import VerifyOtp from './pages/auth/VerifyOtp';
-
-// Protected Route wrapper - requires authentication
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
-
-  if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  return <>{children}</>;
-}
+import CategoriesPage from './pages/settings/CategoriesPage';
 
 // Auth Route wrapper - redirects to home if already logged in
 function AuthRoute({ children }: { children: React.ReactNode }) {
@@ -27,12 +17,28 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Main Application Layout (after login)
-function MainApp() {
-  const { user } = useAuthStore();
+// Protected Layout - wraps all authenticated routes with shared Layout
+// The Layout (including Sidebar) is mounted once and shared across all child routes
+function ProtectedLayout() {
+  const { isAuthenticated } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/auth" replace />;
+  }
 
   return (
     <Layout>
+      <Outlet />
+    </Layout>
+  );
+}
+
+// Dashboard page content (no Layout wrapper needed)
+function DashboardPage() {
+  const { user } = useAuthStore();
+
+  return (
+    <>
       <Header
         title="Dashboard Overview"
         subtitle={`Welcome back, ${user?.name || 'User'}`}
@@ -41,9 +47,7 @@ function MainApp() {
         onPrimaryAction={() => console.log('New project clicked')}
       />
       <PageContent>
-        {/* Dashboard content goes here */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Quick Stats Cards */}
           <div className="bg-white rounded-xl border border-neutral-200 p-6">
             <h3 className="text-sm font-medium text-neutral-500">Active Projects</h3>
             <p className="text-3xl font-semibold text-neutral-800 mt-2">12</p>
@@ -58,7 +62,7 @@ function MainApp() {
           </div>
         </div>
       </PageContent>
-    </Layout>
+    </>
   );
 }
 
@@ -84,15 +88,12 @@ export default function App() {
           }
         />
 
-        {/* Protected Routes - require authentication */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <MainApp />
-            </ProtectedRoute>
-          }
-        />
+        {/* Protected Routes - all share the same Layout via ProtectedLayout */}
+        <Route element={<ProtectedLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="categories" element={<CategoriesPage />} />
+          {/* Add more protected routes here as needed */}
+        </Route>
 
         {/* Catch all - redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />

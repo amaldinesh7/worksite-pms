@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   CaretLeft,
   CaretRight,
@@ -37,21 +37,8 @@ export function Sidebar({ className }: SidebarProps) {
 
   const { user } = useAuthStore();
 
-  const [activePath, setActivePath] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.location.pathname;
-    }
-    return '/';
-  });
-
-  useEffect(() => {
-    const handlePopState = () => setActivePath(window.location.pathname);
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  const handleNavClick = (href: string) => {
-    setActivePath(href);
+  // Close mobile menu on navigation
+  const handleNavClick = () => {
     closeMobile();
   };
 
@@ -118,7 +105,6 @@ export function Sidebar({ className }: SidebarProps) {
                 <NavItemButton
                   item={item}
                   isCollapsed={effectiveCollapsed}
-                  isActive={activePath === item.href}
                   onClick={handleNavClick}
                 />
               </li>
@@ -129,7 +115,6 @@ export function Sidebar({ className }: SidebarProps) {
             <NavSection
               section={managementSection}
               isCollapsed={effectiveCollapsed}
-              activePath={activePath}
               onItemClick={handleNavClick}
             />
           </div>
@@ -138,7 +123,6 @@ export function Sidebar({ className }: SidebarProps) {
             <NavSection
               section={settingsSection}
               isCollapsed={effectiveCollapsed}
-              activePath={activePath}
               onItemClick={handleNavClick}
             />
           </div>
