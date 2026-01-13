@@ -22,7 +22,10 @@ interface VerifyOtpParams {
 interface VerifyOtpResponse {
   message: string;
   user: { id: string; name: string; phone: string };
-  tokens: { accessToken: string; expiresIn: number };
+  organization: { id: string; name: string } | null;
+  role: 'ADMIN' | 'MANAGER' | 'ACCOUNTANT' | null;
+  accessToken: string;
+  expiresIn: number;
   isNewUser: boolean;
 }
 

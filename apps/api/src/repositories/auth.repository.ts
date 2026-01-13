@@ -2,16 +2,30 @@
 
 import { prisma } from '../lib/prisma';
 import { handlePrismaError } from '../lib/database-errors';
-import type { User } from '@prisma/client';
+import type { User, Organization, OrganizationMember } from '@prisma/client';
+
+// Type for user with organization membership
+export type UserWithMembership = User & {
+  memberships: (OrganizationMember & {
+    organization: Organization;
+  })[];
+};
 
 export class AuthRepository {
   /**
-   * Find user by phone number
+   * Find user by phone number with organization memberships
    */
-  async findByPhone(phone: string): Promise<User | null> {
+  async findByPhone(phone: string): Promise<UserWithMembership | null> {
     try {
       return await prisma.user.findUnique({
         where: { phone },
+        include: {
+          memberships: {
+            include: {
+              organization: true,
+            },
+          },
+        },
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -21,7 +35,7 @@ export class AuthRepository {
   /**
    * Find user by ID with memberships
    */
-  async findById(id: string): Promise<User | null> {
+  async findById(id: string): Promise<UserWithMembership | null> {
     try {
       return await prisma.user.findUnique({
         where: { id },
@@ -41,12 +55,19 @@ export class AuthRepository {
   /**
    * Create a new user (called after OTP verification for new users)
    */
-  async createUser(phone: string, name: string = 'User'): Promise<User> {
+  async createUser(phone: string, name: string = 'User'): Promise<UserWithMembership> {
     try {
       return await prisma.user.create({
         data: {
           phone,
           name,
+        },
+        include: {
+          memberships: {
+            include: {
+              organization: true,
+            },
+          },
         },
       });
     } catch (error) {
@@ -56,8 +77,9 @@ export class AuthRepository {
 
   /**
    * Find or create user by phone (used during OTP verification)
+   * Returns user with organization membership info
    */
-  async findOrCreate(phone: string): Promise<{ user: User; isNewUser: boolean }> {
+  async findOrCreate(phone: string): Promise<{ user: UserWithMembership; isNewUser: boolean }> {
     try {
       const existingUser = await this.findByPhone(phone);
 

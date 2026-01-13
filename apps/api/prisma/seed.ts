@@ -31,7 +31,7 @@ async function main() {
   const user = await prisma.user.create({
     data: {
       name: 'Narendra Modi',
-      phone: '9745597425',
+      phone: '+919745597425',
     },
   });
   console.log(`✅ Created user: ${user.name}`);
@@ -46,20 +46,15 @@ async function main() {
   });
   console.log('✅ Added user to organization');
 
-  // Create category types
-  const projectType = await prisma.categoryType.create({
-    data: {
-      organizationId: org.id,
-      key: 'project_type',
-      label: 'Project Type',
-    },
-  });
+  // ============================================
+  // Category Types (keys match frontend expectations)
+  // ============================================
 
-  const expenseCategory = await prisma.categoryType.create({
+  const expenseType = await prisma.categoryType.create({
     data: {
       organizationId: org.id,
-      key: 'expense_category',
-      label: 'Expense Category',
+      key: 'expense_type',
+      label: 'Expense Types',
     },
   });
 
@@ -67,7 +62,7 @@ async function main() {
     data: {
       organizationId: org.id,
       key: 'material_type',
-      label: 'Material Type',
+      label: 'Material Types',
     },
   });
 
@@ -75,73 +70,93 @@ async function main() {
     data: {
       organizationId: org.id,
       key: 'labour_type',
-      label: 'Labour Type',
+      label: 'Labour Types',
     },
   });
 
-  const subWorkType = await prisma.categoryType.create({
+  const subworkType = await prisma.categoryType.create({
     data: {
       organizationId: org.id,
-      key: 'sub_work_type',
-      label: 'Sub Work Type',
+      key: 'subwork_type',
+      label: 'Subwork Types',
     },
   });
+
+  const projectType = await prisma.categoryType.create({
+    data: {
+      organizationId: org.id,
+      key: 'project_type',
+      label: 'Project Types',
+    },
+  });
+
   console.log('✅ Created category types');
 
-  // Create category items - Project Types
-  const residentialType = await prisma.categoryItem.create({
-    data: {
-      organizationId: org.id,
-      categoryTypeId: projectType.id,
-      name: 'Residential',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org.id,
-      categoryTypeId: projectType.id,
-      name: 'Commercial',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org.id,
-      categoryTypeId: projectType.id,
-      name: 'Industrial',
-    },
-  });
+  // ============================================
+  // Category Items - Expense Types
+  // ============================================
 
-  // Create category items - Expense Categories
-  const materialsExpense = await prisma.categoryItem.create({
-    data: {
-      organizationId: org.id,
-      categoryTypeId: expenseCategory.id,
-      name: 'Materials',
-    },
-  });
   const labourExpense = await prisma.categoryItem.create({
     data: {
       organizationId: org.id,
-      categoryTypeId: expenseCategory.id,
-      name: 'Labour',
+      categoryTypeId: expenseType.id,
+      name: 'Labor Cost',
+    },
+  });
+  const materialsExpense = await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: expenseType.id,
+      name: 'Material Purchase',
     },
   });
   await prisma.categoryItem.create({
     data: {
       organizationId: org.id,
-      categoryTypeId: expenseCategory.id,
-      name: 'Equipment',
+      categoryTypeId: expenseType.id,
+      name: 'Equipment Rental',
     },
   });
   await prisma.categoryItem.create({
     data: {
       organizationId: org.id,
-      categoryTypeId: expenseCategory.id,
+      categoryTypeId: expenseType.id,
       name: 'Transportation',
     },
   });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: expenseType.id,
+      name: 'Utilities',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: expenseType.id,
+      name: 'Permits & Licenses',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: expenseType.id,
+      name: 'Insurance',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: expenseType.id,
+      name: 'Subcontractor Fees',
+    },
+  });
 
-  // Create category items - Material Types
+  // ============================================
+  // Category Items - Material Types
+  // ============================================
+
   await prisma.categoryItem.create({
     data: {
       organizationId: org.id,
@@ -153,14 +168,7 @@ async function main() {
     data: {
       organizationId: org.id,
       categoryTypeId: materialType.id,
-      name: 'Steel',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org.id,
-      categoryTypeId: materialType.id,
-      name: 'Sand',
+      name: 'Steel Bars',
     },
   });
   await prisma.categoryItem.create({
@@ -174,16 +182,47 @@ async function main() {
     data: {
       organizationId: org.id,
       categoryTypeId: materialType.id,
+      name: 'Sand',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: materialType.id,
+      name: 'Gravel',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: materialType.id,
+      name: 'Timber',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: materialType.id,
+      name: 'Paint',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: materialType.id,
       name: 'Tiles',
     },
   });
 
-  // Create category items - Labour Types
+  // ============================================
+  // Category Items - Labour Types (matches reference design)
+  // ============================================
+
   await prisma.categoryItem.create({
     data: {
       organizationId: org.id,
       categoryTypeId: labourType.id,
-      name: 'Mason',
+      name: 'General Labourer',
     },
   });
   await prisma.categoryItem.create({
@@ -211,42 +250,145 @@ async function main() {
     data: {
       organizationId: org.id,
       categoryTypeId: labourType.id,
-      name: 'Painter',
+      name: 'Mason',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: labourType.id,
+      name: 'Site Supervisor',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: labourType.id,
+      name: 'Welder',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: labourType.id,
+      name: 'HVAC Technician',
     },
   });
 
-  // Create category items - Sub Work Types
+  // ============================================
+  // Category Items - Subwork Types
+  // ============================================
+
   await prisma.categoryItem.create({
     data: {
       organizationId: org.id,
-      categoryTypeId: subWorkType.id,
-      name: 'Foundation',
+      categoryTypeId: subworkType.id,
+      name: 'Excavation',
     },
   });
   await prisma.categoryItem.create({
     data: {
       organizationId: org.id,
-      categoryTypeId: subWorkType.id,
+      categoryTypeId: subworkType.id,
+      name: 'Foundation Work',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: subworkType.id,
       name: 'Framing',
     },
   });
   await prisma.categoryItem.create({
     data: {
       organizationId: org.id,
-      categoryTypeId: subWorkType.id,
+      categoryTypeId: subworkType.id,
       name: 'Roofing',
     },
   });
   await prisma.categoryItem.create({
     data: {
       organizationId: org.id,
-      categoryTypeId: subWorkType.id,
+      categoryTypeId: subworkType.id,
+      name: 'Plumbing Installation',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: subworkType.id,
+      name: 'Electrical Installation',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: subworkType.id,
       name: 'Flooring',
     },
   });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: subworkType.id,
+      name: 'Painting',
+    },
+  });
+
+  // ============================================
+  // Category Items - Project Types
+  // ============================================
+
+  const residentialType = await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: projectType.id,
+      name: 'Residential',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: projectType.id,
+      name: 'Commercial',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: projectType.id,
+      name: 'Industrial',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: projectType.id,
+      name: 'Infrastructure',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: projectType.id,
+      name: 'Renovation',
+    },
+  });
+  await prisma.categoryItem.create({
+    data: {
+      organizationId: org.id,
+      categoryTypeId: projectType.id,
+      name: 'Mixed-Use',
+    },
+  });
+
   console.log('✅ Created category items');
 
-  // Create parties
+  // ============================================
+  // Parties
+  // ============================================
+
   const vendor1 = await prisma.party.create({
     data: {
       organizationId: org.id,
@@ -271,7 +413,7 @@ async function main() {
       type: 'LABOUR',
     },
   });
-  const subcontractor1 = await prisma.party.create({
+  await prisma.party.create({
     data: {
       organizationId: org.id,
       name: 'Elite Electrical Services',
@@ -281,7 +423,10 @@ async function main() {
   });
   console.log('✅ Created parties');
 
-  // Create a demo project
+  // ============================================
+  // Demo Project
+  // ============================================
+
   const project = await prisma.project.create({
     data: {
       organizationId: org.id,
@@ -294,7 +439,10 @@ async function main() {
   });
   console.log(`✅ Created project: ${project.name}`);
 
-  // Create stages
+  // ============================================
+  // Stages
+  // ============================================
+
   const foundationStage = await prisma.stage.create({
     data: {
       organizationId: org.id,
@@ -303,7 +451,7 @@ async function main() {
       budgetAmount: 500000,
     },
   });
-  const framingStage = await prisma.stage.create({
+  await prisma.stage.create({
     data: {
       organizationId: org.id,
       projectId: project.id,
@@ -311,7 +459,7 @@ async function main() {
       budgetAmount: 350000,
     },
   });
-  const finishingStage = await prisma.stage.create({
+  await prisma.stage.create({
     data: {
       organizationId: org.id,
       projectId: project.id,
@@ -321,7 +469,10 @@ async function main() {
   });
   console.log('✅ Created project stages');
 
-  // Create some expenses
+  // ============================================
+  // Expenses
+  // ============================================
+
   await prisma.expense.create({
     data: {
       organizationId: org.id,
@@ -363,7 +514,10 @@ async function main() {
   });
   console.log('✅ Created sample expenses');
 
-  // Create some payments
+  // ============================================
+  // Payments
+  // ============================================
+
   await prisma.payment.create({
     data: {
       organizationId: org.id,

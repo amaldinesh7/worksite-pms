@@ -131,6 +131,12 @@ Prefer shadcn primitives:
 
 Dashboards must remain dense but readable.
 
+### Interactive Elements (MANDATORY)
+1. Use shadcn `Dialog` for editing/confirmation flows (❌ NO `window.prompt` or `window.confirm`)
+2. All clickable elements MUST have `cursor-pointer` class
+3. Buttons and interactive elements should have hover states
+4. Use proper semantic elements (`<button>` for actions, `<a>` for navigation)
+
 ---
 
 ## 7. Mobile App Rules (apps/mobile) 📱

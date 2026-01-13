@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { SendOtpSchema, VerifyOtpSchema } from './auth.schema';
-import { sendOtp, verifyOtp, refreshToken, logout, getCurrentUser } from './auth.controller';
+import { sendOtp, verifyOtp, logout, getCurrentUser } from './auth.controller';
 
 export default async function authRoutes(fastify: FastifyInstance) {
   // POST /auth/send-otp - Send OTP to phone
@@ -16,43 +16,26 @@ export default async function authRoutes(fastify: FastifyInstance) {
     sendOtp
   );
 
-  // POST /auth/verify-otp - Verify OTP and get tokens
-  // Response sets refresh token as httpOnly cookie
+  // POST /auth/verify-otp - Verify OTP and get token + user info
   fastify.post(
     '/verify-otp',
     {
       schema: {
         body: VerifyOtpSchema,
         tags: ['Auth'],
-        description:
-          'Verify OTP and receive access token. Refresh token is set as httpOnly cookie.',
+        description: 'Verify OTP and receive access token with user and organization info.',
       },
     },
     verifyOtp
   );
 
-  // POST /auth/refresh - Refresh access token
-  // Reads refresh token from httpOnly cookie (no body required)
-  fastify.post(
-    '/refresh',
-    {
-      schema: {
-        tags: ['Auth'],
-        description:
-          'Refresh access token using httpOnly cookie. New refresh token is set as cookie.',
-      },
-    },
-    refreshToken
-  );
-
-  // POST /auth/logout - Invalidate refresh token
-  // Reads refresh token from httpOnly cookie (no body required)
+  // POST /auth/logout - Clear session
   fastify.post(
     '/logout',
     {
       schema: {
         tags: ['Auth'],
-        description: 'Logout and invalidate refresh token from httpOnly cookie.',
+        description: 'Logout user (client should clear stored token).',
       },
     },
     logout
@@ -65,7 +48,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       onRequest: [fastify.authenticate],
       schema: {
         tags: ['Auth'],
-        description: 'Get current authenticated user info',
+        description: 'Get current authenticated user info with organization',
         security: [{ bearerAuth: [] }],
       },
     },
