@@ -270,22 +270,24 @@ function ItemsList({ items, onEditItem }: ItemsListProps) {
           )}
         >
           <span className="text-neutral-800 text-sm">{item.name}</span>
-          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-            {onEditItem && (
+          {onEditItem && (
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => onEditItem(item)}
                 className={cn(
                   'inline-flex items-center px-3 py-1 cursor-pointer',
                   'text-xs border border-neutral-200 rounded-md',
                   'text-neutral-600 bg-white hover:bg-neutral-100',
-                  'transition-colors duration-150'
+                  'transition-all duration-150',
+                  'opacity-40 group-hover:opacity-100 focus-visible:opacity-100',
+                  'focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:outline-none'
                 )}
               >
                 <PencilSimple className="mr-1.5 h-3 w-3" weight="bold" />
                 Edit
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       ))}
     </div>
