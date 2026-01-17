@@ -33,7 +33,6 @@ describe('Projects API', () => {
     it('should create project successfully', async () => {
       const projectData = {
         name: faker.company.name() + ' Project',
-        clientName: faker.person.fullName(),
         location: faker.location.city(),
         startDate: new Date().toISOString(),
         projectTypeItemId: ctx.residentialType.id,
@@ -51,6 +50,36 @@ describe('Projects API', () => {
       expect(body.success).toBe(true);
       expect(body.data.name).toBe(projectData.name);
       expect(body.data.organizationId).toBe(ctx.organization.id);
+    });
+
+    it('should create project with clientId and amount', async () => {
+      // Create a client party first
+      const client = await testData.createParty(ctx.organization.id, 'CLIENT', {
+        name: 'Test Client',
+      });
+
+      const projectData = {
+        name: faker.company.name() + ' Project',
+        clientId: client.id,
+        location: faker.location.city(),
+        startDate: new Date().toISOString(),
+        amount: 5000000,
+        projectTypeItemId: ctx.residentialType.id,
+      };
+
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/projects',
+        headers: authHeaders(ctx.organization.id),
+        payload: projectData,
+      });
+
+      expect(response.statusCode).toBe(201);
+      const body = response.json();
+      expect(body.success).toBe(true);
+      expect(body.data.clientId).toBe(client.id);
+      expect(body.data.client.name).toBe('Test Client');
+      expect(Number(body.data.amount)).toBe(5000000);
     });
 
     it('should reject invalid project data', async () => {
@@ -75,14 +104,14 @@ describe('Projects API', () => {
         url: '/api/projects',
         payload: {
           name: 'Test Project',
-          clientName: 'Client',
           location: 'Location',
           startDate: new Date().toISOString(),
           projectTypeItemId: ctx.residentialType.id,
         },
       });
 
-      expect(response.statusCode).toBe(401);
+      // Missing org context returns 403 (Forbidden)
+      expect(response.statusCode).toBe(403);
       const body = response.json();
       expect(body.error.code).toBe('MISSING_ORG_CONTEXT');
     });
@@ -94,7 +123,6 @@ describe('Projects API', () => {
         headers: authHeaders(ctx.organization.id),
         payload: {
           name: 'Test Project',
-          clientName: 'Client',
           location: 'Location',
           startDate: new Date().toISOString(),
           projectTypeItemId: 'invalid-id',
@@ -286,20 +314,31 @@ describe('Projects API', () => {
 
       // Create party
       const party = await testData.createParty(ctx.organization.id, 'VENDOR');
+      const client = await testData.createParty(ctx.organization.id, 'CLIENT');
 
-      // Create expenses
+      // Create expenses (rate * quantity = 100 * 100 = 10000)
       await testData.createExpense(
         ctx.organization.id,
         project.id,
         party.id,
         ctx.materialsCategory.id,
-        { amount: 10000 }
+        { rate: 100, quantity: 100 }
       );
 
-      // Create payment
+      // Create payment OUT (to vendor)
       await testData.createPayment(ctx.organization.id, project.id, {
         partyId: party.id,
+        type: 'OUT',
+        paymentMode: 'CASH',
         amount: 7000,
+      });
+
+      // Create payment IN (from client)
+      await testData.createPayment(ctx.organization.id, project.id, {
+        partyId: client.id,
+        type: 'IN',
+        paymentMode: 'ONLINE',
+        amount: 15000,
       });
 
       const response = await app.inject({
@@ -311,8 +350,10 @@ describe('Projects API', () => {
       expect(response.statusCode).toBe(200);
       const body = response.json();
       expect(body.data.totalExpenses).toBe(10000);
-      expect(body.data.totalPayments).toBe(7000);
-      expect(body.data.credits).toBe(3000);
+      expect(body.data.totalPayments).toBe(22000); // 7000 + 15000
+      expect(body.data.totalPaymentsIn).toBe(15000);
+      expect(body.data.totalPaymentsOut).toBe(7000);
+      expect(body.data.balance).toBe(5000); // 15000 (IN) - 10000 (expenses)
     });
   });
 });

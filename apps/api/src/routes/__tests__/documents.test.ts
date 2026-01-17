@@ -136,10 +136,10 @@ describe('Documents API', () => {
       expect(body.data.items).toHaveLength(1);
     });
 
-    it('should include compression ratio in response', async () => {
+    it('should return document metadata in response', async () => {
       await testData.createDocument(ctx.organization.id, projectId, {
-        originalSize: 1000000,
-        compressedSize: 500000,
+        fileName: 'test-document.pdf',
+        mimeType: 'application/pdf',
       });
 
       const response = await app.inject({
@@ -150,7 +150,8 @@ describe('Documents API', () => {
 
       expect(response.statusCode).toBe(200);
       const body = response.json();
-      expect(body.data.items[0].compressionRatio).toBe(2);
+      expect(body.data.items[0].fileName).toBe('test-document.pdf');
+      expect(body.data.items[0].mimeType).toBe('application/pdf');
     });
   });
 
