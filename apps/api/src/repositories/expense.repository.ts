@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { handlePrismaError } from '../lib/database-errors';
-import type { Expense, Prisma } from '@prisma/client';
+import type { Expense, Prisma, PaymentMode } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 export interface CreateExpenseData {
@@ -11,10 +11,13 @@ export interface CreateExpenseData {
   materialTypeItemId?: string;
   labourTypeItemId?: string;
   subWorkTypeItemId?: string;
-  amount: number;
+  rate: number;
+  quantity: number;
   expenseDate: Date;
-  paymentMode: string;
   notes?: string;
+  // Optional payment data
+  paidAmount?: number;
+  paymentMode?: PaymentMode;
 }
 
 export interface UpdateExpenseData {
@@ -24,9 +27,9 @@ export interface UpdateExpenseData {
   materialTypeItemId?: string | null;
   labourTypeItemId?: string | null;
   subWorkTypeItemId?: string | null;
-  amount?: number;
+  rate?: number;
+  quantity?: number;
   expenseDate?: Date;
-  paymentMode?: string;
   notes?: string | null;
 }
 
@@ -40,33 +43,83 @@ export interface ExpenseListOptions {
   endDate?: Date;
 }
 
+// Include object for expense queries
+const expenseInclude = {
+  project: true,
+  party: true,
+  stage: true,
+  expenseCategory: true,
+  materialType: true,
+  labourType: true,
+  subWorkType: true,
+  payments: true,
+} as const;
+
 export class ExpenseRepository {
   async create(organizationId: string, data: CreateExpenseData): Promise<Expense> {
     try {
+      const { paidAmount, paymentMode, ...expenseData } = data;
+
+      // Use transaction if payment needs to be created
+      if (paidAmount !== undefined && paymentMode !== undefined) {
+        return await prisma.$transaction(async (tx) => {
+          // Create expense
+          const expense = await tx.expense.create({
+            data: {
+              organizationId,
+              projectId: expenseData.projectId,
+              partyId: expenseData.partyId,
+              stageId: expenseData.stageId,
+              expenseCategoryItemId: expenseData.expenseCategoryItemId,
+              materialTypeItemId: expenseData.materialTypeItemId,
+              labourTypeItemId: expenseData.labourTypeItemId,
+              subWorkTypeItemId: expenseData.subWorkTypeItemId,
+              rate: new Decimal(expenseData.rate),
+              quantity: new Decimal(expenseData.quantity),
+              expenseDate: expenseData.expenseDate,
+              notes: expenseData.notes,
+            },
+          });
+
+          // Create linked payment
+          await tx.payment.create({
+            data: {
+              organizationId,
+              projectId: expenseData.projectId,
+              partyId: expenseData.partyId,
+              expenseId: expense.id,
+              type: 'OUT',
+              paymentMode,
+              amount: new Decimal(paidAmount),
+              paymentDate: expenseData.expenseDate,
+            },
+          });
+
+          // Return expense with all relations
+          return await tx.expense.findUniqueOrThrow({
+            where: { id: expense.id },
+            include: expenseInclude,
+          });
+        });
+      }
+
+      // Create expense without payment
       return await prisma.expense.create({
         data: {
           organizationId,
-          projectId: data.projectId,
-          partyId: data.partyId,
-          stageId: data.stageId,
-          expenseCategoryItemId: data.expenseCategoryItemId,
-          materialTypeItemId: data.materialTypeItemId,
-          labourTypeItemId: data.labourTypeItemId,
-          subWorkTypeItemId: data.subWorkTypeItemId,
-          amount: new Decimal(data.amount),
-          expenseDate: data.expenseDate,
-          paymentMode: data.paymentMode,
-          notes: data.notes,
+          projectId: expenseData.projectId,
+          partyId: expenseData.partyId,
+          stageId: expenseData.stageId,
+          expenseCategoryItemId: expenseData.expenseCategoryItemId,
+          materialTypeItemId: expenseData.materialTypeItemId,
+          labourTypeItemId: expenseData.labourTypeItemId,
+          subWorkTypeItemId: expenseData.subWorkTypeItemId,
+          rate: new Decimal(expenseData.rate),
+          quantity: new Decimal(expenseData.quantity),
+          expenseDate: expenseData.expenseDate,
+          notes: expenseData.notes,
         },
-        include: {
-          project: true,
-          party: true,
-          stage: true,
-          expenseCategory: true,
-          materialType: true,
-          labourType: true,
-          subWorkType: true,
-        },
+        include: expenseInclude,
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -80,15 +133,7 @@ export class ExpenseRepository {
           id,
           organizationId,
         },
-        include: {
-          project: true,
-          party: true,
-          stage: true,
-          expenseCategory: true,
-          materialType: true,
-          labourType: true,
-          subWorkType: true,
-        },
+        include: expenseInclude,
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -125,6 +170,7 @@ export class ExpenseRepository {
             party: true,
             stage: true,
             expenseCategory: true,
+            payments: true,
           },
           orderBy: { expenseDate: 'desc' },
         }),
@@ -151,17 +197,10 @@ export class ExpenseRepository {
         where: { id },
         data: {
           ...data,
-          amount: data.amount !== undefined ? new Decimal(data.amount) : undefined,
+          rate: data.rate !== undefined ? new Decimal(data.rate) : undefined,
+          quantity: data.quantity !== undefined ? new Decimal(data.quantity) : undefined,
         },
-        include: {
-          project: true,
-          party: true,
-          stage: true,
-          expenseCategory: true,
-          materialType: true,
-          labourType: true,
-          subWorkType: true,
-        },
+        include: expenseInclude,
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -187,23 +226,34 @@ export class ExpenseRepository {
   }
 
   // Get expenses summary by category
+  // Note: Now calculates total as sum of (rate * quantity) for each expense
   async getExpensesByCategory(
     organizationId: string,
     projectId?: string
   ): Promise<Array<{ categoryId: string; categoryName: string; total: number }>> {
     try {
-      const expenses = await prisma.expense.groupBy({
-        by: ['expenseCategoryItemId'],
+      // Since we can't use computed fields in groupBy, we need to fetch and calculate
+      const expenses = await prisma.expense.findMany({
         where: {
           organizationId,
           ...(projectId && { projectId }),
         },
-        _sum: {
-          amount: true,
+        select: {
+          expenseCategoryItemId: true,
+          rate: true,
+          quantity: true,
         },
       });
 
-      const categoryIds = expenses.map((e) => e.expenseCategoryItemId);
+      // Group and sum manually
+      const categoryTotals = new Map<string, number>();
+      for (const expense of expenses) {
+        const total = expense.rate.toNumber() * expense.quantity.toNumber();
+        const current = categoryTotals.get(expense.expenseCategoryItemId) || 0;
+        categoryTotals.set(expense.expenseCategoryItemId, current + total);
+      }
+
+      const categoryIds = Array.from(categoryTotals.keys());
       const categories = await prisma.categoryItem.findMany({
         where: { id: { in: categoryIds } },
         select: { id: true, name: true },
@@ -211,10 +261,10 @@ export class ExpenseRepository {
 
       const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
-      return expenses.map((e) => ({
-        categoryId: e.expenseCategoryItemId,
-        categoryName: categoryMap.get(e.expenseCategoryItemId) || 'Unknown',
-        total: e._sum.amount?.toNumber() || 0,
+      return Array.from(categoryTotals.entries()).map(([categoryId, total]) => ({
+        categoryId,
+        categoryName: categoryMap.get(categoryId) || 'Unknown',
+        total,
       }));
     } catch (error) {
       throw handlePrismaError(error);

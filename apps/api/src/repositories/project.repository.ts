@@ -4,17 +4,19 @@ import type { Project, Prisma } from '@prisma/client';
 
 export interface CreateProjectData {
   name: string;
-  clientName: string;
+  clientId?: string;
   location: string;
   startDate: Date;
+  amount?: number;
   projectTypeItemId: string;
 }
 
 export interface UpdateProjectData {
   name?: string;
-  clientName?: string;
+  clientId?: string | null;
   location?: string;
   startDate?: Date;
+  amount?: number | null;
   projectTypeItemId?: string;
 }
 
@@ -31,13 +33,15 @@ export class ProjectRepository {
         data: {
           organizationId,
           name: data.name,
-          clientName: data.clientName,
+          clientId: data.clientId,
           location: data.location,
           startDate: data.startDate,
+          amount: data.amount,
           projectTypeItemId: data.projectTypeItemId,
         },
         include: {
           projectType: true,
+          client: true,
           stages: true,
         },
       });
@@ -55,6 +59,7 @@ export class ProjectRepository {
         },
         include: {
           projectType: true,
+          client: true,
           stages: true,
         },
       });
@@ -73,7 +78,7 @@ export class ProjectRepository {
         ...(options?.search && {
           OR: [
             { name: { contains: options.search, mode: 'insensitive' } },
-            { clientName: { contains: options.search, mode: 'insensitive' } },
+            { client: { name: { contains: options.search, mode: 'insensitive' } } },
           ],
         }),
       };
@@ -85,6 +90,7 @@ export class ProjectRepository {
           take: options?.take,
           include: {
             projectType: true,
+            client: true,
           },
           orderBy: { createdAt: 'desc' },
         }),
@@ -113,6 +119,7 @@ export class ProjectRepository {
         data,
         include: {
           projectType: true,
+          client: true,
         },
       });
     } catch (error) {
@@ -139,6 +146,21 @@ export class ProjectRepository {
     }
   }
 
+  // Helper to calculate total expenses (rate * quantity)
+  private async calculateExpensesTotal(
+    organizationId: string,
+    projectId: string
+  ): Promise<number> {
+    const expenses = await prisma.expense.findMany({
+      where: { organizationId, projectId },
+      select: { rate: true, quantity: true },
+    });
+
+    return expenses.reduce((sum, exp) => {
+      return sum + exp.rate.toNumber() * exp.quantity.toNumber();
+    }, 0);
+  }
+
   // Analytics: Total expenses per project
   async getProjectStats(
     organizationId: string,
@@ -146,28 +168,34 @@ export class ProjectRepository {
   ): Promise<{
     totalExpenses: number;
     totalPayments: number;
-    credits: number;
+    totalPaymentsIn: number;
+    totalPaymentsOut: number;
+    balance: number;
   }> {
     try {
-      const [expensesSum, paymentsSum] = await Promise.all([
-        prisma.expense.aggregate({
-          where: { organizationId, projectId },
+      const [totalExpenses, paymentsInSum, paymentsOutSum] = await Promise.all([
+        this.calculateExpensesTotal(organizationId, projectId),
+        prisma.payment.aggregate({
+          where: { organizationId, projectId, type: 'IN' },
           _sum: { amount: true },
         }),
         prisma.payment.aggregate({
-          where: { organizationId, projectId },
+          where: { organizationId, projectId, type: 'OUT' },
           _sum: { amount: true },
         }),
       ]);
 
-      const totalExpenses = expensesSum._sum.amount?.toNumber() || 0;
-      const totalPayments = paymentsSum._sum.amount?.toNumber() || 0;
-      const credits = totalExpenses - totalPayments;
+      const totalPaymentsIn = paymentsInSum._sum?.amount?.toNumber() || 0;
+      const totalPaymentsOut = paymentsOutSum._sum?.amount?.toNumber() || 0;
+      const totalPayments = totalPaymentsIn + totalPaymentsOut;
+      const balance = totalPaymentsIn - totalExpenses; // Money received - total expense value
 
       return {
         totalExpenses,
         totalPayments,
-        credits,
+        totalPaymentsIn,
+        totalPaymentsOut,
+        balance,
       };
     } catch (error) {
       throw handlePrismaError(error);
