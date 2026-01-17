@@ -2,6 +2,7 @@ import { buildApp } from '../app';
 import { prisma } from '../lib/prisma';
 import { faker } from '@faker-js/faker';
 import type { FastifyInstance } from 'fastify';
+import type { PartyType, PaymentType, PaymentMode, OrganizationRole } from '@prisma/client';
 
 /**
  * Creates a test app instance with logging disabled.
@@ -29,11 +30,29 @@ export const testData = {
   /**
    * Create a test user
    */
-  async createUser(name?: string, phone?: string) {
+  async createUser(data?: Partial<{ name: string; phone: string; email: string }>) {
     return prisma.user.create({
       data: {
-        name: name || faker.person.fullName(),
-        phone: phone || faker.phone.number(),
+        name: data?.name || faker.person.fullName(),
+        phone: data?.phone || faker.phone.number(),
+        email: data?.email,
+      },
+    });
+  },
+
+  /**
+   * Create organization member
+   */
+  async createOrganizationMember(
+    organizationId: string,
+    userId: string,
+    role: OrganizationRole = 'ADMIN'
+  ) {
+    return prisma.organizationMember.create({
+      data: {
+        organizationId,
+        userId,
+        role,
       },
     });
   },
@@ -72,18 +91,20 @@ export const testData = {
     projectTypeItemId: string,
     data?: Partial<{
       name: string;
-      clientName: string;
+      clientId: string;
       location: string;
       startDate: Date;
+      amount: number;
     }>
   ) {
     return prisma.project.create({
       data: {
         organizationId,
         name: data?.name || faker.company.name() + ' Project',
-        clientName: data?.clientName || faker.person.fullName(),
+        clientId: data?.clientId,
         location: data?.location || faker.location.city(),
         startDate: data?.startDate || new Date(),
+        amount: data?.amount,
         projectTypeItemId,
       },
     });
@@ -94,15 +115,87 @@ export const testData = {
    */
   async createParty(
     organizationId: string,
-    type: 'VENDOR' | 'LABOUR' | 'SUBCONTRACTOR',
-    data?: Partial<{ name: string; phone: string }>
+    type: PartyType,
+    data?: Partial<{
+      name: string;
+      phone: string;
+      location: string;
+      isInternal: boolean;
+      profilePicture: string;
+      userId: string;
+    }>
   ) {
     return prisma.party.create({
       data: {
         organizationId,
         name: data?.name || faker.company.name(),
         phone: data?.phone || faker.phone.number(),
+        location: data?.location,
         type,
+        isInternal: data?.isInternal ?? false,
+        profilePicture: data?.profilePicture,
+        userId: data?.userId,
+      },
+    });
+  },
+
+  /**
+   * Create a party with login capability
+   */
+  async createPartyWithLogin(
+    organizationId: string,
+    type: PartyType,
+    role: OrganizationRole,
+    data?: Partial<{
+      name: string;
+      phone: string;
+      email: string;
+      location: string;
+      isInternal: boolean;
+    }>
+  ) {
+    const name = data?.name || faker.person.fullName();
+    const phone = data?.phone || faker.phone.number();
+    const email = data?.email || faker.internet.email();
+
+    // Create user
+    const user = await prisma.user.create({
+      data: { name, phone, email },
+    });
+
+    // Create party linked to user
+    const party = await prisma.party.create({
+      data: {
+        organizationId,
+        name,
+        phone,
+        location: data?.location,
+        type,
+        isInternal: data?.isInternal ?? false,
+        userId: user.id,
+      },
+    });
+
+    // Create organization member
+    const member = await prisma.organizationMember.create({
+      data: {
+        organizationId,
+        userId: user.id,
+        role,
+      },
+    });
+
+    return { user, party, member };
+  },
+
+  /**
+   * Grant project access to a member
+   */
+  async grantProjectAccess(memberId: string, projectId: string) {
+    return prisma.projectAccess.create({
+      data: {
+        memberId,
+        projectId,
       },
     });
   },
@@ -135,9 +228,9 @@ export const testData = {
     expenseCategoryItemId: string,
     data?: Partial<{
       stageId: string;
-      amount: number;
+      rate: number;
+      quantity: number;
       expenseDate: Date;
-      paymentMode: string;
       notes: string;
     }>
   ) {
@@ -148,9 +241,9 @@ export const testData = {
         partyId,
         expenseCategoryItemId,
         stageId: data?.stageId,
-        amount: data?.amount || faker.number.int({ min: 1000, max: 100000 }),
+        rate: data?.rate || faker.number.int({ min: 100, max: 10000 }),
+        quantity: data?.quantity || faker.number.int({ min: 1, max: 100 }),
         expenseDate: data?.expenseDate || new Date(),
-        paymentMode: data?.paymentMode || 'Cash',
         notes: data?.notes,
       },
     });
@@ -164,6 +257,9 @@ export const testData = {
     projectId: string,
     data?: Partial<{
       partyId: string;
+      expenseId: string;
+      type: PaymentType;
+      paymentMode: PaymentMode;
       amount: number;
       paymentDate: Date;
       notes: string;
@@ -174,6 +270,9 @@ export const testData = {
         organizationId,
         projectId,
         partyId: data?.partyId,
+        expenseId: data?.expenseId,
+        type: data?.type || 'OUT',
+        paymentMode: data?.paymentMode || 'CASH',
         amount: data?.amount || faker.number.int({ min: 1000, max: 100000 }),
         paymentDate: data?.paymentDate || new Date(),
         notes: data?.notes,
@@ -193,8 +292,6 @@ export const testData = {
       fileUrl: string;
       storagePath: string;
       mimeType: string;
-      originalSize: number;
-      compressedSize: number;
     }>
   ) {
     return prisma.document.create({
@@ -206,8 +303,46 @@ export const testData = {
         fileUrl: data?.fileUrl || 'http://localhost:9000/documents/test-file.pdf',
         storagePath: data?.storagePath || 'test/test-file.pdf',
         mimeType: data?.mimeType || 'application/pdf',
-        originalSize: data?.originalSize || 1024000,
-        compressedSize: data?.compressedSize || 512000,
+      },
+    });
+  },
+
+  /**
+   * Create a test attachment
+   */
+  async createAttachment(
+    organizationId: string,
+    data?: Partial<{
+      fileName: string;
+      fileUrl: string;
+      storagePath: string;
+      mimeType: string;
+    }>
+  ) {
+    return prisma.attachment.create({
+      data: {
+        organizationId,
+        fileName: data?.fileName || 'test-attachment.jpg',
+        fileUrl: data?.fileUrl || 'http://localhost:9000/attachments/test-attachment.jpg',
+        storagePath: data?.storagePath || 'attachments/test-attachment.jpg',
+        mimeType: data?.mimeType || 'image/jpeg',
+      },
+    });
+  },
+
+  /**
+   * Link an attachment to an entity
+   */
+  async linkAttachment(
+    attachmentId: string,
+    entityType: 'EXPENSE' | 'PAYMENT' | 'DOCUMENT',
+    entityId: string
+  ) {
+    return prisma.entityAttachment.create({
+      data: {
+        attachmentId,
+        entityType,
+        entityId,
       },
     });
   },
@@ -222,6 +357,13 @@ export const cleanup = {
    */
   async organization(organizationId: string) {
     // Delete in order of dependencies
+    await prisma.projectAccess.deleteMany({
+      where: { member: { organizationId } },
+    });
+    await prisma.entityAttachment.deleteMany({
+      where: { attachment: { organizationId } },
+    });
+    await prisma.attachment.deleteMany({ where: { organizationId } });
     await prisma.payment.deleteMany({ where: { organizationId } });
     await prisma.expense.deleteMany({ where: { organizationId } });
     await prisma.document.deleteMany({ where: { organizationId } });
@@ -238,6 +380,9 @@ export const cleanup = {
    * Delete all test data
    */
   async all() {
+    await prisma.projectAccess.deleteMany();
+    await prisma.entityAttachment.deleteMany();
+    await prisma.attachment.deleteMany();
     await prisma.payment.deleteMany();
     await prisma.expense.deleteMany();
     await prisma.document.deleteMany();
@@ -247,6 +392,7 @@ export const cleanup = {
     await prisma.categoryItem.deleteMany();
     await prisma.categoryType.deleteMany();
     await prisma.organizationMember.deleteMany();
+    await prisma.refreshToken.deleteMany();
     await prisma.user.deleteMany();
     await prisma.organization.deleteMany();
   },
@@ -258,7 +404,7 @@ export const cleanup = {
 export function authHeaders(
   organizationId: string,
   userId: string = 'test-user',
-  role: string = 'ADMIN'
+  role: OrganizationRole = 'ADMIN'
 ) {
   return {
     'x-organization-id': organizationId,
