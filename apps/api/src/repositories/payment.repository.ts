@@ -1,11 +1,14 @@
 import { prisma } from '../lib/prisma';
 import { handlePrismaError } from '../lib/database-errors';
-import type { Payment, Prisma } from '@prisma/client';
+import type { Payment, Prisma, PaymentType, PaymentMode } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 export interface CreatePaymentData {
   projectId: string;
   partyId?: string;
+  expenseId?: string;
+  type: PaymentType;
+  paymentMode: PaymentMode;
   amount: number;
   paymentDate: Date;
   notes?: string;
@@ -13,6 +16,9 @@ export interface CreatePaymentData {
 
 export interface UpdatePaymentData {
   partyId?: string | null;
+  expenseId?: string | null;
+  type?: PaymentType;
+  paymentMode?: PaymentMode;
   amount?: number;
   paymentDate?: Date;
   notes?: string | null;
@@ -23,9 +29,18 @@ export interface PaymentListOptions {
   take?: number;
   projectId?: string;
   partyId?: string;
+  expenseId?: string;
+  type?: PaymentType;
   startDate?: Date;
   endDate?: Date;
 }
+
+// Include object for payment queries
+const paymentInclude = {
+  project: true,
+  party: true,
+  expense: true,
+} as const;
 
 export class PaymentRepository {
   async create(organizationId: string, data: CreatePaymentData): Promise<Payment> {
@@ -35,14 +50,14 @@ export class PaymentRepository {
           organizationId,
           projectId: data.projectId,
           partyId: data.partyId,
+          expenseId: data.expenseId,
+          type: data.type,
+          paymentMode: data.paymentMode,
           amount: new Decimal(data.amount),
           paymentDate: data.paymentDate,
           notes: data.notes,
         },
-        include: {
-          project: true,
-          party: true,
-        },
+        include: paymentInclude,
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -56,10 +71,7 @@ export class PaymentRepository {
           id,
           organizationId,
         },
-        include: {
-          project: true,
-          party: true,
-        },
+        include: paymentInclude,
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -75,6 +87,8 @@ export class PaymentRepository {
         organizationId,
         ...(options?.projectId && { projectId: options.projectId }),
         ...(options?.partyId && { partyId: options.partyId }),
+        ...(options?.expenseId && { expenseId: options.expenseId }),
+        ...(options?.type && { type: options.type }),
         ...(options?.startDate || options?.endDate
           ? {
               paymentDate: {
@@ -90,10 +104,7 @@ export class PaymentRepository {
           where,
           skip: options?.skip,
           take: options?.take,
-          include: {
-            project: true,
-            party: true,
-          },
+          include: paymentInclude,
           orderBy: { paymentDate: 'desc' },
         }),
         prisma.payment.count({ where }),
@@ -121,10 +132,7 @@ export class PaymentRepository {
           ...data,
           amount: data.amount !== undefined ? new Decimal(data.amount) : undefined,
         },
-        include: {
-          project: true,
-          party: true,
-        },
+        include: paymentInclude,
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -149,24 +157,56 @@ export class PaymentRepository {
     }
   }
 
-  // Get total payments summary
+  // Get total payments summary with optional type filter
   async getPaymentsSummary(
     organizationId: string,
-    projectId?: string
-  ): Promise<{ total: number; count: number }> {
+    projectId?: string,
+    type?: PaymentType
+  ): Promise<{ total: number; count: number; totalIn: number; totalOut: number }> {
     try {
-      const result = await prisma.payment.aggregate({
-        where: {
-          organizationId,
-          ...(projectId && { projectId }),
-        },
-        _sum: { amount: true },
-        _count: true,
-      });
+      const baseWhere = {
+        organizationId,
+        ...(projectId && { projectId }),
+      };
+
+      // If type is specified, return simple summary
+      if (type) {
+        const result = await prisma.payment.aggregate({
+          where: { ...baseWhere, type },
+          _sum: { amount: true },
+          _count: true,
+        });
+
+        return {
+          total: result._sum.amount?.toNumber() || 0,
+          count: result._count,
+          totalIn: type === 'IN' ? result._sum.amount?.toNumber() || 0 : 0,
+          totalOut: type === 'OUT' ? result._sum.amount?.toNumber() || 0 : 0,
+        };
+      }
+
+      // Get both IN and OUT totals
+      const [inResult, outResult] = await Promise.all([
+        prisma.payment.aggregate({
+          where: { ...baseWhere, type: 'IN' },
+          _sum: { amount: true },
+          _count: true,
+        }),
+        prisma.payment.aggregate({
+          where: { ...baseWhere, type: 'OUT' },
+          _sum: { amount: true },
+          _count: true,
+        }),
+      ]);
+
+      const totalIn = inResult._sum.amount?.toNumber() || 0;
+      const totalOut = outResult._sum.amount?.toNumber() || 0;
 
       return {
-        total: result._sum.amount?.toNumber() || 0,
-        count: result._count,
+        total: totalIn + totalOut,
+        count: inResult._count + outResult._count,
+        totalIn,
+        totalOut,
       };
     } catch (error) {
       throw handlePrismaError(error);

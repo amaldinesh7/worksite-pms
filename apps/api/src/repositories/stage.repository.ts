@@ -161,6 +161,18 @@ export class StageRepository {
     }
   }
 
+  // Helper to calculate total expenses (rate * quantity) for a stage
+  private async calculateExpensesTotal(organizationId: string, stageId: string): Promise<number> {
+    const expenses = await prisma.expense.findMany({
+      where: { organizationId, stageId },
+      select: { rate: true, quantity: true },
+    });
+
+    return expenses.reduce((sum, exp) => {
+      return sum + exp.rate.toNumber() * exp.quantity.toNumber();
+    }, 0);
+  }
+
   // Get stage statistics
   async getStageStats(
     organizationId: string,
@@ -181,13 +193,9 @@ export class StageRepository {
         throw handlePrismaError({ code: 'P2025' });
       }
 
-      const expensesSum = await prisma.expense.aggregate({
-        where: { organizationId, stageId },
-        _sum: { amount: true },
-      });
+      const totalExpenses = await this.calculateExpensesTotal(organizationId, stageId);
 
       const budgetAmount = stage.budgetAmount.toNumber();
-      const totalExpenses = expensesSum._sum.amount?.toNumber() || 0;
       const remaining = budgetAmount - totalExpenses;
       const percentUsed = budgetAmount > 0 ? (totalExpenses / budgetAmount) * 100 : 0;
 
