@@ -91,9 +91,7 @@ export function CategoryTypesNav({
           })
         ) : (
           // Empty state when no data available
-          <p className="px-3 py-2 text-sm text-neutral-500">
-            No category types available. Please check your connection or seed the database.
-          </p>
+          <p className="px-3 py-2 text-sm text-neutral-500">No category types available.</p>
         )}
       </nav>
     </Card>
