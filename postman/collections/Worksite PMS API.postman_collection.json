@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "4641a117-4830-49df-81de-6a768fa8afe3",
     "name": "Worksite PMS API",
-    "description": "Complete API collection for Construction Project Management System.\n\n## Overview\nThis collection contains all endpoints for managing:\n- Organizations\n- Users & Organization Members\n- Projects\n- Stages\n- Parties (Vendors, Labour, Subcontractors)\n- Expenses\n- Payments\n- Categories (Types and Items)\n\n## Authentication Headers\nThe following headers are automatically added to all requests via pre-request script:\n- `x-organization-id`: Organization context (from `organizationId` env var)\n- `x-user-id`: User context (from `userId` env var)\n- `x-user-role`: User role - ADMIN, MANAGER, or ACCOUNTANT (from `userRole` env var)\n\n## Quick Start with Demo Data\nThe Development environment comes pre-populated with demo data IDs. Simply:\n1. Import the collection and environment\n2. Select 'Worksite PMS - Development' environment\n3. Start testing - headers are auto-added!\n\n## Testing Flow (Order to Populate All Tables)\n1. **Organizations** - Create an organization first\n2. **Users** - Create users\n3. **Organization Members** - Add users to organization\n4. **Category Types** - Create category types (project_type, expense_category, etc.)\n5. **Category Items** - Create items for each type\n6. **Projects** - Create projects (requires organization & category items)\n7. **Stages** - Create stages for projects\n8. **Parties** - Create parties (vendors, labour, subcontractors)\n9. **Expenses** - Create expenses (requires project, party, stage, category items)\n10. **Payments** - Create payments (requires project, party)\n\n## Environment Variables\n- `baseUrl`: API base URL (default: http://localhost:3000)\n- `organizationId`: Organization ID → x-organization-id header\n- `userId`: User ID → x-user-id header\n- `userRole`: User role → x-user-role header (ADMIN, MANAGER, ACCOUNTANT)\n- `projectId`: Current project ID\n- `partyId`: Current party ID\n- `stageId`: Current stage ID\n- `expenseId`: Current expense ID\n- `paymentId`: Current payment ID\n- `categoryTypeId`: Current category type ID\n- `categoryItemId`: Current category item ID",
+    "description": "Complete API collection for Construction Project Management System.\n\n## Overview\nThis collection contains all endpoints for managing:\n- Authentication (OTP-based login)\n- Organizations\n- Users & Organization Members\n- Projects\n- Stages\n- Parties (Vendors, Labour, Subcontractors)\n- Expenses\n- Payments\n- Categories (Types and Items)\n- Documents\n\n## Authentication Flow\n**IMPORTANT: Start with authentication!**\n\n1. **Send OTP** (`POST /api/auth/send-otp`)\n   - Provide phone number\n   - In development mode, use OTP code `123456`\n\n2. **Verify OTP** (`POST /api/auth/verify-otp`)\n   - Provide phone number and OTP code\n   - **Automatically saves access token** to environment\n   - Returns user info, organization, and role\n   - All subsequent requests will use this token\n\n3. **Get Current User** (`GET /api/auth/me`)\n   - Verify authentication status\n   - Requires valid access token\n\n4. **Logout** (`POST /api/auth/logout`)\n   - Clears stored tokens\n\n## Automatic Headers\nThe following headers are automatically added to all requests via pre-request script:\n- `Authorization: Bearer <token>` - JWT access token (from `accessToken` env var)\n- `x-organization-id`: Organization context (from `organizationId` env var)\n- `x-user-id`: User context (from `userId` env var)\n- `x-user-role`: User role - ADMIN, MANAGER, or ACCOUNTANT (from `userRole` env var)\n\n## Quick Start\n1. Import the collection and environment\n2. Select 'Worksite PMS - Development' environment\n3. **Run \"Send OTP\"** with your phone number\n4. **Run \"Verify OTP\"** with OTP code `123456` (dev mode)\n5. Access token is now saved - all other requests will work!\n\n## Testing Flow (Order to Populate All Tables)\n1. **Authentication** - Login first (Send OTP → Verify OTP)\n2. **Organizations** - Create an organization (if not already a member)\n3. **Users** - Create users\n4. **Organization Members** - Add users to organization\n5. **Category Types** - Create category types (project_type, expense_category, etc.)\n6. **Category Items** - Create items for each type\n7. **Projects** - Create projects (requires organization & category items)\n8. **Stages** - Create stages for projects\n9. **Parties** - Create parties (vendors, labour, subcontractors)\n10. **Expenses** - Create expenses (requires project, party, stage, category items)\n11. **Payments** - Create payments (requires project, party)\n12. **Documents** - Upload documents to projects\n\n## Environment Variables\n- `baseUrl`: API base URL (default: http://localhost:3000)\n- `accessToken`: JWT access token (auto-set after login)\n- `userId`: User ID (auto-set after login)\n- `userPhone`: User phone number (auto-set after login)\n- `organizationId`: Organization ID (auto-set after login if user is a member)\n- `userRole`: User role (auto-set after login: ADMIN, MANAGER, ACCOUNTANT)\n- `projectId`: Current project ID\n- `partyId`: Current party ID\n- `stageId`: Current stage ID\n- `expenseId`: Current expense ID\n- `paymentId`: Current payment ID\n- `categoryTypeId`: Current category type ID\n- `categoryItemId`: Current category item ID",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -29,13 +29,18 @@
               }
             }
           ],
+          "id": "182af547-1f76-45ee-a332-5eb95d968a65",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
             },
             "description": "Check API health status"
           },
@@ -62,20 +67,287 @@
               }
             }
           ],
+          "id": "eec7e760-d9ad-4968-bfd0-3e0da9642681",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api",
-              "host": ["{{baseUrl}}"],
-              "path": ["api"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api"
+              ]
             },
             "description": "Get API information and list of available endpoints"
           },
           "response": []
         }
       ],
+      "id": "68c43046-8485-4c10-a1d8-586c9b2bde5f",
       "description": "Health check and API information endpoints"
+    },
+    {
+      "name": "0. Authentication",
+      "item": [
+        {
+          "name": "Send OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "637959c2-797e-41d6-954b-567a1075879b",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has OTP info', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('phone');",
+                  "    pm.expect(jsonData.data).to.have.property('expiresAt');",
+                  "    ",
+                  "    // In dev mode, log the test OTP",
+                  "    if (jsonData.data.devHint) {",
+                  "        console.log('Dev Hint:', jsonData.data.devHint);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "b00461d0-1ef8-4ebd-86b4-a054529238d6",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "68f6ce39-f713-47d3-9d0a-22d9020cd42a",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\",\n  \"countryCode\": \"+91\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/send-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "send-otp"
+              ]
+            },
+            "description": "Send OTP to phone number for login/signup.\n\n**Required fields:**\n- `phone`: Phone number (format: +1234567890 or 1234567890)\n- `countryCode`: Country code (default: +91)\n\n**Note:** In development mode, use OTP code `123456` for testing."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP (Login)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "id": "635e4130-6c57-4ac5-8903-250915b21f76",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has access token and user info', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('accessToken');",
+                  "    pm.expect(jsonData.data).to.have.property('user');",
+                  "    ",
+                  "    // Save access token for subsequent requests",
+                  "    pm.environment.set('accessToken', jsonData.data.accessToken);",
+                  "    ",
+                  "    // Save user info",
+                  "    if (jsonData.data.user) {",
+                  "        pm.environment.set('userId', jsonData.data.user.id);",
+                  "        pm.environment.set('userPhone', jsonData.data.user.phone);",
+                  "    }",
+                  "    ",
+                  "    // Save organization info if available",
+                  "    if (jsonData.data.organization) {",
+                  "        pm.environment.set('organizationId', jsonData.data.organization.id);",
+                  "        console.log('Logged in to organization:', jsonData.data.organization.name);",
+                  "    }",
+                  "    ",
+                  "    // Save role if available",
+                  "    if (jsonData.data.role) {",
+                  "        pm.environment.set('userRole', jsonData.data.role);",
+                  "    }",
+                  "    ",
+                  "    console.log('Login successful! Access token saved.');",
+                  "    console.log('User:', jsonData.data.user.name || jsonData.data.user.phone);",
+                  "    if (jsonData.data.isNewUser) {",
+                  "        console.log('New user account created');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "id": "2c65d0aa-49ce-4adb-85ff-ef3fb82465ae",
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "id": "02465d36-2c59-4d4e-a16c-8363f04d4a11",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"9876543210\",\n  \"countryCode\": \"+91\",\n  \"code\": \"345838\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/verify-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "verify-otp"
+              ]
+            },
+            "description": "Verify OTP and receive access token.\n\n**Required fields:**\n- `phone`: Phone number (same as used in Send OTP)\n- `countryCode`: Country code (same as used in Send OTP)\n- `code`: 6-digit OTP code\n\n**Response:**\n- `accessToken`: JWT token to use in Authorization header\n- `user`: User information\n- `organization`: Organization info (if user is a member)\n- `role`: User role in organization (ADMIN, MANAGER, ACCOUNTANT)\n\n**Note:** After successful login, the access token is automatically saved and will be used in all subsequent requests."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User (Me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has user data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('id');",
+                  "    pm.expect(jsonData.data).to.have.property('phone');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "dbb5981d-a671-4086-b7f1-56723ca54a35",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Get current authenticated user info. Requires valid access token in Authorization header."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Clear stored tokens and user info",
+                  "pm.environment.unset('accessToken');",
+                  "pm.environment.unset('userId');",
+                  "pm.environment.unset('userPhone');",
+                  "pm.environment.unset('organizationId');",
+                  "pm.environment.unset('userRole');",
+                  "console.log('Logged out successfully. Tokens cleared.');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "f110528b-269c-44a5-9e47-a144e9868a41",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Logout user. Clears stored tokens from environment variables."
+          },
+          "response": []
+        }
+      ],
+      "id": "95ba4a51-c60a-4bd6-bcfc-1749e67740b2",
+      "description": "Authentication endpoints. **Start here!**\n\n1. **Send OTP** - Request OTP code\n2. **Verify OTP** - Login with OTP code (saves access token automatically)\n3. **Get Current User** - Verify authentication\n4. **Logout** - Clear session\n\nAfter successful login, the access token is automatically added to all requests via the Authorization header."
     },
     {
       "name": "1. Organizations",
@@ -106,6 +378,7 @@
               }
             }
           ],
+          "id": "be625358-3342-4a4f-993c-dd60abe527e4",
           "request": {
             "method": "POST",
             "header": [
@@ -125,8 +398,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/organizations",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "organizations"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "organizations"
+              ]
             },
             "description": "Create a new organization. This should be called FIRST as all other entities belong to an organization.\n\n**Required fields:**\n- `name`: Organization name (1-255 characters)"
           },
@@ -159,13 +437,19 @@
               }
             }
           ],
+          "id": "2914795a-ba9f-4348-b6f7-3bdaf17117ff",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/organizations?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "organizations"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "organizations"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -211,13 +495,20 @@
               }
             }
           ],
+          "id": "9d615ec3-dc18-48a3-9a82-0dd635aefad3",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/organizations/{{organizationId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "organizations", "{{organizationId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "organizations",
+                "{{organizationId}}"
+              ]
             },
             "description": "Get a single organization by ID"
           },
@@ -244,6 +535,7 @@
               }
             }
           ],
+          "id": "4bb4f995-dd15-4bc5-ace1-c70252b1320b",
           "request": {
             "method": "PUT",
             "header": [
@@ -263,8 +555,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/organizations/{{organizationId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "organizations", "{{organizationId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "organizations",
+                "{{organizationId}}"
+              ]
             },
             "description": "Update an existing organization\n\n**Optional fields:**\n- `name`: Organization name (1-255 characters)"
           },
@@ -285,19 +583,27 @@
               }
             }
           ],
+          "id": "c78de00d-8410-4ee7-aa41-853a06eadc79",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/organizations/{{organizationId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "organizations", "{{organizationId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "organizations",
+                "{{organizationId}}"
+              ]
             },
             "description": "Delete an organization by ID. **Warning:** This will cascade delete all related data."
           },
           "response": []
         }
       ],
+      "id": "ec182811-a4b6-4238-9b1e-bb2cd6a7141d",
       "description": "Manage organizations. **Create an organization FIRST** as all other entities belong to an organization."
     },
     {
@@ -330,6 +636,7 @@
               }
             }
           ],
+          "id": "4041c664-0f28-4223-884d-237fd8ffa391",
           "request": {
             "method": "POST",
             "header": [
@@ -349,8 +656,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/users",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
             },
             "description": "Create a new user. Users can be added as members to organizations.\n\n**Required fields:**\n- `name`: User's full name (1-255 characters)\n- `phone`: Phone number (unique, format: +1234567890)"
           },
@@ -383,13 +695,19 @@
               }
             }
           ],
+          "id": "64718f44-f7b1-4a17-b896-45379e3a9aa2",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/users?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -436,13 +754,20 @@
               }
             }
           ],
+          "id": "76230d76-22bb-4216-afe5-d94d3556f852",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/users/{{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "{{userId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}"
+              ]
             },
             "description": "Get a single user by ID"
           },
@@ -470,13 +795,20 @@
               }
             }
           ],
+          "id": "af2fadb5-15ba-4548-b52a-767063ff26de",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/users/by-phone?phone=+1234567890",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "by-phone"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "by-phone"
+              ],
               "query": [
                 {
                   "key": "phone",
@@ -510,13 +842,21 @@
               }
             }
           ],
+          "id": "644987be-0307-4ded-b158-b6b02d70d4e0",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/users/{{userId}}/organizations",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "{{userId}}", "organizations"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "organizations"
+              ]
             },
             "description": "Get all organizations that a user is a member of"
           },
@@ -543,6 +883,7 @@
               }
             }
           ],
+          "id": "aa6f8394-d87e-496f-b023-6dab86d71129",
           "request": {
             "method": "PUT",
             "header": [
@@ -562,8 +903,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/users/{{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "{{userId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}"
+              ]
             },
             "description": "Update an existing user\n\n**Optional fields:**\n- `name`: User's full name (1-255 characters)\n- `phone`: Phone number (must be unique)"
           },
@@ -584,19 +931,27 @@
               }
             }
           ],
+          "id": "258fe9de-3daf-4380-8696-e2a9210a9a0d",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/users/{{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "users", "{{userId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}"
+              ]
             },
             "description": "Delete a user by ID"
           },
           "response": []
         }
       ],
+      "id": "d4d7eb88-5f4c-4b2a-baac-66f897aea6ea",
       "description": "Manage users. Create users after creating an organization, then add them as members."
     },
     {
@@ -625,6 +980,7 @@
               }
             }
           ],
+          "id": "c0bf648a-6631-428d-ae53-55ec994b7ac4",
           "request": {
             "method": "POST",
             "header": [
@@ -644,8 +1000,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/organizations/{{organizationId}}/members",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "organizations", "{{organizationId}}", "members"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "organizations",
+                "{{organizationId}}",
+                "members"
+              ]
             },
             "description": "Add a user as a member of an organization.\n\n**Required fields:**\n- `userId`: ID of the user to add\n- `role`: Member role - one of: `ADMIN`, `MANAGER`, `ACCOUNTANT`"
           },
@@ -672,13 +1035,21 @@
               }
             }
           ],
+          "id": "f11a3f7b-bd95-45f8-a5f2-6463b5dabcc8",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/organizations/{{organizationId}}/members",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "organizations", "{{organizationId}}", "members"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "organizations",
+                "{{organizationId}}",
+                "members"
+              ]
             },
             "description": "Get all members of an organization"
           },
@@ -705,6 +1076,7 @@
               }
             }
           ],
+          "id": "0ea6ee75-383f-48d6-8018-6a761bf99325",
           "request": {
             "method": "PUT",
             "header": [
@@ -724,8 +1096,16 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/organizations/{{organizationId}}/members/{{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "organizations", "{{organizationId}}", "members", "{{userId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "organizations",
+                "{{organizationId}}",
+                "members",
+                "{{userId}}"
+              ]
             },
             "description": "Update a member's role in an organization\n\n**Required fields:**\n- `role`: New role - one of: `ADMIN`, `MANAGER`, `ACCOUNTANT`"
           },
@@ -746,19 +1126,29 @@
               }
             }
           ],
+          "id": "537cdfcf-7a76-4633-8646-ee52b32f63fc",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/organizations/{{organizationId}}/members/{{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "organizations", "{{organizationId}}", "members", "{{userId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "organizations",
+                "{{organizationId}}",
+                "members",
+                "{{userId}}"
+              ]
             },
             "description": "Remove a user from an organization"
           },
           "response": []
         }
       ],
+      "id": "5710249d-0c34-4d7d-8401-1271a42d88ac",
       "description": "Manage organization members. Add users to organizations with specific roles."
     },
     {
@@ -789,6 +1179,7 @@
                   }
                 }
               ],
+              "id": "f7e85ac8-2529-4349-a1cc-eea3899a0918",
               "request": {
                 "method": "POST",
                 "header": [
@@ -808,8 +1199,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/categories/types",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "categories", "types"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories",
+                    "types"
+                  ]
                 },
                 "description": "Create a new category type. Create types like:\n- `PROJECT_TYPE` - Types of projects (Residential, Commercial, etc.)\n- `EXPENSE_CATEGORY` - Expense categories (Materials, Labour, etc.)\n- `MATERIAL_TYPE` - Types of materials\n- `LABOUR_TYPE` - Types of labour\n- `SUB_WORK_TYPE` - Types of sub-contracted work\n\n**Required fields:**\n- `key`: Unique key (e.g., PROJECT_TYPE)\n- `label`: Display label"
               },
@@ -836,13 +1233,20 @@
                   }
                 }
               ],
+              "id": "d20cbd9e-e411-4675-9849-86d57488f07d",
               "request": {
                 "method": "GET",
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/categories/types",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "categories", "types"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories",
+                    "types"
+                  ],
                   "query": [
                     {
                       "key": "includeInactive",
@@ -871,13 +1275,21 @@
                   }
                 }
               ],
+              "id": "43405a5b-f3fc-492a-a576-9932623ae05c",
               "request": {
                 "method": "GET",
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/categories/types/{{categoryTypeId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "categories", "types", "{{categoryTypeId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories",
+                    "types",
+                    "{{categoryTypeId}}"
+                  ]
                 },
                 "description": "Get a category type by ID"
               },
@@ -898,13 +1310,22 @@
                   }
                 }
               ],
+              "id": "c0ad8c87-8242-4a2f-bbfc-ac7029956b77",
               "request": {
                 "method": "GET",
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/categories/types/key/{{categoryTypeKey}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "categories", "types", "key", "{{categoryTypeKey}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories",
+                    "types",
+                    "key",
+                    "{{categoryTypeKey}}"
+                  ]
                 },
                 "description": "Get a category type by its unique key"
               },
@@ -925,6 +1346,7 @@
                   }
                 }
               ],
+              "id": "c3286540-909c-4f2f-bdb1-fcae92363e8e",
               "request": {
                 "method": "PUT",
                 "header": [
@@ -944,8 +1366,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/categories/types/{{categoryTypeId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "categories", "types", "{{categoryTypeId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories",
+                    "types",
+                    "{{categoryTypeId}}"
+                  ]
                 },
                 "description": "Update a category type"
               },
@@ -966,19 +1395,28 @@
                   }
                 }
               ],
+              "id": "cc64509f-1550-4e60-9b3d-86256e1c4f16",
               "request": {
                 "method": "DELETE",
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/categories/types/{{categoryTypeId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "categories", "types", "{{categoryTypeId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories",
+                    "types",
+                    "{{categoryTypeId}}"
+                  ]
                 },
                 "description": "Delete a category type by ID"
               },
               "response": []
             }
-          ]
+          ],
+          "id": "972abea0-ce6b-4f78-a44e-15f73aad3581"
         },
         {
           "name": "Category Items",
@@ -1006,6 +1444,7 @@
                   }
                 }
               ],
+              "id": "4d04f03a-4573-4c4e-bc92-a021da8b8067",
               "request": {
                 "method": "POST",
                 "header": [
@@ -1025,8 +1464,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/categories/items",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "categories", "items"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories",
+                    "items"
+                  ]
                 },
                 "description": "Create a new category item\n\n**Required fields:**\n- `categoryTypeId`: Parent category type ID\n- `name`: Item name"
               },
@@ -1052,13 +1497,22 @@
                   }
                 }
               ],
+              "id": "2bfa898b-ff3d-4c24-bcde-a7866946c6ae",
               "request": {
                 "method": "GET",
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/categories/items/type/{{categoryTypeKey}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "categories", "items", "type", "{{categoryTypeKey}}"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories",
+                    "items",
+                    "type",
+                    "{{categoryTypeKey}}"
+                  ],
                   "query": [
                     {
                       "key": "includeInactive",
@@ -1087,13 +1541,21 @@
                   }
                 }
               ],
+              "id": "ae5736f6-6085-4f9e-a7fa-6d7ec8272745",
               "request": {
                 "method": "GET",
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/categories/items/{{categoryItemId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "categories", "items", "{{categoryItemId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories",
+                    "items",
+                    "{{categoryItemId}}"
+                  ]
                 },
                 "description": "Get a category item by ID"
               },
@@ -1114,6 +1576,7 @@
                   }
                 }
               ],
+              "id": "804f562f-c73d-47df-a4c3-34217bc3d90b",
               "request": {
                 "method": "PUT",
                 "header": [
@@ -1133,8 +1596,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/categories/items/{{categoryItemId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "categories", "items", "{{categoryItemId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories",
+                    "items",
+                    "{{categoryItemId}}"
+                  ]
                 },
                 "description": "Update a category item"
               },
@@ -1155,21 +1625,31 @@
                   }
                 }
               ],
+              "id": "662ebe86-469a-461a-bf1d-38c21dc5f156",
               "request": {
                 "method": "DELETE",
                 "header": [],
                 "url": {
                   "raw": "{{baseUrl}}/api/categories/items/{{categoryItemId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "categories", "items", "{{categoryItemId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categories",
+                    "items",
+                    "{{categoryItemId}}"
+                  ]
                 },
                 "description": "Delete a category item by ID"
               },
               "response": []
             }
-          ]
+          ],
+          "id": "f55a0917-824b-4c5e-a170-b383a8097834"
         }
       ],
+      "id": "311bd693-6d6e-428f-9988-dfd2a7883d71",
       "description": "Manage category types and items. Create category types first, then create items for each type."
     },
     {
@@ -1197,6 +1677,7 @@
               }
             }
           ],
+          "id": "6ce3fde9-6e44-4932-ac43-c139bc9d1e4b",
           "request": {
             "method": "POST",
             "header": [
@@ -1216,8 +1697,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/projects",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "projects"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects"
+              ]
             },
             "description": "Create a new project\n\n**Required fields:**\n- `name`: Project name\n- `clientName`: Client name\n- `location`: Project location\n- `startDate`: Start date (ISO 8601 format)\n- `projectTypeItemId`: Category item ID for project type"
           },
@@ -1248,13 +1734,19 @@
               }
             }
           ],
+          "id": "5a9ad986-f7d7-4e0d-b506-efdde41c9406",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/projects?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "projects"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -1299,13 +1791,20 @@
               }
             }
           ],
+          "id": "9ce13682-2163-4adf-b293-9298713291de",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/projects/{{projectId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "projects", "{{projectId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{projectId}}"
+              ]
             },
             "description": "Get a single project by ID"
           },
@@ -1326,13 +1825,21 @@
               }
             }
           ],
+          "id": "a5a30988-1b32-4c8a-a747-a77235ddbd3e",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/projects/{{projectId}}/stats",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "projects", "{{projectId}}", "stats"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{projectId}}",
+                "stats"
+              ]
             },
             "description": "Get statistics for a specific project"
           },
@@ -1353,6 +1860,7 @@
               }
             }
           ],
+          "id": "8b3fb2da-7e24-4d1f-a87b-fde7470735d2",
           "request": {
             "method": "PUT",
             "header": [
@@ -1372,8 +1880,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/projects/{{projectId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "projects", "{{projectId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{projectId}}"
+              ]
             },
             "description": "Update an existing project. All fields are optional."
           },
@@ -1394,19 +1908,27 @@
               }
             }
           ],
+          "id": "58511f45-67af-45c3-8dc4-36376893ba3a",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/projects/{{projectId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "projects", "{{projectId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "projects",
+                "{{projectId}}"
+              ]
             },
             "description": "Delete a project by ID"
           },
           "response": []
         }
       ],
+      "id": "dfa25252-dfce-4db0-a3e1-e52ec72a85c4",
       "description": "Manage construction projects"
     },
     {
@@ -1433,6 +1955,7 @@
               }
             }
           ],
+          "id": "961d87b9-5f41-4ade-b18f-0dfe9faefc56",
           "request": {
             "method": "POST",
             "header": [
@@ -1452,8 +1975,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/stages",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stages"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stages"
+              ]
             },
             "description": "Create a new stage\n\n**Required fields:**\n- `projectId`: Associated project ID\n- `name`: Stage name\n- `budgetAmount`: Budget amount (must be >= 0)"
           },
@@ -1479,13 +2007,19 @@
               }
             }
           ],
+          "id": "2c597ed0-6b05-49cd-b80d-4e963cce996c",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/stages?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stages"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stages"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -1522,13 +2056,21 @@
               }
             }
           ],
+          "id": "e754aa86-9c8b-438a-a404-724932271d79",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/stages/project/{{projectId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stages", "project", "{{projectId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stages",
+                "project",
+                "{{projectId}}"
+              ]
             },
             "description": "Get all stages for a specific project"
           },
@@ -1549,13 +2091,20 @@
               }
             }
           ],
+          "id": "0643d3ca-fb99-4079-b836-bb87103dc208",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/stages/{{stageId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stages", "{{stageId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stages",
+                "{{stageId}}"
+              ]
             },
             "description": "Get a single stage by ID"
           },
@@ -1576,13 +2125,21 @@
               }
             }
           ],
+          "id": "a55d4552-69d4-40b2-903a-922f360ae87e",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/stages/{{stageId}}/stats",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stages", "{{stageId}}", "stats"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stages",
+                "{{stageId}}",
+                "stats"
+              ]
             },
             "description": "Get statistics for a specific stage"
           },
@@ -1603,6 +2160,7 @@
               }
             }
           ],
+          "id": "b6675e34-e143-4fca-bd95-719404b41d3d",
           "request": {
             "method": "PUT",
             "header": [
@@ -1622,8 +2180,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/stages/{{stageId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stages", "{{stageId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stages",
+                "{{stageId}}"
+              ]
             },
             "description": "Update an existing stage"
           },
@@ -1644,19 +2208,27 @@
               }
             }
           ],
+          "id": "eb7119d6-636f-4846-aee5-a222af15179b",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/stages/{{stageId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "stages", "{{stageId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stages",
+                "{{stageId}}"
+              ]
             },
             "description": "Delete a stage by ID"
           },
           "response": []
         }
       ],
+      "id": "df8e8007-4a49-449d-b547-309e5431c2a1",
       "description": "Manage project stages/phases"
     },
     {
@@ -1683,6 +2255,7 @@
               }
             }
           ],
+          "id": "52152c23-03f2-4da1-b233-0338de0b7d74",
           "request": {
             "method": "POST",
             "header": [
@@ -1702,8 +2275,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/parties",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "parties"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "parties"
+              ]
             },
             "description": "Create a new vendor party\n\n**Required fields:**\n- `name`: Party name\n- `type`: VENDOR, LABOUR, or SUBCONTRACTOR\n\n**Optional fields:**\n- `phone`: Contact phone number"
           },
@@ -1724,6 +2302,7 @@
               }
             }
           ],
+          "id": "68dde550-8cc6-4a2c-bf32-1db1fbc8a0a2",
           "request": {
             "method": "POST",
             "header": [
@@ -1743,8 +2322,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/parties",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "parties"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "parties"
+              ]
             },
             "description": "Create a new labour party"
           },
@@ -1765,6 +2349,7 @@
               }
             }
           ],
+          "id": "80c10da4-1ba8-4545-b79b-2775cc6f7eb2",
           "request": {
             "method": "POST",
             "header": [
@@ -1784,8 +2369,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/parties",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "parties"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "parties"
+              ]
             },
             "description": "Create a new subcontractor party"
           },
@@ -1811,13 +2401,19 @@
               }
             }
           ],
+          "id": "8f8b9fc5-b298-4aa4-b833-f3ee1579d993",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/parties?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "parties"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "parties"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -1860,13 +2456,20 @@
               }
             }
           ],
+          "id": "c8750ee2-a65b-41b9-abd5-f4dbba47c22d",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/parties/{{partyId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "parties", "{{partyId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "parties",
+                "{{partyId}}"
+              ]
             },
             "description": "Get a single party by ID"
           },
@@ -1887,13 +2490,21 @@
               }
             }
           ],
+          "id": "18b94d7b-9231-4753-b3ab-faab3675b6f9",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/parties/{{partyId}}/stats",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "parties", "{{partyId}}", "stats"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "parties",
+                "{{partyId}}",
+                "stats"
+              ]
             },
             "description": "Get statistics for a specific party"
           },
@@ -1914,6 +2525,7 @@
               }
             }
           ],
+          "id": "21e5ceed-e135-4428-8e06-b934c950969e",
           "request": {
             "method": "PUT",
             "header": [
@@ -1933,8 +2545,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/parties/{{partyId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "parties", "{{partyId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "parties",
+                "{{partyId}}"
+              ]
             },
             "description": "Update an existing party"
           },
@@ -1955,19 +2573,27 @@
               }
             }
           ],
+          "id": "c34bce6d-82af-4123-9938-1e63fac43278",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/parties/{{partyId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "parties", "{{partyId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "parties",
+                "{{partyId}}"
+              ]
             },
             "description": "Delete a party by ID"
           },
           "response": []
         }
       ],
+      "id": "726f6909-9187-4fee-ae32-1b678247da5a",
       "description": "Manage parties (vendors, labour, subcontractors)"
     },
     {
@@ -1994,6 +2620,7 @@
               }
             }
           ],
+          "id": "2dfc39e9-ad0c-4ba3-8378-1954c86c191a",
           "request": {
             "method": "POST",
             "header": [
@@ -2013,8 +2640,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/expenses",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "expenses"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "expenses"
+              ]
             },
             "description": "Create a new expense\n\n**Required fields:**\n- `projectId`: Associated project ID\n- `partyId`: Associated party ID\n- `expenseCategoryItemId`: Expense category item ID\n- `amount`: Expense amount (positive number)\n- `expenseDate`: Expense date (ISO 8601)\n- `paymentMode`: Payment mode (e.g., CASH, BANK)\n\n**Optional fields:**\n- `stageId`: Associated stage ID\n- `materialTypeItemId`: Material type category item ID\n- `labourTypeItemId`: Labour type category item ID\n- `subWorkTypeItemId`: Sub-work type category item ID\n- `notes`: Additional notes"
           },
@@ -2040,13 +2672,19 @@
               }
             }
           ],
+          "id": "ba18ec8a-7f82-4cc3-be82-3e1c987f68ad",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/expenses?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "expenses"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "expenses"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -2107,13 +2745,21 @@
               }
             }
           ],
+          "id": "962da876-ecfa-4688-b9b4-b9e75a8c1c20",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/expenses/summary/by-category",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "expenses", "summary", "by-category"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "expenses",
+                "summary",
+                "by-category"
+              ],
               "query": [
                 {
                   "key": "projectId",
@@ -2142,13 +2788,20 @@
               }
             }
           ],
+          "id": "5032a603-fcb1-4f01-ac09-4b90ec5506af",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/expenses/{{expenseId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "expenses", "{{expenseId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "expenses",
+                "{{expenseId}}"
+              ]
             },
             "description": "Get a single expense by ID"
           },
@@ -2169,6 +2822,7 @@
               }
             }
           ],
+          "id": "13ca85c8-51e8-4baa-8733-0255a6be4ad2",
           "request": {
             "method": "PUT",
             "header": [
@@ -2188,8 +2842,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/expenses/{{expenseId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "expenses", "{{expenseId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "expenses",
+                "{{expenseId}}"
+              ]
             },
             "description": "Update an existing expense"
           },
@@ -2210,19 +2870,27 @@
               }
             }
           ],
+          "id": "3adb25b2-25a7-4505-b676-d5fa2f6343a8",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/expenses/{{expenseId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "expenses", "{{expenseId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "expenses",
+                "{{expenseId}}"
+              ]
             },
             "description": "Delete an expense by ID"
           },
           "response": []
         }
       ],
+      "id": "ca57c931-51f1-4de1-8d25-8c6298005570",
       "description": "Manage project expenses"
     },
     {
@@ -2249,6 +2917,7 @@
               }
             }
           ],
+          "id": "aacca24c-90cc-4ee3-b9ae-cfd36b7b3e03",
           "request": {
             "method": "POST",
             "header": [
@@ -2268,8 +2937,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/payments",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "payments"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ]
             },
             "description": "Create a new payment\n\n**Required fields:**\n- `projectId`: Associated project ID\n- `amount`: Payment amount (positive number)\n- `paymentDate`: Payment date (ISO 8601)\n\n**Optional fields:**\n- `partyId`: Associated party ID\n- `notes`: Additional notes"
           },
@@ -2295,13 +2969,19 @@
               }
             }
           ],
+          "id": "0d171f38-a0e2-4053-91d7-9f08f8860b9b",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/payments?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "payments"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -2356,13 +3036,20 @@
               }
             }
           ],
+          "id": "47359e29-2d0c-4964-b630-a39491221682",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/payments/summary",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "payments", "summary"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "summary"
+              ],
               "query": [
                 {
                   "key": "projectId",
@@ -2391,13 +3078,20 @@
               }
             }
           ],
+          "id": "426a9a7a-a454-4e93-b1db-698be840413b",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/payments/{{paymentId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "payments", "{{paymentId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "{{paymentId}}"
+              ]
             },
             "description": "Get a single payment by ID"
           },
@@ -2418,6 +3112,7 @@
               }
             }
           ],
+          "id": "6e3edca7-4577-44b7-b9dd-58b60af5344e",
           "request": {
             "method": "PUT",
             "header": [
@@ -2437,8 +3132,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/payments/{{paymentId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "payments", "{{paymentId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "{{paymentId}}"
+              ]
             },
             "description": "Update an existing payment"
           },
@@ -2459,20 +3160,262 @@
               }
             }
           ],
+          "id": "f0ac0646-fb8c-4eaf-a1f2-6d5fe7ad1a99",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/payments/{{paymentId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "payments", "{{paymentId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "{{paymentId}}"
+              ]
             },
             "description": "Delete a payment by ID"
           },
           "response": []
         }
       ],
+      "id": "da33386b-999c-4a2c-b732-997a5b388e99",
       "description": "Manage project payments"
+    },
+    {
+      "name": "10. Documents",
+      "item": [
+        {
+          "name": "Upload Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data) {",
+                  "    pm.environment.set('documentId', jsonData.data.id);",
+                  "    console.log('Uploaded document ID:', jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "7396b752-e95e-47db-b61d-3783f943847c",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "type": "text",
+                  "description": "Project ID to attach document to"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/documents?projectId={{projectId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents"
+              ],
+              "query": [
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "description": "Project ID (required)"
+                }
+              ]
+            },
+            "description": "Upload a document to a project.\n\n**Required:**\n- `file`: File to upload (multipart/form-data)\n- `projectId`: Query parameter - Project ID to attach document to\n\n**Supported formats:**\n- Images: JPEG, PNG, WebP\n- Documents: PDF, DOCX, XLSX, PPTX\n- Max file size: 50MB"
+          },
+          "response": []
+        },
+        {
+          "name": "List Documents",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.length > 0) {",
+                  "    pm.environment.set('documentId', jsonData.data[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "959bd6d4-6bd2-4332-b0ec-db98995f6104",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page (default: 10, max: 100)"
+                },
+                {
+                  "key": "projectId",
+                  "value": "{{projectId}}",
+                  "description": "Filter by project ID",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get a paginated list of all documents"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Document by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "4ed88cc9-f6ea-4d3b-b36d-c96356730fdc",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{documentId}}"
+              ]
+            },
+            "description": "Get a single document by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Document Download URL",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has download URL', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('downloadUrl');",
+                  "    console.log('Download URL:', jsonData.data.downloadUrl);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "bc8582b5-416d-44cb-bd34-90098f5c21e6",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}/download",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{documentId}}",
+                "download"
+              ]
+            },
+            "description": "Get a signed download URL for a document. The URL is temporary and expires after a set time."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "id": "f8e2c0c4-f656-4875-ae95-5319155c4fdd",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/documents/{{documentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "documents",
+                "{{documentId}}"
+              ]
+            },
+            "description": "Delete a document by ID"
+          },
+          "response": []
+        }
+      ],
+      "id": "8eb20a63-2cd0-4602-9607-d810c8e8efa2",
+      "description": "Manage project documents (file uploads)"
     }
   ],
   "event": [
@@ -2481,7 +3424,17 @@
       "script": {
         "type": "text/javascript",
         "exec": [
+          "// Add Authorization header with Bearer token (if available)",
+          "const accessToken = pm.environment.get('accessToken');",
+          "if (accessToken) {",
+          "    pm.request.headers.add({",
+          "        key: 'Authorization',",
+          "        value: 'Bearer ' + accessToken",
+          "    });",
+          "}",
+          "",
           "// Set organization context headers for all requests",
+          "// Note: These are still required by the organization middleware",
           "const orgId = pm.environment.get('organizationId');",
           "const userId = pm.environment.get('userId');",
           "const userRole = pm.environment.get('userRole') || 'ADMIN';",
@@ -2512,6 +3465,7 @@
   ],
   "variable": [
     {
+      "id": "32647ca1-ef7c-49b9-a3a7-a365b7d0522a",
       "key": "baseUrl",
       "value": "http://localhost:3000",
       "type": "string"
