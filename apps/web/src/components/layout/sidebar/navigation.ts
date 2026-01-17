@@ -2,17 +2,11 @@ import {
   HouseIcon,
   FolderIcon,
   UsersIcon,
-  CreditCardIcon,
   CurrencyDollarIcon,
   MoneyIcon,
-  ListChecksIcon,
   FileTextIcon,
   ChartBarIcon,
   GridFourIcon,
-  StorefrontIcon,
-  GearIcon,
-  BriefcaseIcon,
-  HardHatIcon,
 } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 
@@ -41,6 +35,7 @@ export const managementSection: NavSection = {
   id: 'management',
   title: 'Management',
   items: [
+    { id: 'parties', label: 'Parties', icon: UsersIcon, href: '/parties' },
     { id: 'expenses', label: 'Expenses', icon: CurrencyDollarIcon, href: '/expenses' },
     { id: 'payments', label: 'Payments', icon: MoneyIcon, href: '/payments' },
     { id: 'documents', label: 'Documents', icon: FileTextIcon, href: '/documents' },

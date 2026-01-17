@@ -8,7 +8,14 @@ import {
   sendNoContent,
   buildPagination,
 } from '../../lib/response.utils';
-import type { CreatePartyInput, UpdatePartyInput, PartyQuery, PartyParams } from './party.schema';
+import type {
+  CreatePartyInput,
+  UpdatePartyInput,
+  PartyQuery,
+  PartyParams,
+  PartyProjectsQuery,
+  PartyTransactionsQuery,
+} from './party.schema';
 
 const handle = createErrorHandler('party');
 
@@ -111,5 +118,69 @@ export const getPartiesSummary = handle(
     const summary = await partyRepository.getSummary(request.organizationId);
 
     return sendSuccess(reply, summary);
+  }
+);
+
+// ============================================
+// Get Party Projects with Credits
+// ============================================
+export const getPartyProjects = handle(
+  'fetch',
+  async (
+    request: FastifyRequest<{ Params: PartyParams; Querystring: PartyProjectsQuery }>,
+    reply: FastifyReply
+  ) => {
+    const { page, limit } = request.query;
+    const skip = (page - 1) * limit;
+
+    // First verify party exists
+    const party = await partyRepository.findById(request.organizationId, request.params.id);
+    if (!party) {
+      return sendNotFound(reply, 'Party');
+    }
+
+    const result = await partyRepository.getPartyProjects(request.organizationId, request.params.id, {
+      skip,
+      take: limit,
+    });
+
+    return sendSuccess(reply, {
+      items: result.projects,
+      totals: result.totals,
+      pagination: buildPagination(page, limit, result.total),
+    });
+  }
+);
+
+// ============================================
+// Get Party Transactions (Payments/Expenses)
+// ============================================
+export const getPartyTransactions = handle(
+  'fetch',
+  async (
+    request: FastifyRequest<{ Params: PartyParams; Querystring: PartyTransactionsQuery }>,
+    reply: FastifyReply
+  ) => {
+    const { page, limit, projectId, type } = request.query;
+    const skip = (page - 1) * limit;
+
+    // First verify party exists
+    const party = await partyRepository.findById(request.organizationId, request.params.id);
+    if (!party) {
+      return sendNotFound(reply, 'Party');
+    }
+
+    const result = await partyRepository.getPartyTransactions(
+      request.organizationId,
+      request.params.id,
+      {
+        type,
+        projectId,
+        skip,
+        take: limit,
+      }
+    );
+
+    return sendPaginated(reply, result.transactions, buildPagination(page, limit, result.total));
   }
 );

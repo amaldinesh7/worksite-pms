@@ -4,4 +4,11 @@
 
 export { api, request } from './client';
 export { authApi } from './auth';
-export type { ApiResponse, ApiSuccessResponse, ApiErrorResponse } from './types';
+export type {
+  ApiResponse,
+  ApiSuccessResponse,
+  ApiErrorResponse,
+  PaginationMeta,
+  ApiPaginatedResponse,
+  PaginatedResult,
+} from './types';

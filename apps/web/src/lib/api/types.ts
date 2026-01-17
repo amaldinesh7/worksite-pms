@@ -2,6 +2,35 @@
  * API Response Types
  */
 
+// ============================================
+// Pagination Types
+// ============================================
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+  hasMore: boolean;
+}
+
+export interface ApiPaginatedResponse<T> {
+  success: true;
+  data: {
+    items: T[];
+    pagination: PaginationMeta;
+  };
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  pagination: PaginationMeta;
+}
+
+// ============================================
+// Generic Response Types
+// ============================================
+
 export interface ApiSuccessResponse<T> {
   success: true;
   data: T;

@@ -9,6 +9,7 @@ export interface PaginationMeta {
   limit: number;
   total: number;
   pages: number;
+  hasMore: boolean;
 }
 
 export interface SuccessResponse<T> {
@@ -58,11 +59,13 @@ export function paginatedResponse<T>(items: T[], pagination: PaginationMeta): Pa
  * Build pagination metadata from query params and total count
  */
 export function buildPagination(page: number, limit: number, total: number): PaginationMeta {
+  const pages = Math.ceil(total / limit);
   return {
     page,
     limit,
     total,
-    pages: Math.ceil(total / limit),
+    pages,
+    hasMore: page < pages,
   };
 }
 

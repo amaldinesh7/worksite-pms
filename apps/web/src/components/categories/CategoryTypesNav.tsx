@@ -3,9 +3,10 @@
  *
  * Left panel that displays the list of category types.
  * Filters to show only the allowed types per design requirements.
+ * Uses the reusable ListPanel component.
  */
 
-import { Card } from '@/components/ui/card';
+import { ListPanel } from '@/components/ui/list-panel';
 import { cn } from '@/lib/utils';
 import type { CategoryType } from '@/lib/api/categories';
 
@@ -49,52 +50,37 @@ export function CategoryTypesNav({
     categoryTypes.find((t) => t.key === key)
   ).filter((t): t is CategoryType => t !== undefined);
 
-  // Loading skeleton
-  if (isLoading) {
-    return (
-      <Card className="bg-white border border-neutral-200 rounded-lg p-4 h-full">
-        <h2 className="text-lg font-medium text-neutral-800 mb-4 px-2">Category Types</h2>
-        <nav className="space-y-1">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-9 bg-neutral-100 rounded-md animate-pulse" />
-          ))}
-        </nav>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="bg-white border border-neutral-200 rounded-lg p-4 h-full">
-      <h2 className="text-lg font-medium text-neutral-800 mb-4 px-2">Category Types</h2>
-      <nav className="space-y-1">
-        {filteredTypes.length > 0 ? (
-          // Render actual category types from API
+    <ListPanel>
+      <ListPanel.Header title="Category Types" />
+      <ListPanel.Content>
+        {isLoading ? (
+          <ListPanel.Loading count={5} />
+        ) : filteredTypes.length === 0 ? (
+          <ListPanel.Empty>No category types available.</ListPanel.Empty>
+        ) : (
           filteredTypes.map((categoryType) => {
             const isSelected = selectedType?.id === categoryType.id;
             const label = categoryType.label || TYPE_LABELS[categoryType.key] || categoryType.key;
 
             return (
-              <button
+              <ListPanel.Item
                 key={categoryType.id}
+                isSelected={isSelected}
                 onClick={() => onSelect(categoryType)}
-                className={cn(
-                  'w-full text-left px-3 py-2 rounded-md text-sm cursor-pointer',
-                  'transition-colors duration-150',
-                  isSelected
-                    ? 'text-neutral-900 bg-neutral-100 font-medium'
-                    : 'text-neutral-700 hover:bg-neutral-50'
-                )}
               >
-                {label}
-              </button>
+                <span className={cn(
+                  'text-sm',
+                  isSelected ? 'font-medium text-neutral-900' : 'text-neutral-700'
+                )}>
+                  {label}
+                </span>
+              </ListPanel.Item>
             );
           })
-        ) : (
-          // Empty state when no data available
-          <p className="px-3 py-2 text-sm text-neutral-500">No category types available.</p>
         )}
-      </nav>
-    </Card>
+      </ListPanel.Content>
+    </ListPanel>
   );
 }
 

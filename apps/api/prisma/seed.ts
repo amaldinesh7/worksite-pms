@@ -875,7 +875,7 @@ async function main() {
   console.log(`✅ Created stages for all projects`);
 
   // ============================================
-  // Create Expenses for Projects
+  // Create Expenses for Projects (Multi-project association)
   // ============================================
 
   const stages = await prisma.stage.findMany({
@@ -883,67 +883,182 @@ async function main() {
     include: { project: true },
   });
 
-  for (let i = 0; i < projects.length; i++) {
-    const project = projects[i];
-    const projectStages = stages.filter((s) => s.projectId === project.id);
+  // Track created expenses for payment creation
+  const createdExpenses: Array<{
+    id: string;
+    projectId: string;
+    partyId: string;
+    expenseDate: Date;
+    totalAmount: number;
+  }> = [];
 
-    // Create 5-8 expenses per project
-    const numExpenses = 5 + Math.floor(Math.random() * 4);
-    for (let j = 0; j < numExpenses; j++) {
-      const stage = projectStages[Math.floor(Math.random() * projectStages.length)];
-      const isMaterial = Math.random() > 0.5;
-      const party = isMaterial
-        ? vendorParties[Math.floor(Math.random() * vendorParties.length)]
-        : Math.random() > 0.5
-          ? laborParties[Math.floor(Math.random() * laborParties.length)]
-          : subcontractorParties[Math.floor(Math.random() * subcontractorParties.length)];
+  // Create expenses - each party should work on 2-4 projects
+  // Vendors: material purchases across multiple projects
+  for (const vendor of vendorParties) {
+    // Each vendor works on 2-4 random projects
+    const numProjects = 2 + Math.floor(Math.random() * 3);
+    const vendorProjects = [...projects].sort(() => Math.random() - 0.5).slice(0, numProjects);
 
-      await prisma.expense.create({
-        data: {
-          organizationId: org1.id,
-          projectId: project.id,
-          partyId: party.id,
-          stageId: stage.id,
-          expenseCategoryItemId: isMaterial ? materialsExpense.id : labourExpense.id,
-          materialTypeItemId: isMaterial ? cementMaterial.id : null,
-          labourTypeItemId: !isMaterial ? generalLabour.id : null,
-          rate: isMaterial ? 500 + Math.random() * 1000 : 600 + Math.random() * 400,
-          quantity: isMaterial ? 50 + Math.random() * 200 : 10 + Math.random() * 50,
-          expenseDate: randomDate(project.startDate, new Date()),
-          notes: `${isMaterial ? 'Material purchase' : 'Labor cost'} for ${stage.name} stage`,
-        },
-      });
+    for (const project of vendorProjects) {
+      const projectStages = stages.filter((s) => s.projectId === project.id);
+      // 2-4 expenses per vendor per project
+      const numExpenses = 2 + Math.floor(Math.random() * 3);
+
+      for (let j = 0; j < numExpenses; j++) {
+        const stage = projectStages[Math.floor(Math.random() * projectStages.length)];
+        const rate = 500 + Math.random() * 1500; // ₹500-2000 per unit
+        const quantity = 50 + Math.random() * 250; // 50-300 units
+        const totalAmount = rate * quantity;
+
+        const expense = await prisma.expense.create({
+          data: {
+            organizationId: org1.id,
+            projectId: project.id,
+            partyId: vendor.id,
+            stageId: stage.id,
+            expenseCategoryItemId: materialsExpense.id,
+            materialTypeItemId: Math.random() > 0.5 ? cementMaterial.id : steelMaterial.id,
+            rate,
+            quantity,
+            expenseDate: randomDate(project.startDate, new Date()),
+            notes: `Material purchase for ${stage.name} stage - ${project.name}`,
+          },
+        });
+
+        createdExpenses.push({
+          id: expense.id,
+          projectId: expense.projectId,
+          partyId: expense.partyId,
+          expenseDate: expense.expenseDate,
+          totalAmount,
+        });
+      }
     }
   }
-  console.log('✅ Created expenses for projects');
+  console.log(`✅ Created vendor expenses across multiple projects`);
 
-  // ============================================
-  // Create Payments
-  // ============================================
+  // Labours: wages across multiple projects
+  for (const labour of laborParties) {
+    // Each labour team works on 2-4 random projects
+    const numProjects = 2 + Math.floor(Math.random() * 3);
+    const labourProjects = [...projects].sort(() => Math.random() - 0.5).slice(0, numProjects);
 
-  const expenses = await prisma.expense.findMany({
-    where: { organizationId: org1.id },
-  });
+    for (const project of labourProjects) {
+      const projectStages = stages.filter((s) => s.projectId === project.id);
+      // 2-3 wage entries per labour per project
+      const numExpenses = 2 + Math.floor(Math.random() * 2);
 
-  // Create payments for expenses (OUT)
-  for (const expense of expenses.slice(0, Math.floor(expenses.length * 0.7))) {
-    const paymentModes: Array<'CASH' | 'CHEQUE' | 'ONLINE'> = ['CASH', 'CHEQUE', 'ONLINE'];
-    const paymentMode = paymentModes[Math.floor(Math.random() * paymentModes.length)];
+      for (let j = 0; j < numExpenses; j++) {
+        const stage = projectStages[Math.floor(Math.random() * projectStages.length)];
+        const rate = 600 + Math.random() * 400; // ₹600-1000 per day
+        const quantity = 10 + Math.random() * 40; // 10-50 days
+        const totalAmount = rate * quantity;
 
-    await prisma.payment.create({
-      data: {
-        organizationId: org1.id,
-        projectId: expense.projectId,
-        partyId: expense.partyId,
-        expenseId: expense.id,
-        type: 'OUT',
-        paymentMode,
-        amount: Number(expense.rate) * Number(expense.quantity) * (0.5 + Math.random() * 0.5), // 50-100% of expense
-        paymentDate: randomDate(expense.expenseDate, new Date()),
-        notes: `Payment for ${paymentMode.toLowerCase()} transaction`,
-      },
-    });
+        const expense = await prisma.expense.create({
+          data: {
+            organizationId: org1.id,
+            projectId: project.id,
+            partyId: labour.id,
+            stageId: stage.id,
+            expenseCategoryItemId: labourExpense.id,
+            labourTypeItemId: Math.random() > 0.5 ? generalLabour.id : carpenterLabour.id,
+            rate,
+            quantity,
+            expenseDate: randomDate(project.startDate, new Date()),
+            notes: `Labour wages for ${stage.name} stage - ${project.name}`,
+          },
+        });
+
+        createdExpenses.push({
+          id: expense.id,
+          projectId: expense.projectId,
+          partyId: expense.partyId,
+          expenseDate: expense.expenseDate,
+          totalAmount,
+        });
+      }
+    }
   }
+  console.log(`✅ Created labour expenses across multiple projects`);
+
+  // Subcontractors: work across multiple projects
+  for (const subcontractor of subcontractorParties) {
+    // Each subcontractor works on 2-3 random projects
+    const numProjects = 2 + Math.floor(Math.random() * 2);
+    const subProjects = [...projects].sort(() => Math.random() - 0.5).slice(0, numProjects);
+
+    for (const project of subProjects) {
+      const projectStages = stages.filter((s) => s.projectId === project.id);
+      // 1-3 contracts per subcontractor per project
+      const numExpenses = 1 + Math.floor(Math.random() * 3);
+
+      for (let j = 0; j < numExpenses; j++) {
+        const stage = projectStages[Math.floor(Math.random() * projectStages.length)];
+        const rate = 5000 + Math.random() * 15000; // ₹5000-20000 per unit of work
+        const quantity = 1 + Math.random() * 10; // 1-10 units of work
+        const totalAmount = rate * quantity;
+
+        const expense = await prisma.expense.create({
+          data: {
+            organizationId: org1.id,
+            projectId: project.id,
+            partyId: subcontractor.id,
+            stageId: stage.id,
+            expenseCategoryItemId: labourExpense.id,
+            labourTypeItemId: generalLabour.id,
+            rate,
+            quantity,
+            expenseDate: randomDate(project.startDate, new Date()),
+            notes: `Subcontract work for ${stage.name} stage - ${project.name}`,
+          },
+        });
+
+        createdExpenses.push({
+          id: expense.id,
+          projectId: expense.projectId,
+          partyId: expense.partyId,
+          expenseDate: expense.expenseDate,
+          totalAmount,
+        });
+      }
+    }
+  }
+  console.log(`✅ Created subcontractor expenses across multiple projects`);
+  console.log(`   Total expenses created: ${createdExpenses.length}`);
+
+  // ============================================
+  // Create Partial Payments (50-80% of expenses)
+  // ============================================
+
+  const paymentModes: Array<'CASH' | 'CHEQUE' | 'ONLINE'> = ['CASH', 'CHEQUE', 'ONLINE'];
+  let paymentsCreated = 0;
+
+  // Create partial payments for most expenses (80% of expenses get payments)
+  for (const expense of createdExpenses) {
+    // 80% chance of having a payment
+    if (Math.random() > 0.2) {
+      const paymentMode = paymentModes[Math.floor(Math.random() * paymentModes.length)];
+      // Pay 50-80% of the expense amount to create credit balances
+      const paymentPercentage = 0.5 + Math.random() * 0.3;
+      const paymentAmount = expense.totalAmount * paymentPercentage;
+
+      await prisma.payment.create({
+        data: {
+          organizationId: org1.id,
+          projectId: expense.projectId,
+          partyId: expense.partyId,
+          expenseId: expense.id,
+          type: 'OUT',
+          paymentMode,
+          amount: paymentAmount,
+          paymentDate: randomDate(expense.expenseDate, new Date()),
+          notes: `Partial payment (${Math.round(paymentPercentage * 100)}%) via ${paymentMode.toLowerCase()}`,
+        },
+      });
+      paymentsCreated++;
+    }
+  }
+  console.log(`✅ Created ${paymentsCreated} partial payments for expenses`);
 
   // Create client payments (IN)
   for (const project of projects) {
@@ -967,7 +1082,7 @@ async function main() {
       }
     }
   }
-  console.log('✅ Created payments');
+  console.log('✅ Created client payments');
 
   // ============================================
   // Grant Project Access to Team Members
@@ -1026,7 +1141,7 @@ async function main() {
   console.log(`   - Team Members: ${teamMemberParties.length}`);
   console.log(`   - Projects: ${projects.length}`);
   console.log(`   - Clients: ${clients.length}`);
-  console.log(`   - Expenses: ${expenses.length}`);
+  console.log(`   - Expenses: ${createdExpenses.length}`);
   console.log(
     `   - Payments: ${await prisma.payment.count({ where: { organizationId: org1.id } })}`
   );

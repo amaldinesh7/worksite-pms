@@ -223,6 +223,205 @@ export class PartyRepository {
       throw handlePrismaError(error);
     }
   }
+
+  // Get projects associated with a party (via expenses) with credit calculations
+  async getPartyProjects(
+    organizationId: string,
+    partyId: string,
+    options?: { skip?: number; take?: number }
+  ): Promise<{
+    projects: Array<{
+      id: string;
+      name: string;
+      totalExpenses: number;
+      totalPayments: number;
+      credit: number;
+    }>;
+    totals: {
+      totalPaid: number;
+      totalCredit: number;
+    };
+    total: number;
+  }> {
+    try {
+      // Get all expenses for this party grouped by project
+      const expenses = await prisma.expense.findMany({
+        where: { organizationId, partyId },
+        select: {
+          projectId: true,
+          rate: true,
+          quantity: true,
+          project: {
+            select: { id: true, name: true },
+          },
+        },
+      });
+
+      // Get all payments for this party grouped by project
+      const payments = await prisma.payment.findMany({
+        where: { organizationId, partyId },
+        select: {
+          projectId: true,
+          amount: true,
+        },
+      });
+
+      // Build project map with expenses
+      const projectMap = new Map<
+        string,
+        { id: string; name: string; totalExpenses: number; totalPayments: number }
+      >();
+
+      for (const expense of expenses) {
+        const expenseAmount = expense.rate.toNumber() * expense.quantity.toNumber();
+        const existing = projectMap.get(expense.projectId);
+        if (existing) {
+          existing.totalExpenses += expenseAmount;
+        } else {
+          projectMap.set(expense.projectId, {
+            id: expense.project.id,
+            name: expense.project.name,
+            totalExpenses: expenseAmount,
+            totalPayments: 0,
+          });
+        }
+      }
+
+      // Add payments to project map
+      for (const payment of payments) {
+        const existing = projectMap.get(payment.projectId);
+        if (existing) {
+          existing.totalPayments += payment.amount.toNumber();
+        }
+      }
+
+      // Convert to array and calculate credits
+      const allProjects = Array.from(projectMap.values()).map((p) => ({
+        ...p,
+        credit: p.totalExpenses - p.totalPayments,
+      }));
+
+      // Sort by credit (highest first)
+      allProjects.sort((a, b) => b.credit - a.credit);
+
+      // Calculate totals
+      const totals = allProjects.reduce(
+        (acc, p) => ({
+          totalPaid: acc.totalPaid + p.totalPayments,
+          totalCredit: acc.totalCredit + p.credit,
+        }),
+        { totalPaid: 0, totalCredit: 0 }
+      );
+
+      // Apply pagination
+      const total = allProjects.length;
+      const paginatedProjects = options?.take
+        ? allProjects.slice(options.skip || 0, (options.skip || 0) + options.take)
+        : allProjects;
+
+      return {
+        projects: paginatedProjects,
+        totals,
+        total,
+      };
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
+
+  // Get transactions (payments or expenses) for a party, optionally filtered by project
+  async getPartyTransactions(
+    organizationId: string,
+    partyId: string,
+    options: {
+      type: 'payments' | 'expenses';
+      projectId?: string;
+      skip?: number;
+      take?: number;
+    }
+  ): Promise<{
+    transactions: Array<{
+      id: string;
+      date: Date;
+      title: string;
+      amount: number;
+      projectId: string;
+      projectName: string;
+    }>;
+    total: number;
+  }> {
+    try {
+      if (options.type === 'payments') {
+        const where: Prisma.PaymentWhereInput = {
+          organizationId,
+          partyId,
+          type: 'OUT', // Only outgoing payments to parties
+          ...(options.projectId && { projectId: options.projectId }),
+        };
+
+        const [payments, total] = await Promise.all([
+          prisma.payment.findMany({
+            where,
+            skip: options.skip,
+            take: options.take,
+            orderBy: { paymentDate: 'desc' },
+            include: {
+              project: { select: { id: true, name: true } },
+              expense: { select: { expenseCategory: { select: { name: true } } } },
+            },
+          }),
+          prisma.payment.count({ where }),
+        ]);
+
+        return {
+          transactions: payments.map((p) => ({
+            id: p.id,
+            date: p.paymentDate,
+            title: p.expense?.expenseCategory?.name || p.project.name,
+            amount: p.amount.toNumber(),
+            projectId: p.project.id,
+            projectName: p.project.name,
+          })),
+          total,
+        };
+      } else {
+        // Expenses (purchases for vendors, wages for labour/subcontractor)
+        const where: Prisma.ExpenseWhereInput = {
+          organizationId,
+          partyId,
+          ...(options.projectId && { projectId: options.projectId }),
+        };
+
+        const [expenses, total] = await Promise.all([
+          prisma.expense.findMany({
+            where,
+            skip: options.skip,
+            take: options.take,
+            orderBy: { expenseDate: 'desc' },
+            include: {
+              project: { select: { id: true, name: true } },
+              expenseCategory: { select: { name: true } },
+            },
+          }),
+          prisma.expense.count({ where }),
+        ]);
+
+        return {
+          transactions: expenses.map((e) => ({
+            id: e.id,
+            date: e.expenseDate,
+            title: e.expenseCategory?.name || e.project.name,
+            amount: e.rate.toNumber() * e.quantity.toNumber(),
+            projectId: e.project.id,
+            projectName: e.project.name,
+          })),
+          total,
+        };
+      }
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
 }
 
 export const partyRepository = new PartyRepository();
