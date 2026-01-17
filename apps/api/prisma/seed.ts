@@ -725,7 +725,9 @@ async function main() {
       clientLocation: 'Downtown Business Center, Tower A',
       location: 'Downtown City, Plot 123',
       startDate: new Date('2024-01-15'),
+      endDate: new Date('2025-06-30'),
       amount: 5000000,
+      area: '45000',
       projectType: residentialType,
     },
     {
@@ -736,7 +738,9 @@ async function main() {
       clientLocation: 'Business District, Office Tower 5',
       location: 'Tech Zone, Sector 7',
       startDate: new Date('2024-02-01'),
+      endDate: new Date('2025-12-15'),
       amount: 8500000,
+      area: '75000',
       projectType: commercialType,
     },
     {
@@ -747,7 +751,9 @@ async function main() {
       clientLocation: 'Developer Hub, Building 12',
       location: 'Suburban Area, Phase 2',
       startDate: new Date('2024-03-10'),
+      endDate: new Date('2026-03-10'),
       amount: 12000000,
+      area: '120000',
       projectType: residentialType,
     },
     {
@@ -758,7 +764,9 @@ async function main() {
       clientLocation: 'Industrial Estate, Unit 45',
       location: 'Industrial Zone, Plot 89',
       startDate: new Date('2024-04-05'),
+      endDate: new Date('2025-10-01'),
       amount: 15000000,
+      area: '85000',
       projectType: industrialType,
     },
     {
@@ -769,7 +777,9 @@ async function main() {
       clientLocation: 'Mall Management Office, Floor 3',
       location: 'City Center, Mall Complex',
       startDate: new Date('2024-05-20'),
+      endDate: null, // No end date
       amount: 3200000,
+      area: null, // No area
       projectType: commercialType,
     },
     {
@@ -780,7 +790,9 @@ async function main() {
       clientLocation: 'Government Complex, Block 2',
       location: 'Highway 45, KM 12',
       startDate: new Date('2024-06-01'),
+      endDate: null, // No end date
       amount: 25000000,
+      area: null, // No area
       projectType: residentialType, // Using residential as fallback
     },
   ];
@@ -828,7 +840,9 @@ async function main() {
         clientId: clientParty.id,
         location: proj.location,
         startDate: proj.startDate,
+        endDate: proj.endDate,
         amount: proj.amount,
+        area: proj.area,
         projectTypeItemId: proj.projectType.id,
       },
     });

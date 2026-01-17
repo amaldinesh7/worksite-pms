@@ -1,7 +1,7 @@
 # Database Schema
 
 > Auto-generated from `apps/api/prisma/schema.prisma`
-> Last generated: 2026-01-17T14:35:26.174Z
+> Last generated: 2026-01-17T20:41:14.017Z
 
 ---
 
@@ -126,9 +126,14 @@
 | `clientId` | `String?` | - |
 | `location` | `String` | - |
 | `startDate` | `DateTime` | - |
+| `endDate` | `DateTime?` | - |
 | `amount` | `Decimal?` | @db.Decimal(15, 2) |
 | `projectTypeItemId` | `String` | - |
+| `area` | `String?` | - |
+| `projectPicture` | `String?` | - |
+| `status` | `ProjectStatus` | @default(ACTIVE) |
 | `createdAt` | `DateTime` | @default(now()) |
+| `updatedAt` | `DateTime` | @default(now()) @updatedAt |
 | `organization` | `Organization` | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
 | `client` | `Party?` | @relation("ProjectClient", fields: [clientId], references: [id]) |
 | `projectType` | `CategoryItem` | @relation("ProjectType", fields: [projectTypeItemId], references: [id]) |

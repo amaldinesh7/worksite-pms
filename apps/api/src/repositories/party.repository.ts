@@ -61,10 +61,7 @@ export class PartyRepository {
       const where: Prisma.PartyWhereInput = {
         organizationId,
         ...(options?.search && {
-          OR: [
-            { name: { contains: options.search, mode: 'insensitive' } },
-            { phone: { contains: options.search, mode: 'insensitive' } },
-          ],
+          name: { contains: options.search, mode: 'insensitive' },
         }),
         ...(options?.type && { type: options.type }),
       };

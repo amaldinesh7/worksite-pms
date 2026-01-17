@@ -46,6 +46,12 @@ enum EntityType {
   DOCUMENT
 }
 
+enum ProjectStatus {
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+}
+
 // ============================================
 // Organizations & Users (Multi-tenant Foundation)
 // ============================================
@@ -206,15 +212,20 @@ model CategoryItem {
 // ============================================
 
 model Project {
-  id                String   @id @default(cuid())
+  id                String        @id @default(cuid())
   organizationId    String
   name              String
   clientId          String?
   location          String
   startDate         DateTime
-  amount            Decimal? @db.Decimal(15, 2)
+  endDate           DateTime?
+  amount            Decimal?      @db.Decimal(15, 2)
   projectTypeItemId String
-  createdAt         DateTime @default(now())
+  area              String?
+  projectPicture    String?
+  status            ProjectStatus @default(ACTIVE)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @default(now()) @updatedAt
 
   // Relations
   organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -229,6 +240,7 @@ model Project {
   @@index([organizationId])
   @@index([clientId])
   @@index([projectTypeItemId])
+  @@index([status])
   @@map("projects")
 }
 
@@ -369,6 +381,8 @@ model Document {
   fileUrl        String
   storagePath    String
   mimeType       String
+  originalSize   Int      @default(0)
+  compressedSize Int      @default(0)
   uploadedAt     DateTime @default(now())
 
   // Relations

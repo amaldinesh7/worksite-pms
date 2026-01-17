@@ -7,6 +7,7 @@ import VerifyOtp from './pages/auth/VerifyOtp';
 import CategoriesPage from './pages/settings/CategoriesPage';
 import PartiesPage from './pages/parties/PartiesPage';
 import PartyDetailPage from './pages/parties/PartyDetailPage';
+import ProjectsPage from './pages/projects/ProjectsPage';
 
 // Auth Route wrapper - redirects to home if already logged in
 function AuthRoute({ children }: { children: React.ReactNode }) {
@@ -93,6 +94,7 @@ export default function App() {
         {/* Protected Routes - all share the same Layout via ProtectedLayout */}
         <Route element={<ProtectedLayout />}>
           <Route index element={<DashboardPage />} />
+          <Route path="projects" element={<ProjectsPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="parties" element={<PartiesPage />} />
           <Route path="parties/:id" element={<PartyDetailPage />} />

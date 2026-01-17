@@ -7,6 +7,8 @@ import {
   updateProjectSchema,
   projectQuerySchema,
   projectParamsSchema,
+  addProjectMemberSchema,
+  projectMemberParamsSchema,
 } from './project.schema';
 
 export default async function projectRoutes(fastify: FastifyInstance) {
@@ -52,5 +54,30 @@ export default async function projectRoutes(fastify: FastifyInstance) {
   app.delete('/:id', {
     schema: { params: projectParamsSchema },
     handler: controller.deleteProject,
+  });
+
+  // ============================================
+  // Project Members Routes
+  // ============================================
+
+  // GET /api/projects/:id/members - Get project members
+  app.get('/:id/members', {
+    schema: { params: projectParamsSchema },
+    handler: controller.getProjectMembers,
+  });
+
+  // POST /api/projects/:id/members - Add member to project
+  app.post('/:id/members', {
+    schema: {
+      params: projectParamsSchema,
+      body: addProjectMemberSchema,
+    },
+    handler: controller.addProjectMember,
+  });
+
+  // DELETE /api/projects/:id/members/:memberId - Remove member from project
+  app.delete('/:id/members/:memberId', {
+    schema: { params: projectMemberParamsSchema },
+    handler: controller.removeProjectMember,
   });
 }
