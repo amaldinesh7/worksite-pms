@@ -242,20 +242,20 @@ describe('Stages API', () => {
 
       const party = await testData.createParty(ctx.organization.id, 'VENDOR');
 
-      // Create expenses for this stage
+      // Create expenses for this stage (rate * quantity)
       await testData.createExpense(
         ctx.organization.id,
         projectId,
         party.id,
         ctx.materialsCategory.id,
-        { stageId: stage.id, amount: 25000 }
+        { stageId: stage.id, rate: 250, quantity: 100 } // 25000
       );
       await testData.createExpense(
         ctx.organization.id,
         projectId,
         party.id,
         ctx.materialsCategory.id,
-        { stageId: stage.id, amount: 15000 }
+        { stageId: stage.id, rate: 150, quantity: 100 } // 15000
       );
 
       const response = await app.inject({

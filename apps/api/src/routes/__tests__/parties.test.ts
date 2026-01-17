@@ -114,6 +114,32 @@ describe('Parties API', () => {
       expect(body.data.items[0].type).toBe('VENDOR');
     });
 
+    it('should filter parties by isInternal', async () => {
+      await testData.createParty(ctx.organization.id, 'VENDOR', {
+        name: 'External Vendor',
+        isInternal: false,
+      });
+      await testData.createParty(ctx.organization.id, 'ACCOUNTANT', {
+        name: 'Internal Accountant',
+        isInternal: true,
+      });
+      await testData.createParty(ctx.organization.id, 'SUPERVISOR', {
+        name: 'Internal Supervisor',
+        isInternal: true,
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: '/api/parties?isInternal=true',
+        headers: authHeaders(ctx.organization.id),
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.data.items).toHaveLength(2);
+      expect(body.data.items.every((p: { isInternal: boolean }) => p.isInternal)).toBe(true);
+    });
+
     it('should filter parties by search', async () => {
       await testData.createParty(ctx.organization.id, 'VENDOR', { name: 'Unique Vendor Name' });
       await testData.createParty(ctx.organization.id, 'VENDOR', { name: 'Other Vendor' });
@@ -202,18 +228,20 @@ describe('Parties API', () => {
       const party = await testData.createParty(ctx.organization.id, 'VENDOR');
       const project = await testData.createProject(ctx.organization.id, ctx.residentialType.id);
 
-      // Create expenses
+      // Create expenses (rate * quantity = 500 * 100 = 50000)
       await testData.createExpense(
         ctx.organization.id,
         project.id,
         party.id,
         ctx.materialsCategory.id,
-        { amount: 50000 }
+        { rate: 500, quantity: 100 }
       );
 
       // Create payment
       await testData.createPayment(ctx.organization.id, project.id, {
         partyId: party.id,
+        type: 'OUT',
+        paymentMode: 'CASH',
         amount: 30000,
       });
 

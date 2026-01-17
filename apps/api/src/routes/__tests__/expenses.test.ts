@@ -30,11 +30,12 @@ describe('Expenses API', () => {
   });
 
   beforeEach(async () => {
+    await prisma.payment.deleteMany({ where: { organizationId: ctx.organization.id } });
     await prisma.expense.deleteMany({ where: { organizationId: ctx.organization.id } });
   });
 
   describe('POST /api/expenses', () => {
-    it('should create expense successfully', async () => {
+    it('should create expense successfully with rate and quantity', async () => {
       const response = await app.inject({
         method: 'POST',
         url: '/api/expenses',
@@ -43,9 +44,9 @@ describe('Expenses API', () => {
           projectId,
           partyId,
           expenseCategoryItemId: ctx.materialsCategory.id,
-          amount: 50000,
+          rate: 500,
+          quantity: 100,
           expenseDate: new Date().toISOString(),
-          paymentMode: 'Cash',
           notes: 'Test expense',
         },
       });
@@ -53,8 +54,34 @@ describe('Expenses API', () => {
       expect(response.statusCode).toBe(201);
       const body = response.json();
       expect(body.success).toBe(true);
-      expect(parseFloat(body.data.amount)).toBe(50000);
-      expect(body.data.paymentMode).toBe('Cash');
+      expect(parseFloat(body.data.rate)).toBe(500);
+      expect(parseFloat(body.data.quantity)).toBe(100);
+    });
+
+    it('should create expense with linked payment when paidAmount is provided', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/expenses',
+        headers: authHeaders(ctx.organization.id),
+        payload: {
+          projectId,
+          partyId,
+          expenseCategoryItemId: ctx.materialsCategory.id,
+          rate: 500,
+          quantity: 100,
+          expenseDate: new Date().toISOString(),
+          paidAmount: 25000,
+          paymentMode: 'CASH',
+        },
+      });
+
+      expect(response.statusCode).toBe(201);
+      const body = response.json();
+      expect(body.success).toBe(true);
+      expect(body.data.payments).toHaveLength(1);
+      expect(parseFloat(body.data.payments[0].amount)).toBe(25000);
+      expect(body.data.payments[0].paymentMode).toBe('CASH');
+      expect(body.data.payments[0].type).toBe('OUT');
     });
 
     it('should reject expense without required fields', async () => {
@@ -64,14 +91,14 @@ describe('Expenses API', () => {
         headers: authHeaders(ctx.organization.id),
         payload: {
           projectId,
-          // Missing partyId, expenseCategoryItemId, etc.
+          // Missing partyId, expenseCategoryItemId, rate, quantity, etc.
         },
       });
 
       expect(response.statusCode).toBe(400);
     });
 
-    it('should reject negative amount', async () => {
+    it('should reject negative rate', async () => {
       const response = await app.inject({
         method: 'POST',
         url: '/api/expenses',
@@ -80,9 +107,27 @@ describe('Expenses API', () => {
           projectId,
           partyId,
           expenseCategoryItemId: ctx.materialsCategory.id,
-          amount: -1000,
+          rate: -100,
+          quantity: 10,
           expenseDate: new Date().toISOString(),
-          paymentMode: 'Cash',
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+    });
+
+    it('should reject negative quantity', async () => {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/api/expenses',
+        headers: authHeaders(ctx.organization.id),
+        payload: {
+          projectId,
+          partyId,
+          expenseCategoryItemId: ctx.materialsCategory.id,
+          rate: 100,
+          quantity: -10,
+          expenseDate: new Date().toISOString(),
         },
       });
 
@@ -103,9 +148,9 @@ describe('Expenses API', () => {
           partyId,
           stageId: stage.id,
           expenseCategoryItemId: ctx.materialsCategory.id,
-          amount: 25000,
+          rate: 250,
+          quantity: 100,
           expenseDate: new Date().toISOString(),
-          paymentMode: 'Bank Transfer',
         },
       });
 
@@ -194,13 +239,22 @@ describe('Expenses API', () => {
   });
 
   describe('GET /api/expenses/:id', () => {
-    it('should get expense by id', async () => {
+    it('should get expense by id with payments', async () => {
       const expense = await testData.createExpense(
         ctx.organization.id,
         projectId,
         partyId,
         ctx.materialsCategory.id
       );
+
+      // Create a linked payment
+      await testData.createPayment(ctx.organization.id, projectId, {
+        partyId,
+        expenseId: expense.id,
+        type: 'OUT',
+        paymentMode: 'CASH',
+        amount: 5000,
+      });
 
       const response = await app.inject({
         method: 'GET',
@@ -211,6 +265,7 @@ describe('Expenses API', () => {
       expect(response.statusCode).toBe(200);
       const body = response.json();
       expect(body.data.id).toBe(expense.id);
+      expect(body.data.payments).toHaveLength(1);
     });
 
     it('should return 404 for non-existent expense', async () => {
@@ -225,13 +280,13 @@ describe('Expenses API', () => {
   });
 
   describe('PUT /api/expenses/:id', () => {
-    it('should update expense', async () => {
+    it('should update expense rate and quantity', async () => {
       const expense = await testData.createExpense(
         ctx.organization.id,
         projectId,
         partyId,
         ctx.materialsCategory.id,
-        { amount: 10000 }
+        { rate: 100, quantity: 10 }
       );
 
       const response = await app.inject({
@@ -239,14 +294,16 @@ describe('Expenses API', () => {
         url: `/api/expenses/${expense.id}`,
         headers: authHeaders(ctx.organization.id),
         payload: {
-          amount: 15000,
+          rate: 150,
+          quantity: 20,
           notes: 'Updated notes',
         },
       });
 
       expect(response.statusCode).toBe(200);
       const body = response.json();
-      expect(parseFloat(body.data.amount)).toBe(15000);
+      expect(parseFloat(body.data.rate)).toBe(150);
+      expect(parseFloat(body.data.quantity)).toBe(20);
       expect(body.data.notes).toBe('Updated notes');
     });
   });
@@ -274,23 +331,25 @@ describe('Expenses API', () => {
   });
 
   describe('GET /api/expenses/summary/by-category', () => {
-    it('should get expenses summary by category', async () => {
+    it('should get expenses summary by category (rate * quantity)', async () => {
+      // Create expenses with known rate and quantity
       await testData.createExpense(
         ctx.organization.id,
         projectId,
         partyId,
         ctx.materialsCategory.id,
-        { amount: 10000 }
+        { rate: 100, quantity: 100 } // Total: 10000
       );
       await testData.createExpense(
         ctx.organization.id,
         projectId,
         partyId,
         ctx.materialsCategory.id,
-        { amount: 15000 }
+        { rate: 150, quantity: 100 } // Total: 15000
       );
       await testData.createExpense(ctx.organization.id, projectId, partyId, ctx.labourCategory.id, {
-        amount: 20000,
+        rate: 200,
+        quantity: 100, // Total: 20000
       });
 
       const response = await app.inject({
