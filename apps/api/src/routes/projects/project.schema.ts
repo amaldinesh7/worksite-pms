@@ -6,9 +6,10 @@ import { z } from 'zod';
 
 export const createProjectSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  clientName: z.string().min(1, 'Client name is required'),
+  clientId: z.string().optional(),
   location: z.string().min(1, 'Location is required'),
   startDate: z.string().datetime(),
+  amount: z.number().positive().optional(),
   projectTypeItemId: z.string().min(1, 'Project type is required'),
 });
 

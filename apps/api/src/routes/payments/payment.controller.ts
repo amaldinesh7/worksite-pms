@@ -13,7 +13,9 @@ import type {
   UpdatePaymentInput,
   PaymentQuery,
   PaymentParams,
+  SummaryQuery,
 } from './payment.schema';
+import type { PaymentType, PaymentMode } from '@prisma/client';
 
 const handle = createErrorHandler('payment');
 
@@ -23,7 +25,7 @@ const handle = createErrorHandler('payment');
 export const listPayments = handle(
   'fetch',
   async (request: FastifyRequest<{ Querystring: PaymentQuery }>, reply: FastifyReply) => {
-    const { page, limit, projectId, partyId, startDate, endDate } = request.query;
+    const { page, limit, projectId, partyId, expenseId, type, startDate, endDate } = request.query;
     const skip = (page - 1) * limit;
 
     const { payments, total } = await paymentRepository.findAll(request.organizationId, {
@@ -31,6 +33,8 @@ export const listPayments = handle(
       take: limit,
       projectId,
       partyId,
+      expenseId,
+      type: type as PaymentType | undefined,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
     });
@@ -63,6 +67,8 @@ export const createPayment = handle(
   async (request: FastifyRequest<{ Body: CreatePaymentInput }>, reply: FastifyReply) => {
     const payment = await paymentRepository.create(request.organizationId, {
       ...request.body,
+      type: request.body.type as PaymentType,
+      paymentMode: request.body.paymentMode as PaymentMode,
       paymentDate: new Date(request.body.paymentDate),
     });
 
@@ -81,6 +87,8 @@ export const updatePayment = handle(
   ) => {
     const updateData = {
       ...request.body,
+      type: request.body.type as PaymentType | undefined,
+      paymentMode: request.body.paymentMode as PaymentMode | undefined,
       paymentDate: request.body.paymentDate ? new Date(request.body.paymentDate) : undefined,
     };
 
@@ -110,10 +118,12 @@ export const deletePayment = handle(
 // ============================================
 export const getPaymentsSummary = handle(
   'fetch',
-  async (request: FastifyRequest<{ Querystring: { projectId?: string } }>, reply: FastifyReply) => {
+  async (request: FastifyRequest<{ Querystring: SummaryQuery }>, reply: FastifyReply) => {
+    const { projectId, type } = request.query;
     const summary = await paymentRepository.getPaymentsSummary(
       request.organizationId,
-      request.query.projectId
+      projectId,
+      type as PaymentType | undefined
     );
 
     return sendSuccess(reply, summary);

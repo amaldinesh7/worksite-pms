@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+// Payment mode enum values
+const paymentModeValues = ['CASH', 'CHEQUE', 'ONLINE'] as const;
+
 // ============================================
 // Request Schemas
 // ============================================
@@ -12,10 +15,13 @@ export const createExpenseSchema = z.object({
   materialTypeItemId: z.string().optional(),
   labourTypeItemId: z.string().optional(),
   subWorkTypeItemId: z.string().optional(),
-  amount: z.number().positive('Amount must be positive'),
+  rate: z.number().positive('Rate must be positive'),
+  quantity: z.number().positive('Quantity must be positive'),
   expenseDate: z.string().datetime(),
-  paymentMode: z.string().min(1, 'Payment mode is required'),
   notes: z.string().optional(),
+  // Optional payment fields - if provided, creates a linked payment
+  paidAmount: z.number().positive('Paid amount must be positive').optional(),
+  paymentMode: z.enum(paymentModeValues).optional(),
 });
 
 export const updateExpenseSchema = z.object({
@@ -25,9 +31,9 @@ export const updateExpenseSchema = z.object({
   materialTypeItemId: z.string().nullable().optional(),
   labourTypeItemId: z.string().nullable().optional(),
   subWorkTypeItemId: z.string().nullable().optional(),
-  amount: z.number().positive().optional(),
+  rate: z.number().positive().optional(),
+  quantity: z.number().positive().optional(),
   expenseDate: z.string().datetime().optional(),
-  paymentMode: z.string().min(1).optional(),
   notes: z.string().nullable().optional(),
 });
 
