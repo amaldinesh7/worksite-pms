@@ -5,12 +5,14 @@ import type { Party, PartyType, Prisma } from '@prisma/client';
 export interface CreatePartyData {
   name: string;
   phone?: string;
+  location: string;
   type: PartyType;
 }
 
 export interface UpdatePartyData {
   name?: string;
   phone?: string;
+  location?: string;
   type?: PartyType;
 }
 
@@ -29,6 +31,7 @@ export class PartyRepository {
           organizationId,
           name: data.name,
           phone: data.phone,
+          location: data.location,
           type: data.type,
         },
       });
@@ -129,18 +132,20 @@ export class PartyRepository {
     balance: number;
   }> {
     try {
-      const [expensesSum, paymentsSum] = await Promise.all([
-        prisma.expense.aggregate({
-          where: { organizationId, partyId },
-          _sum: { amount: true },
-        }),
-        prisma.payment.aggregate({
-          where: { organizationId, partyId },
-          _sum: { amount: true },
-        }),
-      ]);
+      // Calculate expenses total (rate * quantity)
+      const expenses = await prisma.expense.findMany({
+        where: { organizationId, partyId },
+        select: { rate: true, quantity: true },
+      });
+      const totalExpenses = expenses.reduce(
+        (sum, exp) => sum + exp.rate.toNumber() * exp.quantity.toNumber(),
+        0
+      );
 
-      const totalExpenses = expensesSum._sum.amount?.toNumber() || 0;
+      const paymentsSum = await prisma.payment.aggregate({
+        where: { organizationId, partyId },
+        _sum: { amount: true },
+      });
       const totalPayments = paymentsSum._sum.amount?.toNumber() || 0;
       const balance = totalExpenses - totalPayments;
 
@@ -148,6 +153,71 @@ export class PartyRepository {
         totalExpenses,
         totalPayments,
         balance,
+      };
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
+
+  // Get summary of all parties by type (for stats cards)
+  async getSummary(organizationId: string): Promise<{
+    totalVendors: number;
+    totalLabours: number;
+    totalSubcontractors: number;
+    vendorsBalance: number;
+    laboursBalance: number;
+    subcontractorsBalance: number;
+  }> {
+    try {
+      // Get counts by type
+      const [vendorCount, labourCount, subcontractorCount] = await Promise.all([
+        prisma.party.count({ where: { organizationId, type: 'VENDOR' } }),
+        prisma.party.count({ where: { organizationId, type: 'LABOUR' } }),
+        prisma.party.count({ where: { organizationId, type: 'SUBCONTRACTOR' } }),
+      ]);
+
+      // Get balances by type (expenses - payments)
+      const getBalanceByType = async (type: PartyType): Promise<number> => {
+        const parties = await prisma.party.findMany({
+          where: { organizationId, type },
+          select: { id: true },
+        });
+
+        if (parties.length === 0) return 0;
+
+        const partyIds = parties.map((p) => p.id);
+
+        // Calculate expenses total (rate * quantity)
+        const expenses = await prisma.expense.findMany({
+          where: { organizationId, partyId: { in: partyIds } },
+          select: { rate: true, quantity: true },
+        });
+        const totalExpenses = expenses.reduce(
+          (sum, exp) => sum + exp.rate.toNumber() * exp.quantity.toNumber(),
+          0
+        );
+
+        const paymentsSum = await prisma.payment.aggregate({
+          where: { organizationId, partyId: { in: partyIds } },
+          _sum: { amount: true },
+        });
+        const totalPayments = paymentsSum._sum.amount?.toNumber() || 0;
+        return totalExpenses - totalPayments;
+      };
+
+      const [vendorsBalance, laboursBalance, subcontractorsBalance] = await Promise.all([
+        getBalanceByType('VENDOR'),
+        getBalanceByType('LABOUR'),
+        getBalanceByType('SUBCONTRACTOR'),
+      ]);
+
+      return {
+        totalVendors: vendorCount,
+        totalLabours: labourCount,
+        totalSubcontractors: subcontractorCount,
+        vendorsBalance,
+        laboursBalance,
+        subcontractorsBalance,
       };
     } catch (error) {
       throw handlePrismaError(error);

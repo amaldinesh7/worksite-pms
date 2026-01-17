@@ -12,15 +12,38 @@ datasource db {
 // ============================================
 
 enum OrganizationRole {
-  ADMIN
-  MANAGER
-  ACCOUNTANT
+  ADMIN      // Full access to everything
+  MANAGER    // Manage projects, parties, expenses, payments
+  ACCOUNTANT // View/manage expenses and payments only
+  SUPERVISOR // View assigned projects, add expenses
+  CLIENT     // View their project progress and payments
 }
 
 enum PartyType {
   VENDOR
   LABOUR
   SUBCONTRACTOR
+  CLIENT
+  ACCOUNTANT
+  SUPERVISOR
+  PROJECT_MANAGER
+}
+
+enum PaymentType {
+  IN
+  OUT
+}
+
+enum PaymentMode {
+  CASH
+  CHEQUE
+  ONLINE
+}
+
+enum EntityType {
+  EXPENSE
+  PAYMENT
+  DOCUMENT
 }
 
 // ============================================
@@ -42,6 +65,7 @@ model Organization {
   payments       Payment[]
   documents      Document[]
   stages         Stage[]
+  attachments    Attachment[]
 
   @@map("organizations")
 }
@@ -49,12 +73,14 @@ model Organization {
 model User {
   id        String   @id @default(cuid())
   name      String
-  phone     String   @unique
+  phone     String?  @unique
+  email     String?  @unique
   createdAt DateTime @default(now())
 
   // Relations
   memberships   OrganizationMember[]
   refreshTokens RefreshToken[]
+  party         Party?
 
   @@map("users")
 }
@@ -97,13 +123,34 @@ model OrganizationMember {
   createdAt      DateTime         @default(now())
 
   // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectAccess ProjectAccess[]
 
   @@unique([organizationId, userId])
   @@index([organizationId])
   @@index([userId])
   @@map("organization_members")
+}
+
+// ============================================
+// Project Access (Scoped Permissions)
+// ============================================
+
+model ProjectAccess {
+  id        String   @id @default(cuid())
+  memberId  String
+  projectId String
+  createdAt DateTime @default(now())
+
+  // Relations
+  member  OrganizationMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  project Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, projectId])
+  @@index([memberId])
+  @@index([projectId])
+  @@map("project_access")
 }
 
 // ============================================
@@ -162,21 +209,25 @@ model Project {
   id                String   @id @default(cuid())
   organizationId    String
   name              String
-  clientName        String
+  clientId          String?
   location          String
   startDate         DateTime
+  amount            Decimal? @db.Decimal(15, 2)
   projectTypeItemId String
   createdAt         DateTime @default(now())
 
   // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  projectType  CategoryItem @relation("ProjectType", fields: [projectTypeItemId], references: [id])
-  stages       Stage[]
-  expenses     Expense[]
-  payments     Payment[]
-  documents    Document[]
+  organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client        Party?          @relation("ProjectClient", fields: [clientId], references: [id])
+  projectType   CategoryItem    @relation("ProjectType", fields: [projectTypeItemId], references: [id])
+  stages        Stage[]
+  expenses      Expense[]
+  payments      Payment[]
+  documents     Document[]
+  projectAccess ProjectAccess[]
 
   @@index([organizationId])
+  @@index([clientId])
   @@index([projectTypeItemId])
   @@map("projects")
 }
@@ -186,12 +237,12 @@ model Project {
 // ============================================
 
 model Stage {
-  id           String   @id @default(cuid())
+  id             String   @id @default(cuid())
   organizationId String
-  projectId    String
-  name         String
-  budgetAmount Decimal  @db.Decimal(15, 2)
-  createdAt    DateTime @default(now())
+  projectId      String
+  name           String
+  budgetAmount   Decimal  @db.Decimal(15, 2)
+  createdAt      DateTime @default(now())
 
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -213,16 +264,24 @@ model Party {
   organizationId String
   name           String
   phone          String?
+  location       String
   type           PartyType
+  isInternal     Boolean   @default(false)
+  profilePicture String?
+  userId         String?   @unique
   createdAt      DateTime  @default(now())
 
   // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  expenses     Expense[]
-  payments     Payment[]
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user             User?        @relation(fields: [userId], references: [id])
+  expenses         Expense[]
+  payments         Payment[]
+  projectsAsClient Project[]    @relation("ProjectClient")
 
   @@index([organizationId])
   @@index([type])
+  @@index([isInternal])
+  @@index([userId])
   @@map("parties")
 }
 
@@ -240,9 +299,9 @@ model Expense {
   materialTypeItemId    String?
   labourTypeItemId      String?
   subWorkTypeItemId     String?
-  amount                Decimal  @db.Decimal(15, 2)
+  rate                  Decimal  @db.Decimal(15, 2)
+  quantity              Decimal  @db.Decimal(15, 4)
   expenseDate           DateTime
-  paymentMode           String
   notes                 String?  @db.Text
   createdAt             DateTime @default(now())
 
@@ -255,6 +314,7 @@ model Expense {
   materialType    CategoryItem? @relation("MaterialType", fields: [materialTypeItemId], references: [id])
   labourType      CategoryItem? @relation("LabourType", fields: [labourTypeItemId], references: [id])
   subWorkType     CategoryItem? @relation("SubWorkType", fields: [subWorkTypeItemId], references: [id])
+  payments        Payment[]
 
   @@index([organizationId])
   @@index([projectId])
@@ -269,24 +329,30 @@ model Expense {
 // ============================================
 
 model Payment {
-  id             String   @id @default(cuid())
+  id             String      @id @default(cuid())
   organizationId String
   projectId      String
   partyId        String?
-  amount         Decimal  @db.Decimal(15, 2)
+  expenseId      String?
+  type           PaymentType
+  paymentMode    PaymentMode
+  amount         Decimal     @db.Decimal(15, 2)
   paymentDate    DateTime
-  notes          String?  @db.Text
-  createdAt      DateTime @default(now())
+  notes          String?     @db.Text
+  createdAt      DateTime    @default(now())
 
   // Relations
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   party        Party?       @relation(fields: [partyId], references: [id])
+  expense      Expense?     @relation(fields: [expenseId], references: [id])
 
   @@index([organizationId])
   @@index([projectId])
   @@index([partyId])
+  @@index([expenseId])
   @@index([paymentDate])
+  @@index([type])
   @@map("payments")
 }
 
@@ -301,10 +367,8 @@ model Document {
   fileName       String
   fileType       String
   fileUrl        String
-  storagePath    String   // Path in storage bucket
-  mimeType       String   // Detected MIME type
-  originalSize   Int      // Size before compression (bytes)
-  compressedSize Int      // Size after compression (bytes)
+  storagePath    String
+  mimeType       String
   uploadedAt     DateTime @default(now())
 
   // Relations
@@ -314,4 +378,44 @@ model Document {
   @@index([organizationId])
   @@index([projectId])
   @@map("documents")
+}
+
+// ============================================
+// Attachments (Unified file storage)
+// ============================================
+
+model Attachment {
+  id             String   @id @default(cuid())
+  organizationId String
+  fileName       String
+  fileUrl        String
+  storagePath    String
+  mimeType       String
+  uploadedAt     DateTime @default(now())
+
+  // Relations
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  entities     EntityAttachment[]
+
+  @@index([organizationId])
+  @@map("attachments")
+}
+
+// ============================================
+// Entity Attachments (Junction table)
+// ============================================
+
+model EntityAttachment {
+  id           String     @id @default(cuid())
+  attachmentId String
+  entityType   EntityType
+  entityId     String
+  createdAt    DateTime   @default(now())
+
+  // Relations
+  attachment Attachment @relation(fields: [attachmentId], references: [id], onDelete: Cascade)
+
+  @@unique([attachmentId, entityType, entityId])
+  @@index([entityType, entityId])
+  @@map("entity_attachments")
 }
