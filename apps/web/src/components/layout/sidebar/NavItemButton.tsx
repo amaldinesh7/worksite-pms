@@ -22,7 +22,11 @@ export function NavItemButton({
   const location = useLocation();
 
   // Use prop if provided, otherwise derive from current location
-  const isActive = isActiveProp ?? location.pathname === item.href;
+  const isActive =
+    isActiveProp ??
+    (item.href === '/'
+      ? location.pathname === '/'
+      : location.pathname === item.href || location.pathname.startsWith(`${item.href}/`));
 
   const handleClick = () => {
     onClick?.(item.href);

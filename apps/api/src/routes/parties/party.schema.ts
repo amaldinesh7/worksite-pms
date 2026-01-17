@@ -49,6 +49,22 @@ export const partyParamsSchema = z.object({
 });
 
 // ============================================
+// Party Projects & Transactions Schemas
+// ============================================
+
+export const partyProjectsQuerySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(50),
+});
+
+export const partyTransactionsQuerySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(10),
+  projectId: z.string().optional(),
+  type: z.enum(['payments', 'expenses']).default('payments'),
+});
+
+// ============================================
 // Invite/Link Schemas
 // ============================================
 
@@ -93,3 +109,5 @@ export type PartyParams = z.infer<typeof partyParamsSchema>;
 export type InvitePartyInput = z.infer<typeof invitePartySchema>;
 export type LinkPartyInput = z.infer<typeof linkPartySchema>;
 export type GrantProjectAccessInput = z.infer<typeof grantProjectAccessSchema>;
+export type PartyProjectsQuery = z.infer<typeof partyProjectsQuerySchema>;
+export type PartyTransactionsQuery = z.infer<typeof partyTransactionsQuerySchema>;

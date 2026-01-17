@@ -7,6 +7,8 @@ import {
   updatePartySchema,
   partyQuerySchema,
   partyParamsSchema,
+  partyProjectsQuerySchema,
+  partyTransactionsQuerySchema,
 } from './party.schema';
 
 export default async function partyRoutes(fastify: FastifyInstance) {
@@ -36,6 +38,24 @@ export default async function partyRoutes(fastify: FastifyInstance) {
   app.get('/:id/stats', {
     schema: { params: partyParamsSchema },
     handler: controller.getPartyStats,
+  });
+
+  // GET /api/parties/:id/projects - Get party projects with credits
+  app.get('/:id/projects', {
+    schema: {
+      params: partyParamsSchema,
+      querystring: partyProjectsQuerySchema,
+    },
+    handler: controller.getPartyProjects,
+  });
+
+  // GET /api/parties/:id/transactions - Get party transactions (payments/expenses)
+  app.get('/:id/transactions', {
+    schema: {
+      params: partyParamsSchema,
+      querystring: partyTransactionsQuerySchema,
+    },
+    handler: controller.getPartyTransactions,
   });
 
   // POST /api/parties - Create party

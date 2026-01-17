@@ -5,6 +5,8 @@ import { Layout, PageContent, Header } from '@/components/layout';
 import PhoneInput from './pages/auth/PhoneInput';
 import VerifyOtp from './pages/auth/VerifyOtp';
 import CategoriesPage from './pages/settings/CategoriesPage';
+import PartiesPage from './pages/parties/PartiesPage';
+import PartyDetailPage from './pages/parties/PartyDetailPage';
 
 // Auth Route wrapper - redirects to home if already logged in
 function AuthRoute({ children }: { children: React.ReactNode }) {
@@ -92,6 +94,8 @@ export default function App() {
         <Route element={<ProtectedLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="categories" element={<CategoriesPage />} />
+          <Route path="parties" element={<PartiesPage />} />
+          <Route path="parties/:id" element={<PartyDetailPage />} />
           {/* Add more protected routes here as needed */}
         </Route>
 

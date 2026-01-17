@@ -1,0 +1,696 @@
+---
+description: React Standard coding conventions for maintainable, readable React code
+globs:
+  - apps/web/src/**/*.tsx
+  - apps/web/src/**/*.ts
+  - apps/mobile/**/*.tsx
+alwaysApply: true
+---
+
+# React Standard - Coding Conventions
+
+Based on [The React Standard](https://www.frontend-junction.com/blog/the-react-standard), these rules ensure readable, maintainable React code.
+
+---
+
+## 1. Readability Is Reliability
+
+**Principle**: Code should be explicit and self-documenting. Avoid clever abstractions that hide intent.
+
+### Rules:
+- ✅ Use explicit, descriptive names
+- ✅ Prefer multiple lines over nested ternaries
+- ✅ Extract complex logic to named functions
+- ❌ No clever one-liners that obscure meaning
+
+### Examples:
+
+```tsx
+// ✅ GOOD - Explicit and clear
+function UserProfile({ user }: UserProfileProps) {
+  const isUserActive = user.status === 'active';
+  const hasProfilePicture = user.avatarUrl !== null;
+  
+  if (!isUserActive) {
+    return <InactiveUserMessage />;
+  }
+  
+  return (
+    <div>
+      {hasProfilePicture ? (
+        <img src={user.avatarUrl} alt={user.name} />
+      ) : (
+        <DefaultAvatar />
+      )}
+    </div>
+  );
+}
+
+// ❌ BAD - Clever but unclear
+function UserProfile({ user }: UserProfileProps) {
+  return user.status === 'active' 
+    ? user.avatarUrl ? <img src={user.avatarUrl} /> : <DefaultAvatar />
+    : <InactiveUserMessage />;
+}
+```
+
+---
+
+## 2. Booleans Must Ask Questions
+
+**Principle**: Boolean variables and props should read like questions with clear yes/no answers.
+
+### Rules:
+- ✅ Prefix booleans with: `is`, `has`, `should`, `can`, `did`, `will`
+- ✅ Use positive boolean names (avoid `isNotVisible`, use `isVisible`)
+- ❌ No boolean props without question prefixes
+
+### Examples:
+
+```tsx
+// ✅ GOOD - Boolean props ask questions
+interface ButtonProps {
+  isDisabled?: boolean;
+  isLoading?: boolean;
+  hasIcon?: boolean;
+  shouldShowTooltip?: boolean;
+}
+
+function Button({ isDisabled, isLoading, hasIcon }: ButtonProps) {
+  return (
+    <button disabled={isDisabled}>
+      {isLoading && <Spinner />}
+      {hasIcon && <Icon />}
+    </button>
+  );
+}
+
+// ❌ BAD - Not questions
+interface ButtonProps {
+  disabled?: boolean;  // ❌ Use isDisabled
+  loading?: boolean;   // ❌ Use isLoading
+  icon?: boolean;      // ❌ Use hasIcon
+}
+```
+
+### Common Patterns:
+
+```tsx
+// State booleans
+const [isOpen, setIsOpen] = useState(false);
+const [hasError, setHasError] = useState(false);
+const [shouldFetch, setShouldFetch] = useState(true);
+
+// Props
+interface ModalProps {
+  isOpen: boolean;
+  isClosable?: boolean;
+  hasBackdrop?: boolean;
+  shouldCloseOnEscape?: boolean;
+}
+
+// Computed booleans
+const isUserLoggedIn = user !== null;
+const hasPermissions = user.role === 'admin';
+const canEdit = hasPermissions && !isReadOnly;
+```
+
+---
+
+## 3. Event Props vs. Event Handlers
+
+**Principle**: Distinguish between event props (passed down) and event handlers (defined locally).
+
+### Rules:
+- ✅ Event props: Use `on` prefix (`onClick`, `onSubmit`, `onChange`)
+- ✅ Event handlers: Use `handle` prefix (`handleClick`, `handleSubmit`, `handleChange`)
+- ✅ Callbacks: Use `on` prefix when passed as props
+
+### Examples:
+
+```tsx
+// ✅ GOOD - Clear distinction
+interface ButtonProps {
+  onClick: () => void;  // Event prop (passed from parent)
+}
+
+function Form() {
+  // Event handler (defined locally)
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    // ... submit logic
+  };
+  
+  const handleInputChange = (value: string) => {
+    // ... change logic
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <Input onChange={handleInputChange} />
+      <Button onClick={handleSubmit}>Submit</Button>
+    </form>
+  );
+}
+
+// ❌ BAD - Unclear naming
+function Form() {
+  const submit = () => { /* ... */ };  // ❌ Should be handleSubmit
+  const onChange = () => { /* ... */ }; // ❌ Should be handleChange
+  
+  return <form onSubmit={submit} />;
+}
+```
+
+### Pattern:
+
+```tsx
+// Component receives event props (on*)
+interface CardProps {
+  onClick: () => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+// Component defines event handlers (handle*)
+function CardList() {
+  const handleCardClick = (id: string) => {
+    // ... logic
+  };
+  
+  const handleEdit = (id: string) => {
+    // ... logic
+  };
+  
+  return (
+    <Card
+      onClick={() => handleCardClick(card.id)}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+    />
+  );
+}
+```
+
+---
+
+## 4. Destructure Props at the Boundary
+
+**Principle**: Destructure props in the function signature, not inside the component body.
+
+### Rules:
+- ✅ Destructure props in function parameters
+- ✅ Use rest props for spreading (`...rest`)
+- ❌ No destructuring inside component body
+
+### Examples:
+
+```tsx
+// ✅ GOOD - Destructure at boundary
+interface ButtonProps {
+  variant: 'primary' | 'secondary';
+  size: 'sm' | 'md' | 'lg';
+  children: React.ReactNode;
+  className?: string;
+}
+
+function Button({ 
+  variant, 
+  size, 
+  children, 
+  className,
+  ...rest 
+}: ButtonProps) {
+  return (
+    <button 
+      className={cn(baseStyles, variantStyles[variant], className)}
+      {...rest}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ❌ BAD - Destructuring inside body
+function Button(props: ButtonProps) {
+  const { variant, size, children } = props;  // ❌ Do this in signature
+  return <button>{children}</button>;
+}
+```
+
+### With Default Values:
+
+```tsx
+// ✅ GOOD - Defaults in destructuring
+function Button({ 
+  variant = 'primary',
+  size = 'md',
+  children,
+  ...rest 
+}: ButtonProps) {
+  // ...
+}
+```
+
+---
+
+## 5. Escape Hatch Pattern (useEffect)
+
+**Principle**: `useEffect` is an escape hatch for side effects. Use it sparingly and explicitly.
+
+### Rules:
+- ✅ Use `useEffect` ONLY for side effects (API calls, subscriptions, DOM manipulation)
+- ✅ Prefer event handlers for user interactions
+- ✅ Extract complex effects to custom hooks
+- ❌ No effects for derived state (use `useMemo` or `useState` with computed values)
+
+### Examples:
+
+```tsx
+// ✅ GOOD - Side effect (API call)
+function UserProfile({ userId }: { userId: string }) {
+  const [user, setUser] = useState<User | null>(null);
+  
+  useEffect(() => {
+    // Side effect: fetching data
+    fetchUser(userId).then(setUser);
+  }, [userId]);
+  
+  return <div>{user?.name}</div>;
+}
+
+// ✅ BETTER - Extract to custom hook
+function useUser(userId: string) {
+  const [user, setUser] = useState<User | null>(null);
+  
+  useEffect(() => {
+    fetchUser(userId).then(setUser);
+  }, [userId]);
+  
+  return user;
+}
+
+function UserProfile({ userId }: { userId: string }) {
+  const user = useUser(userId);
+  return <div>{user?.name}</div>;
+}
+
+// ❌ BAD - Not a side effect (derived state)
+function Counter({ initialCount }: { initialCount: number }) {
+  const [count, setCount] = useState(initialCount);
+  
+  useEffect(() => {
+    setCount(initialCount);  // ❌ Use useState with key or derived value
+  }, [initialCount]);
+  
+  return <div>{count}</div>;
+}
+
+// ✅ GOOD - Derived state without effect
+function Counter({ initialCount }: { initialCount: number }) {
+  const [count, setCount] = useState(initialCount);
+  
+  // Reset when initialCount changes (if needed)
+  const resetCount = () => setCount(initialCount);
+  
+  return <div>{count}</div>;
+}
+```
+
+### Effect Dependencies:
+
+```tsx
+// ✅ GOOD - Explicit dependencies
+useEffect(() => {
+  const subscription = subscribe(userId);
+  return () => subscription.unsubscribe();
+}, [userId]);  // Clear dependency
+
+// ❌ BAD - Missing dependencies
+useEffect(() => {
+  fetchData(userId);  // ❌ userId not in deps
+}, []);  // Empty deps array
+```
+
+---
+
+## 6. Custom Hooks for Reusability
+
+**Principle**: Extract reusable logic to custom hooks. Keep components focused on rendering.
+
+### Rules:
+- ✅ Extract data fetching to hooks
+- ✅ Extract form logic to hooks
+- ✅ Extract complex state logic to hooks
+- ✅ Hooks return what components need (data, handlers, state)
+
+### Examples:
+
+```tsx
+// ✅ GOOD - Custom hook for data fetching
+function useParties(filters: PartyFilters) {
+  const [parties, setParties] = useState<Party[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  
+  useEffect(() => {
+    setIsLoading(true);
+    fetchParties(filters)
+      .then(setParties)
+      .catch(setError)
+      .finally(() => setIsLoading(false));
+  }, [filters]);
+  
+  return { parties, isLoading, error };
+}
+
+function PartiesPage() {
+  const { parties, isLoading, error } = useParties({ type: 'VENDOR' });
+  
+  if (isLoading) return <Spinner />;
+  if (error) return <ErrorMessage error={error} />;
+  
+  return <PartiesTable parties={parties} />;
+}
+
+// ✅ GOOD - Custom hook for form logic
+function usePartyForm(initialData?: Party) {
+  const [formData, setFormData] = useState<PartyFormData>(
+    initialData || defaultFormData
+  );
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const handleChange = (field: keyof PartyFormData, value: unknown) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user types
+    if (errors[field]) {
+      setErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+  
+  const validate = () => {
+    // ... validation logic
+  };
+  
+  return {
+    formData,
+    errors,
+    handleChange,
+    validate,
+    setFormData,
+  };
+}
+```
+
+---
+
+## 7. Memoization: A Scalpel, Not a Sledgehammer
+
+**Principle**: Memoize only when necessary. Premature optimization is the root of all evil.
+
+### Rules:
+- ✅ Use `useMemo` for expensive computations
+- ✅ Use `useCallback` for stable function references (when needed for child memoization)
+- ✅ Use `React.memo` for expensive components that re-render frequently
+- ❌ Don't memoize everything "just in case"
+- ❌ Don't memoize simple computations
+
+### Examples:
+
+```tsx
+// ✅ GOOD - Expensive computation
+function DataTable({ data, filters }: DataTableProps) {
+  // Expensive: filtering and sorting large dataset
+  const filteredData = useMemo(() => {
+    return data
+      .filter(item => matchesFilters(item, filters))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [data, filters]);
+  
+  return <Table data={filteredData} />;
+}
+
+// ❌ BAD - Simple computation (no memo needed)
+function UserCard({ user }: UserCardProps) {
+  // ❌ Unnecessary memoization
+  const fullName = useMemo(() => {
+    return `${user.firstName} ${user.lastName}`;
+  }, [user.firstName, user.lastName]);
+  
+  return <div>{fullName}</div>;
+}
+
+// ✅ GOOD - Simple computation without memo
+function UserCard({ user }: UserCardProps) {
+  const fullName = `${user.firstName} ${user.lastName}`;
+  return <div>{fullName}</div>;
+}
+
+// ✅ GOOD - useCallback for stable references (when needed)
+function ExpensiveChild({ onClick }: { onClick: () => void }) {
+  // This component is memoized, so onClick should be stable
+  return <button onClick={onClick}>Click</button>;
+}
+
+const MemoizedChild = React.memo(ExpensiveChild);
+
+function Parent() {
+  const [count, setCount] = useState(0);
+  
+  // ✅ Stable callback (only needed because child is memoized)
+  const handleClick = useCallback(() => {
+    console.log('clicked');
+  }, []);
+  
+  return (
+    <div>
+      <button onClick={() => setCount(c => c + 1)}>Count: {count}</button>
+      <MemoizedChild onClick={handleClick} />
+    </div>
+  );
+}
+```
+
+### When to Memoize:
+
+- ✅ **useMemo**: Expensive calculations, object/array creation for dependencies
+- ✅ **useCallback**: Functions passed to memoized children, functions in dependency arrays
+- ✅ **React.memo**: Components that render frequently with same props
+- ❌ **Don't memoize**: Simple computations, frequently changing props, small components
+
+---
+
+## 8. Architecture: Co-location Beats Layering
+
+**Principle**: Keep related code together. Feature-based structure over layer-based structure.
+
+### Rules:
+- ✅ Group by feature, not by file type
+- ✅ Co-locate components, hooks, types, and utilities
+- ✅ Use index files for clean imports
+- ❌ Avoid deep folder hierarchies
+
+### Structure:
+
+```
+// ✅ GOOD - Feature-based structure
+src/
+  features/
+    parties/
+      components/
+        PartiesTable.tsx
+        PartyForm.tsx
+        PartyCard.tsx
+      hooks/
+        useParties.ts
+        usePartyForm.ts
+      types.ts
+      api.ts
+      index.ts  // Re-exports
+    projects/
+      components/
+      hooks/
+      types.ts
+      index.ts
+
+// ❌ BAD - Layer-based structure
+src/
+  components/
+    parties/
+  hooks/
+    parties/
+  types/
+    parties/
+  api/
+    parties/
+```
+
+### Co-location Example:
+
+```tsx
+// features/parties/types.ts
+export interface Party {
+  id: string;
+  name: string;
+  type: PartyType;
+}
+
+// features/parties/hooks/useParties.ts
+import type { Party } from '../types';
+
+export function useParties() {
+  // ...
+}
+
+// features/parties/components/PartiesTable.tsx
+import { useParties } from '../hooks/useParties';
+import type { Party } from '../types';
+
+export function PartiesTable() {
+  const { parties } = useParties();
+  // ...
+}
+
+// features/parties/index.ts
+export { PartiesTable } from './components/PartiesTable';
+export { useParties } from './hooks/useParties';
+export type { Party } from './types';
+```
+
+---
+
+## 9. Named Exports Over Default Exports
+
+**Principle**: Use named exports for better refactoring, autocomplete, and clarity.
+
+### Rules:
+- ✅ Prefer named exports (`export function Component`)
+- ✅ Use default exports ONLY for pages/routes (Next.js/Expo Router convention)
+- ✅ Use index files for re-exports
+- ❌ Avoid default exports for reusable components
+
+### Examples:
+
+```tsx
+// ✅ GOOD - Named export
+export function Button({ children }: ButtonProps) {
+  return <button>{children}</button>;
+}
+
+// ✅ GOOD - Multiple named exports
+export function Card({ children }: CardProps) {
+  return <div className="card">{children}</div>;
+}
+
+export function CardHeader({ children }: CardHeaderProps) {
+  return <div className="card-header">{children}</div>;
+}
+
+export function CardContent({ children }: CardContentProps) {
+  return <div className="card-content">{children}</div>;
+}
+
+// ✅ GOOD - Default export for pages (router convention)
+export default function PartiesPage() {
+  return <div>Parties</div>;
+}
+
+// ✅ GOOD - Index file for clean imports
+// components/ui/index.ts
+export { Button } from './button';
+export { Card, CardHeader, CardContent } from './card';
+
+// Usage
+import { Button, Card, CardHeader } from '@/components/ui';
+```
+
+---
+
+## 10. TypeScript Patterns
+
+**Principle**: Leverage TypeScript for type safety and better developer experience.
+
+### Rules:
+- ✅ Use discriminated unions for state machines
+- ✅ Use `type` for unions/intersections, `interface` for objects
+- ✅ Prefer `type` for component props
+- ✅ Use `as const` for literal types
+- ❌ Avoid `any` (use `unknown` if needed)
+
+### Examples:
+
+```tsx
+// ✅ GOOD - Discriminated union for state
+type AsyncState<T> =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: T }
+  | { status: 'error'; error: Error };
+
+function useAsyncData<T>() {
+  const [state, setState] = useState<AsyncState<T>>({ status: 'idle' });
+  
+  // TypeScript knows which properties exist based on status
+  if (state.status === 'success') {
+    console.log(state.data);  // ✅ TypeScript knows data exists
+  }
+  
+  return state;
+}
+
+// ✅ GOOD - Props type
+type ButtonProps = {
+  variant: 'primary' | 'secondary';
+  size?: 'sm' | 'md' | 'lg';
+  children: React.ReactNode;
+  onClick?: () => void;
+};
+
+// ✅ GOOD - as const for literal types
+const THEMES = ['light', 'dark', 'auto'] as const;
+type Theme = typeof THEMES[number];  // 'light' | 'dark' | 'auto'
+
+// ✅ GOOD - Generic components
+interface ListProps<T> {
+  items: T[];
+  renderItem: (item: T) => React.ReactNode;
+}
+
+function List<T>({ items, renderItem }: ListProps<T>) {
+  return (
+    <ul>
+      {items.map((item, index) => (
+        <li key={index}>{renderItem(item)}</li>
+      ))}
+    </ul>
+  );
+}
+```
+
+---
+
+## Summary Checklist
+
+When writing React components, ensure:
+
+- [ ] **Readability**: Code is explicit and self-documenting
+- [ ] **Booleans**: All boolean props/variables use question prefixes (`is`, `has`, `should`, etc.)
+- [ ] **Events**: Event props use `on` prefix, handlers use `handle` prefix
+- [ ] **Props**: Destructured in function signature, not inside body
+- [ ] **Effects**: `useEffect` only for side effects, extracted to hooks when complex
+- [ ] **Hooks**: Reusable logic extracted to custom hooks
+- [ ] **Memoization**: Only when necessary (expensive computations, stable refs)
+- [ ] **Structure**: Feature-based co-location over layer-based separation
+- [ ] **Exports**: Named exports for components, default only for pages
+- [ ] **Types**: Discriminated unions, proper TypeScript patterns
+
+---
+
+## References
+
+- [The React Standard](https://www.frontend-junction.com/blog/the-react-standard)
+- [React TypeScript Cheatsheet](https://react-typescript-cheatsheet.netlify.app/)
