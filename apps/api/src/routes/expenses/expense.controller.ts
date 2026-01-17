@@ -14,6 +14,7 @@ import type {
   ExpenseQuery,
   ExpenseParams,
 } from './expense.schema';
+import type { PaymentMode } from '@prisma/client';
 
 // Create a resource-specific error handler
 const handle = createErrorHandler('expense');
@@ -63,9 +64,13 @@ export const getExpense = handle(
 export const createExpense = handle(
   'create',
   async (request: FastifyRequest<{ Body: CreateExpenseInput }>, reply: FastifyReply) => {
+    const { paidAmount, paymentMode, ...expenseData } = request.body;
+
     const expense = await expenseRepository.create(request.organizationId, {
-      ...request.body,
-      expenseDate: new Date(request.body.expenseDate),
+      ...expenseData,
+      expenseDate: new Date(expenseData.expenseDate),
+      paidAmount,
+      paymentMode: paymentMode as PaymentMode | undefined,
     });
 
     return sendSuccess(reply, expense, 201);

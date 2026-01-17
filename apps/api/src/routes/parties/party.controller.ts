@@ -101,3 +101,15 @@ export const getPartyStats = handle(
     return sendSuccess(reply, stats);
   }
 );
+
+// ============================================
+// Get Parties Summary
+// ============================================
+export const getPartiesSummary = handle(
+  'fetch',
+  async (request: FastifyRequest, reply: FastifyReply) => {
+    const summary = await partyRepository.getSummary(request.organizationId);
+
+    return sendSuccess(reply, summary);
+  }
+);

@@ -21,6 +21,11 @@ export default async function partyRoutes(fastify: FastifyInstance) {
     handler: controller.listParties,
   });
 
+  // GET /api/parties/summary - Get summary stats for all parties
+  app.get('/summary', {
+    handler: controller.getPartiesSummary,
+  });
+
   // GET /api/parties/:id - Get party by ID
   app.get('/:id', {
     schema: { params: partyParamsSchema },
