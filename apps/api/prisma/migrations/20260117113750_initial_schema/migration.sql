@@ -1,8 +1,17 @@
 -- CreateEnum
-CREATE TYPE "OrganizationRole" AS ENUM ('ADMIN', 'MANAGER', 'ACCOUNTANT');
+CREATE TYPE "OrganizationRole" AS ENUM ('ADMIN', 'MANAGER', 'ACCOUNTANT', 'SUPERVISOR', 'CLIENT');
 
 -- CreateEnum
-CREATE TYPE "PartyType" AS ENUM ('VENDOR', 'LABOUR', 'SUBCONTRACTOR');
+CREATE TYPE "PartyType" AS ENUM ('VENDOR', 'LABOUR', 'SUBCONTRACTOR', 'CLIENT', 'ACCOUNTANT', 'SUPERVISOR', 'PROJECT_MANAGER');
+
+-- CreateEnum
+CREATE TYPE "PaymentType" AS ENUM ('IN', 'OUT');
+
+-- CreateEnum
+CREATE TYPE "PaymentMode" AS ENUM ('CASH', 'CHEQUE', 'ONLINE');
+
+-- CreateEnum
+CREATE TYPE "EntityType" AS ENUM ('EXPENSE', 'PAYMENT', 'DOCUMENT');
 
 -- CreateTable
 CREATE TABLE "organizations" (
@@ -17,10 +26,35 @@ CREATE TABLE "organizations" (
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "phone" TEXT NOT NULL,
+    "phone" TEXT,
+    "email" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "otp_verifications" (
+    "id" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "verified" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "otp_verifications_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "refresh_tokens" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "refresh_tokens_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -32,6 +66,16 @@ CREATE TABLE "organization_members" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "organization_members_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "project_access" (
+    "id" TEXT NOT NULL,
+    "memberId" TEXT NOT NULL,
+    "projectId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "project_access_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -65,9 +109,10 @@ CREATE TABLE "projects" (
     "id" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "clientName" TEXT NOT NULL,
+    "clientId" TEXT,
     "location" TEXT NOT NULL,
     "startDate" TIMESTAMP(3) NOT NULL,
+    "amount" DECIMAL(15,2),
     "projectTypeItemId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -92,7 +137,11 @@ CREATE TABLE "parties" (
     "organizationId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "phone" TEXT,
+    "location" TEXT NOT NULL,
     "type" "PartyType" NOT NULL,
+    "isInternal" BOOLEAN NOT NULL DEFAULT false,
+    "profilePicture" TEXT,
+    "userId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "parties_pkey" PRIMARY KEY ("id")
@@ -109,9 +158,9 @@ CREATE TABLE "expenses" (
     "materialTypeItemId" TEXT,
     "labourTypeItemId" TEXT,
     "subWorkTypeItemId" TEXT,
-    "amount" DECIMAL(15,2) NOT NULL,
+    "rate" DECIMAL(15,2) NOT NULL,
+    "quantity" DECIMAL(15,4) NOT NULL,
     "expenseDate" TIMESTAMP(3) NOT NULL,
-    "paymentMode" TEXT NOT NULL,
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -124,6 +173,9 @@ CREATE TABLE "payments" (
     "organizationId" TEXT NOT NULL,
     "projectId" TEXT NOT NULL,
     "partyId" TEXT,
+    "expenseId" TEXT,
+    "type" "PaymentType" NOT NULL,
+    "paymentMode" "PaymentMode" NOT NULL,
     "amount" DECIMAL(15,2) NOT NULL,
     "paymentDate" TIMESTAMP(3) NOT NULL,
     "notes" TEXT,
@@ -142,15 +194,49 @@ CREATE TABLE "documents" (
     "fileUrl" TEXT NOT NULL,
     "storagePath" TEXT NOT NULL,
     "mimeType" TEXT NOT NULL,
-    "originalSize" INTEGER NOT NULL,
-    "compressedSize" INTEGER NOT NULL,
     "uploadedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "documents_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "attachments" (
+    "id" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "fileName" TEXT NOT NULL,
+    "fileUrl" TEXT NOT NULL,
+    "storagePath" TEXT NOT NULL,
+    "mimeType" TEXT NOT NULL,
+    "uploadedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "attachments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "entity_attachments" (
+    "id" TEXT NOT NULL,
+    "attachmentId" TEXT NOT NULL,
+    "entityType" "EntityType" NOT NULL,
+    "entityId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "entity_attachments_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_phone_key" ON "users"("phone");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE INDEX "otp_verifications_phone_expiresAt_idx" ON "otp_verifications"("phone", "expiresAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "refresh_tokens_token_key" ON "refresh_tokens"("token");
+
+-- CreateIndex
+CREATE INDEX "refresh_tokens_userId_idx" ON "refresh_tokens"("userId");
 
 -- CreateIndex
 CREATE INDEX "organization_members_organizationId_idx" ON "organization_members"("organizationId");
@@ -160,6 +246,15 @@ CREATE INDEX "organization_members_userId_idx" ON "organization_members"("userId
 
 -- CreateIndex
 CREATE UNIQUE INDEX "organization_members_organizationId_userId_key" ON "organization_members"("organizationId", "userId");
+
+-- CreateIndex
+CREATE INDEX "project_access_memberId_idx" ON "project_access"("memberId");
+
+-- CreateIndex
+CREATE INDEX "project_access_projectId_idx" ON "project_access"("projectId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "project_access_memberId_projectId_key" ON "project_access"("memberId", "projectId");
 
 -- CreateIndex
 CREATE INDEX "category_types_organizationId_idx" ON "category_types"("organizationId");
@@ -180,6 +275,9 @@ CREATE UNIQUE INDEX "category_items_categoryTypeId_name_key" ON "category_items"
 CREATE INDEX "projects_organizationId_idx" ON "projects"("organizationId");
 
 -- CreateIndex
+CREATE INDEX "projects_clientId_idx" ON "projects"("clientId");
+
+-- CreateIndex
 CREATE INDEX "projects_projectTypeItemId_idx" ON "projects"("projectTypeItemId");
 
 -- CreateIndex
@@ -192,10 +290,19 @@ CREATE INDEX "stages_projectId_idx" ON "stages"("projectId");
 CREATE UNIQUE INDEX "stages_projectId_name_key" ON "stages"("projectId", "name");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "parties_userId_key" ON "parties"("userId");
+
+-- CreateIndex
 CREATE INDEX "parties_organizationId_idx" ON "parties"("organizationId");
 
 -- CreateIndex
 CREATE INDEX "parties_type_idx" ON "parties"("type");
+
+-- CreateIndex
+CREATE INDEX "parties_isInternal_idx" ON "parties"("isInternal");
+
+-- CreateIndex
+CREATE INDEX "parties_userId_idx" ON "parties"("userId");
 
 -- CreateIndex
 CREATE INDEX "expenses_organizationId_idx" ON "expenses"("organizationId");
@@ -222,7 +329,13 @@ CREATE INDEX "payments_projectId_idx" ON "payments"("projectId");
 CREATE INDEX "payments_partyId_idx" ON "payments"("partyId");
 
 -- CreateIndex
+CREATE INDEX "payments_expenseId_idx" ON "payments"("expenseId");
+
+-- CreateIndex
 CREATE INDEX "payments_paymentDate_idx" ON "payments"("paymentDate");
+
+-- CreateIndex
+CREATE INDEX "payments_type_idx" ON "payments"("type");
 
 -- CreateIndex
 CREATE INDEX "documents_organizationId_idx" ON "documents"("organizationId");
@@ -230,11 +343,29 @@ CREATE INDEX "documents_organizationId_idx" ON "documents"("organizationId");
 -- CreateIndex
 CREATE INDEX "documents_projectId_idx" ON "documents"("projectId");
 
+-- CreateIndex
+CREATE INDEX "attachments_organizationId_idx" ON "attachments"("organizationId");
+
+-- CreateIndex
+CREATE INDEX "entity_attachments_entityType_entityId_idx" ON "entity_attachments"("entityType", "entityId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "entity_attachments_attachmentId_entityType_entityId_key" ON "entity_attachments"("attachmentId", "entityType", "entityId");
+
+-- AddForeignKey
+ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
 -- AddForeignKey
 ALTER TABLE "organization_members" ADD CONSTRAINT "organization_members_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "organization_members" ADD CONSTRAINT "organization_members_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "project_access" ADD CONSTRAINT "project_access_memberId_fkey" FOREIGN KEY ("memberId") REFERENCES "organization_members"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "project_access" ADD CONSTRAINT "project_access_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "category_types" ADD CONSTRAINT "category_types_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -249,6 +380,9 @@ ALTER TABLE "category_items" ADD CONSTRAINT "category_items_categoryTypeId_fkey"
 ALTER TABLE "projects" ADD CONSTRAINT "projects_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "projects" ADD CONSTRAINT "projects_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "parties"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "projects" ADD CONSTRAINT "projects_projectTypeItemId_fkey" FOREIGN KEY ("projectTypeItemId") REFERENCES "category_items"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -259,6 +393,9 @@ ALTER TABLE "stages" ADD CONSTRAINT "stages_projectId_fkey" FOREIGN KEY ("projec
 
 -- AddForeignKey
 ALTER TABLE "parties" ADD CONSTRAINT "parties_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "parties" ADD CONSTRAINT "parties_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "expenses" ADD CONSTRAINT "expenses_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -294,7 +431,16 @@ ALTER TABLE "payments" ADD CONSTRAINT "payments_projectId_fkey" FOREIGN KEY ("pr
 ALTER TABLE "payments" ADD CONSTRAINT "payments_partyId_fkey" FOREIGN KEY ("partyId") REFERENCES "parties"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "payments" ADD CONSTRAINT "payments_expenseId_fkey" FOREIGN KEY ("expenseId") REFERENCES "expenses"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "documents" ADD CONSTRAINT "documents_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "documents" ADD CONSTRAINT "documents_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "attachments" ADD CONSTRAINT "attachments_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "entity_attachments" ADD CONSTRAINT "entity_attachments_attachmentId_fkey" FOREIGN KEY ("attachmentId") REFERENCES "attachments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
