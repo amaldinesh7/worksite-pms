@@ -1,15 +1,18 @@
 import {
-  House,
-  Folder,
-  Users,
-  CreditCard,
-  CurrencyDollar,
-  Money,
-  ListChecks,
-  FileText,
-  ChartBar,
-  GridFour,
-  Gear,
+  HouseIcon,
+  FolderIcon,
+  UsersIcon,
+  CreditCardIcon,
+  CurrencyDollarIcon,
+  MoneyIcon,
+  ListChecksIcon,
+  FileTextIcon,
+  ChartBarIcon,
+  GridFourIcon,
+  StorefrontIcon,
+  GearIcon,
+  BriefcaseIcon,
+  HardHatIcon,
 } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 
@@ -28,29 +31,25 @@ export interface NavSection {
 }
 
 export const mainNavItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: House, href: '/' },
-  { id: 'projects', label: 'Projects', icon: Folder, href: '/projects', badge: 12 },
-  { id: 'team', label: 'Team Directory', icon: Users, href: '/team', badge: 24 },
-  { id: 'credits', label: 'Credits Hub', icon: CreditCard, href: '/credits' },
+  { id: 'dashboard', label: 'Dashboard', icon: HouseIcon, href: '/' },
+  { id: 'projects', label: 'Projects', icon: FolderIcon, href: '/projects', badge: 12 },
+  { id: 'team', label: 'Team Directory', icon: UsersIcon, href: '/team', badge: 24 },
+  { id: 'credits-hub', label: 'Credits Hub', icon: UsersIcon, href: '/team', badge: 24 },
 ];
 
 export const managementSection: NavSection = {
   id: 'management',
   title: 'Management',
   items: [
-    { id: 'expenses', label: 'Expenses', icon: CurrencyDollar, href: '/expenses' },
-    { id: 'payments', label: 'Payments', icon: Money, href: '/payments' },
-    { id: 'stages', label: 'Stages', icon: ListChecks, href: '/stages' },
-    { id: 'documents', label: 'Documents', icon: FileText, href: '/documents' },
-    { id: 'reports', label: 'Reports', icon: ChartBar, href: '/reports' },
+    { id: 'expenses', label: 'Expenses', icon: CurrencyDollarIcon, href: '/expenses' },
+    { id: 'payments', label: 'Payments', icon: MoneyIcon, href: '/payments' },
+    { id: 'documents', label: 'Documents', icon: FileTextIcon, href: '/documents' },
+    { id: 'reports', label: 'Reports', icon: ChartBarIcon, href: '/reports' },
   ],
 };
 
 export const settingsSection: NavSection = {
   id: 'settings',
   title: 'Settings',
-  items: [
-    { id: 'categories', label: 'Categories', icon: GridFour, href: '/categories' },
-    { id: 'settings', label: 'Settings', icon: Gear, href: '/settings' },
-  ],
+  items: [{ id: 'categories', label: 'Categories', icon: GridFourIcon, href: '/categories' }],
 };

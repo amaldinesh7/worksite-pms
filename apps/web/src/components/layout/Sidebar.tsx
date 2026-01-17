@@ -18,6 +18,7 @@ import {
   mainNavItems,
   managementSection,
   settingsSection,
+  creditsHubSection,
 } from './sidebar/index';
 
 interface SidebarProps {
