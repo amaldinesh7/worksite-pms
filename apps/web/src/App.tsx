@@ -8,6 +8,7 @@ import CategoriesPage from './pages/settings/CategoriesPage';
 import PartiesPage from './pages/parties/PartiesPage';
 import PartyDetailPage from './pages/parties/PartyDetailPage';
 import ProjectsPage from './pages/projects/ProjectsPage';
+import ProjectDetailPage from './pages/projects/ProjectDetailPage';
 
 // Auth Route wrapper - redirects to home if already logged in
 function AuthRoute({ children }: { children: React.ReactNode }) {
@@ -95,6 +96,7 @@ export default function App() {
         <Route element={<ProtectedLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="projects" element={<ProjectsPage />} />
+          <Route path="projects/:id" element={<ProjectDetailPage />} />
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="parties" element={<PartiesPage />} />
           <Route path="parties/:id" element={<PartyDetailPage />} />

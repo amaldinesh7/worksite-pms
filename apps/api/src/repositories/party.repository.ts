@@ -84,18 +84,17 @@ export class PartyRepository {
 
   async update(organizationId: string, id: string, data: UpdatePartyData): Promise<Party> {
     try {
-      const existing = await prisma.party.findFirst({
+      // Atomic org-scoped update
+      const result = await prisma.party.updateMany({
         where: { id, organizationId },
+        data,
       });
 
-      if (!existing) {
+      if (result.count === 0) {
         throw handlePrismaError({ code: 'P2025' });
       }
 
-      return await prisma.party.update({
-        where: { id },
-        data,
-      });
+      return await prisma.party.findUniqueOrThrow({ where: { id } });
     } catch (error) {
       throw handlePrismaError(error);
     }
@@ -103,17 +102,14 @@ export class PartyRepository {
 
   async delete(organizationId: string, id: string): Promise<void> {
     try {
-      const existing = await prisma.party.findFirst({
+      // Atomic org-scoped delete
+      const result = await prisma.party.deleteMany({
         where: { id, organizationId },
       });
 
-      if (!existing) {
+      if (result.count === 0) {
         throw handlePrismaError({ code: 'P2025' });
       }
-
-      await prisma.party.delete({
-        where: { id },
-      });
     } catch (error) {
       throw handlePrismaError(error);
     }
@@ -364,7 +360,7 @@ export class PartyRepository {
             orderBy: { paymentDate: 'desc' },
             include: {
               project: { select: { id: true, name: true } },
-              expense: { select: { expenseCategory: { select: { name: true } } } },
+              expense: { select: { expenseType: { select: { name: true } } } },
             },
           }),
           prisma.payment.count({ where }),
@@ -374,10 +370,10 @@ export class PartyRepository {
           transactions: payments.map((p) => ({
             id: p.id,
             date: p.paymentDate,
-            title: p.expense?.expenseCategory?.name || p.project.name,
+            title: p.expense?.expenseType?.name || p.project?.name || 'Unknown',
             amount: p.amount.toNumber(),
-            projectId: p.project.id,
-            projectName: p.project.name,
+            projectId: p.project?.id || '',
+            projectName: p.project?.name || 'Unknown',
           })),
           total,
         };
@@ -397,7 +393,7 @@ export class PartyRepository {
             orderBy: { expenseDate: 'desc' },
             include: {
               project: { select: { id: true, name: true } },
-              expenseCategory: { select: { name: true } },
+              expenseType: { select: { name: true } },
             },
           }),
           prisma.expense.count({ where }),
@@ -407,10 +403,10 @@ export class PartyRepository {
           transactions: expenses.map((e) => ({
             id: e.id,
             date: e.expenseDate,
-            title: e.expenseCategory?.name || e.project.name,
+            title: e.expenseType?.name || e.project?.name || 'Unknown',
             amount: e.rate.toNumber() * e.quantity.toNumber(),
-            projectId: e.project.id,
-            projectName: e.project.name,
+            projectId: e.project?.id || '',
+            projectName: e.project?.name || 'Unknown',
           })),
           total,
         };

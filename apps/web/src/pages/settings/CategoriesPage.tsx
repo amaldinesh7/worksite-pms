@@ -17,6 +17,7 @@ import {
   useCategoryItems,
   useCreateCategoryItem,
   useUpdateCategoryItem,
+  useDeleteCategoryItem,
 } from '@/lib/hooks/useCategories';
 import type { CategoryType, CategoryItem } from '@/lib/api/categories';
 import { cn } from '@/lib/utils';
@@ -38,6 +39,7 @@ export default function CategoriesPage() {
   // Mutations
   const createItemMutation = useCreateCategoryItem();
   const updateItemMutation = useUpdateCategoryItem();
+  const deleteItemMutation = useDeleteCategoryItem();
 
   // Set default selected type when types are loaded
   useEffect(() => {
@@ -64,6 +66,11 @@ export default function CategoriesPage() {
       id: item.id,
       data: { name: newName },
     });
+  };
+
+  // Handle deleting an item
+  const handleDeleteItem = (item: CategoryItem) => {
+    deleteItemMutation.mutate(item.id);
   };
 
   // Filter items based on global search (if implemented)
@@ -125,6 +132,8 @@ export default function CategoriesPage() {
               onCreateItem={handleCreateItem}
               isCreating={createItemMutation.isPending}
               onEditItem={handleEditItem}
+              onDeleteItem={handleDeleteItem}
+              isDeleting={deleteItemMutation.isPending}
             />
           </div>
         </div>

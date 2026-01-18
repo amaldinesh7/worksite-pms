@@ -16,7 +16,6 @@ import type { AxiosResponse } from 'axios';
 
 export interface CategoryType {
   id: string;
-  organizationId: string;
   key: string;
   label: string;
   isActive: boolean;
@@ -31,6 +30,7 @@ export interface CategoryItem {
   categoryTypeId: string;
   name: string;
   isActive: boolean;
+  isEditable: boolean;
   createdAt: string;
   updatedAt: string;
   categoryType?: CategoryType;

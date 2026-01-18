@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { expenseRepository } from '../../repositories/expense.repository';
+import { expenseService } from '../../services/expense.service';
 import { createErrorHandler } from '../../lib/error-handler';
 import {
   sendSuccess,
@@ -14,7 +14,7 @@ import type {
   ExpenseQuery,
   ExpenseParams,
 } from './expense.schema';
-import type { PaymentMode } from '@prisma/client';
+import type { PaymentMode, ExpenseStatus } from '@prisma/client';
 
 // Create a resource-specific error handler
 const handle = createErrorHandler('expense');
@@ -25,15 +25,18 @@ const handle = createErrorHandler('expense');
 export const listExpenses = handle(
   'fetch',
   async (request: FastifyRequest<{ Querystring: ExpenseQuery }>, reply: FastifyReply) => {
-    const { page, limit, projectId, partyId, stageId, startDate, endDate } = request.query;
+    const { page, limit, projectId, partyId, stageId, search, status, startDate, endDate } =
+      request.query;
     const skip = (page - 1) * limit;
 
-    const { expenses, total } = await expenseRepository.findAll(request.organizationId, {
+    const { expenses, total } = await expenseService.findAll(request.organizationId, {
       skip,
       take: limit,
       projectId,
       partyId,
       stageId,
+      search,
+      status: status as ExpenseStatus | undefined,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
     });
@@ -48,7 +51,7 @@ export const listExpenses = handle(
 export const getExpense = handle(
   'fetch',
   async (request: FastifyRequest<{ Params: ExpenseParams }>, reply: FastifyReply) => {
-    const expense = await expenseRepository.findById(request.organizationId, request.params.id);
+    const expense = await expenseService.findById(request.organizationId, request.params.id);
 
     if (!expense) {
       return sendNotFound(reply, 'Expense');
@@ -59,16 +62,18 @@ export const getExpense = handle(
 );
 
 // ============================================
-// Create Expense
+// Create Expense (with optional payment via service)
 // ============================================
 export const createExpense = handle(
   'create',
   async (request: FastifyRequest<{ Body: CreateExpenseInput }>, reply: FastifyReply) => {
-    const { paidAmount, paymentMode, ...expenseData } = request.body;
+    const { paidAmount, paymentMode, status, ...expenseData } = request.body;
 
-    const expense = await expenseRepository.create(request.organizationId, {
+    // Service handles the expense + payment transaction logic
+    const expense = await expenseService.create(request.organizationId, {
       ...expenseData,
       expenseDate: new Date(expenseData.expenseDate),
+      status: status as ExpenseStatus | undefined,
       paidAmount,
       paymentMode: paymentMode as PaymentMode | undefined,
     });
@@ -86,12 +91,14 @@ export const updateExpense = handle(
     request: FastifyRequest<{ Params: ExpenseParams; Body: UpdateExpenseInput }>,
     reply: FastifyReply
   ) => {
+    const { status, ...rest } = request.body;
     const updateData = {
-      ...request.body,
-      expenseDate: request.body.expenseDate ? new Date(request.body.expenseDate) : undefined,
+      ...rest,
+      status: status as ExpenseStatus | undefined,
+      expenseDate: rest.expenseDate ? new Date(rest.expenseDate) : undefined,
     };
 
-    const expense = await expenseRepository.update(
+    const expense = await expenseService.update(
       request.organizationId,
       request.params.id,
       updateData
@@ -107,7 +114,7 @@ export const updateExpense = handle(
 export const deleteExpense = handle(
   'delete',
   async (request: FastifyRequest<{ Params: ExpenseParams }>, reply: FastifyReply) => {
-    await expenseRepository.delete(request.organizationId, request.params.id);
+    await expenseService.delete(request.organizationId, request.params.id);
     return sendNoContent(reply);
   }
 );
@@ -118,7 +125,7 @@ export const deleteExpense = handle(
 export const getExpensesByCategory = handle(
   'fetch',
   async (request: FastifyRequest<{ Querystring: { projectId?: string } }>, reply: FastifyReply) => {
-    const summary = await expenseRepository.getExpensesByCategory(
+    const summary = await expenseService.getExpensesByCategory(
       request.organizationId,
       request.query.projectId
     );

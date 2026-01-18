@@ -9,8 +9,7 @@ import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from 'date-fns';
-import { CalendarIcon, ImageIcon, X, Check } from 'lucide-react';
+import { ImageIcon, X, Check } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -29,8 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { DatePicker } from '@/components/ui/custom/date-picker';
 import { cn } from '@/lib/utils';
 import { useCategoryItems } from '@/lib/hooks/useCategories';
 import { useOrganizationMembers } from '@/lib/hooks/useOrganizations';
@@ -308,11 +306,17 @@ export function ProjectFormDialog({
                         <SelectValue placeholder="Select Project Type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {projectTypes.map((type) => (
-                          <SelectItem key={type.id} value={type.id} className="cursor-pointer">
-                            {type.name}
-                          </SelectItem>
-                        ))}
+                        {projectTypes.length === 0 ? (
+                          <div className="py-6 text-center text-sm text-muted-foreground">
+                            No project types found
+                          </div>
+                        ) : (
+                          projectTypes.map((type) => (
+                            <SelectItem key={type.id} value={type.id} className="cursor-pointer">
+                              {type.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   )}
@@ -382,27 +386,11 @@ export function ProjectFormDialog({
                   name="startDate"
                   control={control}
                   render={({ field }) => (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'w-full justify-start text-left font-normal cursor-pointer',
-                            !field.value && 'text-muted-foreground'
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {field.value ? format(field.value, 'PPP') : 'Pick a date'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Pick a date"
+                    />
                   )}
                 />
                 {errors.startDate && (
@@ -417,27 +405,11 @@ export function ProjectFormDialog({
                   name="endDate"
                   control={control}
                   render={({ field }) => (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            'w-full justify-start text-left font-normal cursor-pointer',
-                            !field.value && 'text-muted-foreground'
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {field.value ? format(field.value, 'PPP') : 'Pick a date'}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <DatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Pick a date"
+                    />
                   )}
                 />
               </div>

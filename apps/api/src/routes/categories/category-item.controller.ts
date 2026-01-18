@@ -74,6 +74,26 @@ export const updateCategoryItem = handle(
     }>,
     reply: FastifyReply
   ) => {
+    // Check if item exists and is editable
+    const existingItem = await categoryItemRepository.findById(
+      request.organizationId,
+      request.params.id
+    );
+
+    if (!existingItem) {
+      return sendNotFound(reply, 'Category item');
+    }
+
+    if (!existingItem.isEditable) {
+      return reply.code(403).send({
+        success: false,
+        error: {
+          message: 'This category item cannot be edited',
+          code: 'FORBIDDEN',
+        },
+      });
+    }
+
     const item = await categoryItemRepository.update(
       request.organizationId,
       request.params.id,
@@ -90,6 +110,26 @@ export const updateCategoryItem = handle(
 export const deleteCategoryItem = handle(
   'delete',
   async (request: FastifyRequest<{ Params: CategoryItemParams }>, reply: FastifyReply) => {
+    // Check if item exists and is editable
+    const existingItem = await categoryItemRepository.findById(
+      request.organizationId,
+      request.params.id
+    );
+
+    if (!existingItem) {
+      return sendNotFound(reply, 'Category item');
+    }
+
+    if (!existingItem.isEditable) {
+      return reply.code(403).send({
+        success: false,
+        error: {
+          message: 'This category item cannot be deleted',
+          code: 'FORBIDDEN',
+        },
+      });
+    }
+
     await categoryItemRepository.delete(request.organizationId, request.params.id);
     return sendNoContent(reply);
   }

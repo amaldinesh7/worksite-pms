@@ -1,35 +1,37 @@
 import { prisma } from '../lib/prisma';
 import { handlePrismaError } from '../lib/database-errors';
-import type { Expense, Prisma, PaymentMode } from '@prisma/client';
+import type { Expense, Prisma, ExpenseStatus } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
+// Pure expense data without payment info (payment logic moved to service)
 export interface CreateExpenseData {
   projectId: string;
   partyId: string;
   stageId?: string;
-  expenseCategoryItemId: string;
+  expenseTypeItemId: string;
   materialTypeItemId?: string;
   labourTypeItemId?: string;
   subWorkTypeItemId?: string;
+  description?: string;
   rate: number;
   quantity: number;
   expenseDate: Date;
+  status?: ExpenseStatus;
   notes?: string;
-  // Optional payment data
-  paidAmount?: number;
-  paymentMode?: PaymentMode;
 }
 
 export interface UpdateExpenseData {
   partyId?: string;
   stageId?: string | null;
-  expenseCategoryItemId?: string;
+  expenseTypeItemId?: string;
   materialTypeItemId?: string | null;
   labourTypeItemId?: string | null;
   subWorkTypeItemId?: string | null;
+  description?: string | null;
   rate?: number;
   quantity?: number;
   expenseDate?: Date;
+  status?: ExpenseStatus;
   notes?: string | null;
 }
 
@@ -39,6 +41,8 @@ export interface ExpenseListOptions {
   projectId?: string;
   partyId?: string;
   stageId?: string;
+  search?: string;
+  status?: ExpenseStatus;
   startDate?: Date;
   endDate?: Date;
 }
@@ -48,76 +52,39 @@ const expenseInclude = {
   project: true,
   party: true,
   stage: true,
-  expenseCategory: true,
+  expenseType: true,
   materialType: true,
   labourType: true,
   subWorkType: true,
   payments: true,
 } as const;
 
+/**
+ * Expense Repository - Pure data access layer.
+ * Business logic (expense + payment transactions) is in ExpenseService.
+ */
 export class ExpenseRepository {
+  /**
+   * Create a single expense (no payment logic - that's in service).
+   */
   async create(organizationId: string, data: CreateExpenseData): Promise<Expense> {
     try {
-      const { paidAmount, paymentMode, ...expenseData } = data;
-
-      // Use transaction if payment needs to be created
-      if (paidAmount !== undefined && paymentMode !== undefined) {
-        return await prisma.$transaction(async (tx) => {
-          // Create expense
-          const expense = await tx.expense.create({
-            data: {
-              organizationId,
-              projectId: expenseData.projectId,
-              partyId: expenseData.partyId,
-              stageId: expenseData.stageId,
-              expenseCategoryItemId: expenseData.expenseCategoryItemId,
-              materialTypeItemId: expenseData.materialTypeItemId,
-              labourTypeItemId: expenseData.labourTypeItemId,
-              subWorkTypeItemId: expenseData.subWorkTypeItemId,
-              rate: new Decimal(expenseData.rate),
-              quantity: new Decimal(expenseData.quantity),
-              expenseDate: expenseData.expenseDate,
-              notes: expenseData.notes,
-            },
-          });
-
-          // Create linked payment
-          await tx.payment.create({
-            data: {
-              organizationId,
-              projectId: expenseData.projectId,
-              partyId: expenseData.partyId,
-              expenseId: expense.id,
-              type: 'OUT',
-              paymentMode,
-              amount: new Decimal(paidAmount),
-              paymentDate: expenseData.expenseDate,
-            },
-          });
-
-          // Return expense with all relations
-          return await tx.expense.findUniqueOrThrow({
-            where: { id: expense.id },
-            include: expenseInclude,
-          });
-        });
-      }
-
-      // Create expense without payment
       return await prisma.expense.create({
         data: {
           organizationId,
-          projectId: expenseData.projectId,
-          partyId: expenseData.partyId,
-          stageId: expenseData.stageId,
-          expenseCategoryItemId: expenseData.expenseCategoryItemId,
-          materialTypeItemId: expenseData.materialTypeItemId,
-          labourTypeItemId: expenseData.labourTypeItemId,
-          subWorkTypeItemId: expenseData.subWorkTypeItemId,
-          rate: new Decimal(expenseData.rate),
-          quantity: new Decimal(expenseData.quantity),
-          expenseDate: expenseData.expenseDate,
-          notes: expenseData.notes,
+          projectId: data.projectId,
+          partyId: data.partyId,
+          stageId: data.stageId,
+          expenseTypeItemId: data.expenseTypeItemId,
+          materialTypeItemId: data.materialTypeItemId,
+          labourTypeItemId: data.labourTypeItemId,
+          subWorkTypeItemId: data.subWorkTypeItemId,
+          description: data.description,
+          rate: new Decimal(data.rate),
+          quantity: new Decimal(data.quantity),
+          expenseDate: data.expenseDate,
+          status: data.status,
+          notes: data.notes,
         },
         include: expenseInclude,
       });
@@ -150,6 +117,14 @@ export class ExpenseRepository {
         ...(options?.projectId && { projectId: options.projectId }),
         ...(options?.partyId && { partyId: options.partyId }),
         ...(options?.stageId && { stageId: options.stageId }),
+        ...(options?.status && { status: options.status }),
+        ...(options?.search && {
+          OR: [
+            { description: { contains: options.search, mode: 'insensitive' } },
+            { notes: { contains: options.search, mode: 'insensitive' } },
+            { party: { name: { contains: options.search, mode: 'insensitive' } } },
+          ],
+        }),
         ...(options?.startDate || options?.endDate
           ? {
               expenseDate: {
@@ -165,13 +140,7 @@ export class ExpenseRepository {
           where,
           skip: options?.skip,
           take: options?.take,
-          include: {
-            project: true,
-            party: true,
-            stage: true,
-            expenseCategory: true,
-            payments: true,
-          },
+          include: expenseInclude,
           orderBy: { expenseDate: 'desc' },
         }),
         prisma.expense.count({ where }),
@@ -185,21 +154,23 @@ export class ExpenseRepository {
 
   async update(organizationId: string, id: string, data: UpdateExpenseData): Promise<Expense> {
     try {
-      const existing = await prisma.expense.findFirst({
+      // Use updateMany for atomic org-scoped update, then fetch result
+      const result = await prisma.expense.updateMany({
         where: { id, organizationId },
-      });
-
-      if (!existing) {
-        throw handlePrismaError({ code: 'P2025' });
-      }
-
-      return await prisma.expense.update({
-        where: { id },
         data: {
           ...data,
           rate: data.rate !== undefined ? new Decimal(data.rate) : undefined,
           quantity: data.quantity !== undefined ? new Decimal(data.quantity) : undefined,
         },
+      });
+
+      if (result.count === 0) {
+        throw handlePrismaError({ code: 'P2025' });
+      }
+
+      // Fetch and return updated expense with relations
+      return await prisma.expense.findUniqueOrThrow({
+        where: { id },
         include: expenseInclude,
       });
     } catch (error) {
@@ -209,37 +180,32 @@ export class ExpenseRepository {
 
   async delete(organizationId: string, id: string): Promise<void> {
     try {
-      const existing = await prisma.expense.findFirst({
+      // Use deleteMany for atomic org-scoped delete
+      const result = await prisma.expense.deleteMany({
         where: { id, organizationId },
       });
 
-      if (!existing) {
+      if (result.count === 0) {
         throw handlePrismaError({ code: 'P2025' });
       }
-
-      await prisma.expense.delete({
-        where: { id },
-      });
     } catch (error) {
       throw handlePrismaError(error);
     }
   }
 
-  // Get expenses summary by category
-  // Note: Now calculates total as sum of (rate * quantity) for each expense
+  // Get expenses summary by type
   async getExpensesByCategory(
     organizationId: string,
     projectId?: string
   ): Promise<Array<{ categoryId: string; categoryName: string; total: number }>> {
     try {
-      // Since we can't use computed fields in groupBy, we need to fetch and calculate
       const expenses = await prisma.expense.findMany({
         where: {
           organizationId,
           ...(projectId && { projectId }),
         },
         select: {
-          expenseCategoryItemId: true,
+          expenseTypeItemId: true,
           rate: true,
           quantity: true,
         },
@@ -249,8 +215,8 @@ export class ExpenseRepository {
       const categoryTotals = new Map<string, number>();
       for (const expense of expenses) {
         const total = expense.rate.toNumber() * expense.quantity.toNumber();
-        const current = categoryTotals.get(expense.expenseCategoryItemId) || 0;
-        categoryTotals.set(expense.expenseCategoryItemId, current + total);
+        const current = categoryTotals.get(expense.expenseTypeItemId) || 0;
+        categoryTotals.set(expense.expenseTypeItemId, current + total);
       }
 
       const categoryIds = Array.from(categoryTotals.keys());

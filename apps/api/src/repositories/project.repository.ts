@@ -35,6 +35,49 @@ export interface ProjectListOptions {
   status?: ProjectStatus;
 }
 
+// Include object for project queries
+const projectInclude = {
+  projectType: true,
+  client: true,
+  stages: true,
+  projectAccess: {
+    include: {
+      member: {
+        include: {
+          user: true,
+        },
+      },
+    },
+  },
+  _count: {
+    select: {
+      expenses: true,
+      payments: true,
+    },
+  },
+} as const;
+
+// Lighter include for list queries
+const projectListInclude = {
+  projectType: true,
+  client: true,
+  projectAccess: {
+    include: {
+      member: {
+        include: {
+          user: true,
+        },
+      },
+    },
+  },
+  _count: {
+    select: {
+      expenses: true,
+      payments: true,
+    },
+  },
+} as const;
+
 export class ProjectRepository {
   async create(organizationId: string, data: CreateProjectData): Promise<Project> {
     try {
@@ -52,26 +95,7 @@ export class ProjectRepository {
           projectPicture: data.projectPicture,
           status: data.status || 'ACTIVE',
         },
-        include: {
-          projectType: true,
-          client: true,
-          stages: true,
-          projectAccess: {
-            include: {
-              member: {
-                include: {
-                  user: true,
-                },
-              },
-            },
-          },
-          _count: {
-            select: {
-              expenses: true,
-              payments: true,
-            },
-          },
-        },
+        include: projectInclude,
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -83,28 +107,9 @@ export class ProjectRepository {
       return await prisma.project.findFirst({
         where: {
           id,
-          organizationId, // Organization scoping!
+          organizationId,
         },
-        include: {
-          projectType: true,
-          client: true,
-          stages: true,
-          projectAccess: {
-            include: {
-              member: {
-                include: {
-                  user: true,
-                },
-              },
-            },
-          },
-          _count: {
-            select: {
-              expenses: true,
-              payments: true,
-            },
-          },
-        },
+        include: projectInclude,
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -114,7 +119,11 @@ export class ProjectRepository {
   async findAll(
     organizationId: string,
     options?: ProjectListOptions
-  ): Promise<{ projects: Project[]; total: number; counts: { all: number; active: number; onHold: number; completed: number } }> {
+  ): Promise<{
+    projects: Project[];
+    total: number;
+    counts: { all: number; active: number; onHold: number; completed: number };
+  }> {
     try {
       const where: Prisma.ProjectWhereInput = {
         organizationId,
@@ -127,38 +136,21 @@ export class ProjectRepository {
         ...(options?.status && { status: options.status }),
       };
 
-      const [projects, total, allCount, activeCount, onHoldCount, completedCount] = await Promise.all([
-        prisma.project.findMany({
-          where,
-          skip: options?.skip,
-          take: options?.take,
-          include: {
-            projectType: true,
-            client: true,
-            projectAccess: {
-              include: {
-                member: {
-                  include: {
-                    user: true,
-                  },
-                },
-              },
-            },
-            _count: {
-              select: {
-                expenses: true,
-                payments: true,
-              },
-            },
-          },
-          orderBy: { updatedAt: 'desc' },
-        }),
-        prisma.project.count({ where }),
-        prisma.project.count({ where: { organizationId } }),
-        prisma.project.count({ where: { organizationId, status: 'ACTIVE' } }),
-        prisma.project.count({ where: { organizationId, status: 'ON_HOLD' } }),
-        prisma.project.count({ where: { organizationId, status: 'COMPLETED' } }),
-      ]);
+      const [projects, total, allCount, activeCount, onHoldCount, completedCount] =
+        await Promise.all([
+          prisma.project.findMany({
+            where,
+            skip: options?.skip,
+            take: options?.take,
+            include: projectListInclude,
+            orderBy: { updatedAt: 'desc' },
+          }),
+          prisma.project.count({ where }),
+          prisma.project.count({ where: { organizationId } }),
+          prisma.project.count({ where: { organizationId, status: 'ACTIVE' } }),
+          prisma.project.count({ where: { organizationId, status: 'ON_HOLD' } }),
+          prisma.project.count({ where: { organizationId, status: 'COMPLETED' } }),
+        ]);
 
       return {
         projects,
@@ -177,37 +169,19 @@ export class ProjectRepository {
 
   async update(organizationId: string, id: string, data: UpdateProjectData): Promise<Project> {
     try {
-      // First check if project exists in this organization
-      const existing = await prisma.project.findFirst({
+      // Atomic org-scoped update
+      const result = await prisma.project.updateMany({
         where: { id, organizationId },
+        data,
       });
 
-      if (!existing) {
+      if (result.count === 0) {
         throw handlePrismaError({ code: 'P2025' });
       }
 
-      return await prisma.project.update({
+      return await prisma.project.findUniqueOrThrow({
         where: { id },
-        data,
-        include: {
-          projectType: true,
-          client: true,
-          projectAccess: {
-            include: {
-              member: {
-                include: {
-                  user: true,
-                },
-              },
-            },
-          },
-          _count: {
-            select: {
-              expenses: true,
-              payments: true,
-            },
-          },
-        },
+        include: projectInclude,
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -216,28 +190,21 @@ export class ProjectRepository {
 
   async delete(organizationId: string, id: string): Promise<void> {
     try {
-      // First check if project exists in this organization
-      const existing = await prisma.project.findFirst({
+      // Atomic org-scoped delete
+      const result = await prisma.project.deleteMany({
         where: { id, organizationId },
       });
 
-      if (!existing) {
+      if (result.count === 0) {
         throw handlePrismaError({ code: 'P2025' });
       }
-
-      await prisma.project.delete({
-        where: { id },
-      });
     } catch (error) {
       throw handlePrismaError(error);
     }
   }
 
   // Helper to calculate total expenses (rate * quantity)
-  private async calculateExpensesTotal(
-    organizationId: string,
-    projectId: string
-  ): Promise<number> {
+  private async calculateExpensesTotal(organizationId: string, projectId: string): Promise<number> {
     const expenses = await prisma.expense.findMany({
       where: { organizationId, projectId },
       select: { rate: true, quantity: true },
@@ -275,7 +242,7 @@ export class ProjectRepository {
       const totalPaymentsIn = paymentsInSum._sum?.amount?.toNumber() || 0;
       const totalPaymentsOut = paymentsOutSum._sum?.amount?.toNumber() || 0;
       const totalPayments = totalPaymentsIn + totalPaymentsOut;
-      const balance = totalPaymentsIn - totalExpenses; // Money received - total expense value
+      const balance = totalPaymentsIn - totalExpenses;
 
       return {
         totalExpenses,
@@ -342,22 +309,17 @@ export class ProjectRepository {
         throw handlePrismaError({ code: 'P2025' });
       }
 
-      const access = await prisma.projectAccess.findUnique({
+      // Atomic delete using composite key
+      const result = await prisma.projectAccess.deleteMany({
         where: {
-          memberId_projectId: {
-            memberId,
-            projectId,
-          },
+          memberId,
+          projectId,
         },
       });
 
-      if (!access) {
+      if (result.count === 0) {
         throw handlePrismaError({ code: 'P2025' });
       }
-
-      await prisma.projectAccess.delete({
-        where: { id: access.id },
-      });
     } catch (error) {
       throw handlePrismaError(error);
     }

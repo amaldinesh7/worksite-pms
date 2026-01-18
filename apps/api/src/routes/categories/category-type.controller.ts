@@ -13,29 +13,28 @@ import type {
 const handle = createErrorHandler('category type');
 
 // ============================================
-// List Category Types
+// List Category Types (global types with org-scoped items)
 // ============================================
 export const listCategoryTypes = handle(
   'fetch',
   async (request: FastifyRequest<{ Querystring: CategoryQuery }>, reply: FastifyReply) => {
-    const categoryTypes = await categoryTypeRepository.findAll(request.organizationId, {
-      includeInactive: request.query.includeInactive,
-    });
+    // Get global types with items filtered by organization
+    const categoryTypes = await categoryTypeRepository.findAllWithOrgItems(
+      request.organizationId,
+      { includeInactive: request.query.includeInactive }
+    );
 
     return sendSuccess(reply, categoryTypes);
   }
 );
 
 // ============================================
-// Get Category Type by ID
+// Get Category Type by ID (global)
 // ============================================
 export const getCategoryType = handle(
   'fetch',
   async (request: FastifyRequest<{ Params: CategoryTypeParams }>, reply: FastifyReply) => {
-    const categoryType = await categoryTypeRepository.findById(
-      request.organizationId,
-      request.params.id
-    );
+    const categoryType = await categoryTypeRepository.findById(request.params.id);
 
     if (!categoryType) {
       return sendNotFound(reply, 'Category type');
@@ -46,15 +45,12 @@ export const getCategoryType = handle(
 );
 
 // ============================================
-// Get Category Type by Key
+// Get Category Type by Key (global)
 // ============================================
 export const getCategoryTypeByKey = handle(
   'fetch',
   async (request: FastifyRequest<{ Params: CategoryTypeKeyParams }>, reply: FastifyReply) => {
-    const categoryType = await categoryTypeRepository.findByKey(
-      request.organizationId,
-      request.params.key
-    );
+    const categoryType = await categoryTypeRepository.findByKey(request.params.key);
 
     if (!categoryType) {
       return sendNotFound(reply, 'Category type');
@@ -65,19 +61,19 @@ export const getCategoryTypeByKey = handle(
 );
 
 // ============================================
-// Create Category Type
+// Create Category Type (global - admin only)
 // ============================================
 export const createCategoryType = handle(
   'create',
   async (request: FastifyRequest<{ Body: CreateCategoryTypeInput }>, reply: FastifyReply) => {
-    const categoryType = await categoryTypeRepository.create(request.organizationId, request.body);
+    const categoryType = await categoryTypeRepository.create(request.body);
 
     return sendSuccess(reply, categoryType, 201);
   }
 );
 
 // ============================================
-// Update Category Type
+// Update Category Type (global - admin only)
 // ============================================
 export const updateCategoryType = handle(
   'update',
@@ -88,23 +84,19 @@ export const updateCategoryType = handle(
     }>,
     reply: FastifyReply
   ) => {
-    const categoryType = await categoryTypeRepository.update(
-      request.organizationId,
-      request.params.id,
-      request.body
-    );
+    const categoryType = await categoryTypeRepository.update(request.params.id, request.body);
 
     return sendSuccess(reply, categoryType);
   }
 );
 
 // ============================================
-// Delete Category Type
+// Delete Category Type (global - admin only)
 // ============================================
 export const deleteCategoryType = handle(
   'delete',
   async (request: FastifyRequest<{ Params: CategoryTypeParams }>, reply: FastifyReply) => {
-    await categoryTypeRepository.delete(request.organizationId, request.params.id);
+    await categoryTypeRepository.delete(request.params.id);
     return sendNoContent(reply);
   }
 );

@@ -12,11 +12,11 @@ import type { CategoryType } from '@/lib/api/categories';
 
 // Allowed category type keys in display order
 const ALLOWED_TYPE_KEYS = [
+  'project_type',
   'expense_type',
   'material_type',
   'labour_type',
-  'subwork_type',
-  'project_type',
+  'sub_work_type',
 ] as const;
 
 // Human-readable labels for fallback
@@ -52,7 +52,7 @@ export function CategoryTypesNav({
 
   return (
     <ListPanel>
-      <ListPanel.Header title="Category Types" />
+      <ListPanel.Header title="Categories" />
       <ListPanel.Content>
         {isLoading ? (
           <ListPanel.Loading count={5} />
