@@ -35,6 +35,9 @@ export interface UpdateExpenseData {
   notes?: string | null;
 }
 
+export type SortByField = 'expenseDate' | 'amount' | 'createdAt';
+export type SortOrder = 'asc' | 'desc';
+
 export interface ExpenseListOptions {
   skip?: number;
   take?: number;
@@ -45,18 +48,21 @@ export interface ExpenseListOptions {
   status?: ExpenseStatus;
   startDate?: Date;
   endDate?: Date;
+  expenseTypeItemId?: string;
+  sortBy?: SortByField;
+  sortOrder?: SortOrder;
 }
 
-// Include object for expense queries
+// Include object for expense queries - only select needed fields
 const expenseInclude = {
-  project: true,
-  party: true,
-  stage: true,
-  expenseType: true,
-  materialType: true,
-  labourType: true,
-  subWorkType: true,
-  payments: true,
+  project: { select: { id: true, name: true } },
+  party: { select: { id: true, name: true, type: true } },
+  stage: { select: { id: true, name: true } },
+  expenseType: { select: { id: true, name: true } },
+  materialType: { select: { id: true, name: true } },
+  labourType: { select: { id: true, name: true } },
+  subWorkType: { select: { id: true, name: true } },
+  payments: { select: { id: true, amount: true, paymentMode: true, paymentDate: true } },
 } as const;
 
 /**
@@ -118,6 +124,7 @@ export class ExpenseRepository {
         ...(options?.partyId && { partyId: options.partyId }),
         ...(options?.stageId && { stageId: options.stageId }),
         ...(options?.status && { status: options.status }),
+        ...(options?.expenseTypeItemId && { expenseTypeItemId: options.expenseTypeItemId }),
         ...(options?.search && {
           OR: [
             { description: { contains: options.search, mode: 'insensitive' } },
@@ -135,13 +142,22 @@ export class ExpenseRepository {
           : {}),
       };
 
+      // Build dynamic orderBy based on sortBy option
+      const sortBy = options?.sortBy || 'expenseDate';
+      const sortOrder = options?.sortOrder || 'desc';
+      
+      // For 'amount' sorting, we need to sort by rate (as amount = rate * quantity)
+      // This is a simplification - for true amount sorting we'd need a computed field
+      const orderByField = sortBy === 'amount' ? 'rate' : sortBy;
+      const orderBy: Prisma.ExpenseOrderByWithRelationInput = { [orderByField]: sortOrder };
+
       const [expenses, total] = await Promise.all([
         prisma.expense.findMany({
           where,
           skip: options?.skip,
           take: options?.take,
           include: expenseInclude,
-          orderBy: { expenseDate: 'desc' },
+          orderBy,
         }),
         prisma.expense.count({ where }),
       ]);

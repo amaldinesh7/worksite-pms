@@ -14,11 +14,12 @@ import type { PaginationMeta, ApiSuccessResponse, ApiPaginatedResponse } from '.
 
 export type ExpenseStatus = 'PENDING' | 'APPROVED';
 export type PaymentMode = 'CASH' | 'CHEQUE' | 'ONLINE';
+export type ExpenseSortBy = 'expenseDate' | 'amount' | 'createdAt';
+export type ExpenseSortOrder = 'asc' | 'desc';
 
-export interface ExpenseCategory {
+export interface ExpenseTypeItem {
   id: string;
   name: string;
-  isEditable: boolean;
 }
 
 export interface ExpenseParty {
@@ -50,7 +51,7 @@ export interface Expense {
   projectId: string;
   partyId: string;
   stageId: string | null;
-  expenseCategoryItemId: string;
+  expenseTypeItemId: string;
   materialTypeItemId: string | null;
   labourTypeItemId: string | null;
   subWorkTypeItemId: string | null;
@@ -65,10 +66,10 @@ export interface Expense {
   project: ExpenseProject;
   party: ExpenseParty;
   stage: ExpenseStage | null;
-  expenseCategory: ExpenseCategory;
-  materialType: ExpenseCategory | null;
-  labourType: ExpenseCategory | null;
-  subWorkType: ExpenseCategory | null;
+  expenseType: ExpenseTypeItem;
+  materialType: ExpenseTypeItem | null;
+  labourType: ExpenseTypeItem | null;
+  subWorkType: ExpenseTypeItem | null;
   payments: ExpensePayment[];
 }
 
@@ -82,7 +83,7 @@ export interface CreateExpenseInput {
   projectId: string;
   partyId: string;
   stageId?: string;
-  expenseCategoryItemId: string;
+  expenseTypeItemId: string;
   materialTypeItemId?: string;
   labourTypeItemId?: string;
   subWorkTypeItemId?: string;
@@ -99,7 +100,7 @@ export interface CreateExpenseInput {
 export interface UpdateExpenseInput {
   partyId?: string;
   stageId?: string | null;
-  expenseCategoryItemId?: string;
+  expenseTypeItemId?: string;
   materialTypeItemId?: string | null;
   labourTypeItemId?: string | null;
   subWorkTypeItemId?: string | null;
@@ -121,6 +122,9 @@ export interface ExpenseQueryParams {
   status?: ExpenseStatus;
   startDate?: string;
   endDate?: string;
+  expenseTypeItemId?: string;
+  sortBy?: ExpenseSortBy;
+  sortOrder?: ExpenseSortOrder;
 }
 
 export interface ExpensesResponse {

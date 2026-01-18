@@ -17,14 +17,14 @@ export interface CreateExpenseWithPaymentData extends CreateExpenseData {
 
 // Include object for expense queries (duplicated from repository for transaction use)
 const expenseInclude = {
-  project: true,
-  party: true,
-  stage: true,
-  expenseType: true,
-  materialType: true,
-  labourType: true,
-  subWorkType: true,
-  payments: true,
+  project: { select: { id: true, name: true } },
+  party: { select: { id: true, name: true, type: true } },
+  stage: { select: { id: true, name: true } },
+  expenseType: { select: { id: true, name: true } },
+  materialType: { select: { id: true, name: true } },
+  labourType: { select: { id: true, name: true } },
+  subWorkType: { select: { id: true, name: true } },
+  payments: { select: { id: true, amount: true, paymentMode: true, paymentDate: true } },
 } as const;
 
 /**

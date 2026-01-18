@@ -48,7 +48,7 @@ import type { Expense, CreateExpenseInput, UpdateExpenseInput, PaymentMode } fro
 // ============================================
 
 const expenseFormSchema = z.object({
-  expenseCategoryItemId: z.string().min(1, 'Expense type is required'),
+  expenseTypeItemId: z.string().min(1, 'Expense type is required'),
   expenseDate: z.date({ required_error: 'Date is required' }),
   rate: z.coerce.number().positive('Unit price must be positive'),
   quantity: z.coerce.number().positive('Quantity must be positive'),
@@ -188,7 +188,7 @@ export function AddExpenseModal({
   } = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseFormSchema),
     defaultValues: {
-      expenseCategoryItemId: '',
+      expenseTypeItemId: '',
       expenseDate: new Date(),
       rate: 0,
       quantity: 1,
@@ -206,7 +206,7 @@ export function AddExpenseModal({
   const watchRate = watch('rate');
   const watchQuantity = watch('quantity');
   const watchPaidAmount = watch('paidAmount');
-  const watchExpenseCategory = watch('expenseCategoryItemId');
+  const watchExpenseType = watch('expenseTypeItemId');
 
   // Calculate totals
   const totalAmount = (watchRate || 0) * (watchQuantity || 0);
@@ -214,7 +214,7 @@ export function AddExpenseModal({
 
   // Update expense type when category changes
   useEffect(() => {
-    const category = expenseCategories.find((c) => c.id === watchExpenseCategory);
+    const category = expenseCategories.find((c) => c.id === watchExpenseType);
     if (category) {
       setSelectedExpenseType(category.name as ExpenseType);
       // Reset party and sub-category when expense type changes
@@ -225,17 +225,17 @@ export function AddExpenseModal({
     } else {
       setSelectedExpenseType(null);
     }
-  }, [watchExpenseCategory, expenseCategories, setValue]);
+  }, [watchExpenseType, expenseCategories, setValue]);
 
   // Reset form when dialog opens/closes or expense changes
   useEffect(() => {
     if (open) {
       if (expense) {
-        const category = expenseCategories.find((c) => c.id === expense.expenseCategoryItemId);
+        const category = expenseCategories.find((c) => c.id === expense.expenseTypeItemId);
         setSelectedExpenseType(category?.name as ExpenseType || null);
         
         reset({
-          expenseCategoryItemId: expense.expenseCategoryItemId,
+          expenseTypeItemId: expense.expenseTypeItemId,
           expenseDate: new Date(expense.expenseDate),
           rate: expense.rate,
           quantity: expense.quantity,
@@ -251,7 +251,7 @@ export function AddExpenseModal({
       } else {
         setSelectedExpenseType(null);
         reset({
-          expenseCategoryItemId: '',
+          expenseTypeItemId: '',
           expenseDate: new Date(),
           rate: 0,
           quantity: 1,
@@ -273,7 +273,7 @@ export function AddExpenseModal({
       if (isEditing && expense) {
         const updateData: UpdateExpenseInput = {
           partyId: data.partyId,
-          expenseCategoryItemId: data.expenseCategoryItemId,
+          expenseTypeItemId: data.expenseTypeItemId,
           materialTypeItemId: data.materialTypeItemId || null,
           labourTypeItemId: data.labourTypeItemId || null,
           subWorkTypeItemId: data.subWorkTypeItemId || null,
@@ -288,7 +288,7 @@ export function AddExpenseModal({
         const createData: CreateExpenseInput = {
           projectId,
           partyId: data.partyId,
-          expenseCategoryItemId: data.expenseCategoryItemId,
+          expenseTypeItemId: data.expenseTypeItemId,
           materialTypeItemId: data.materialTypeItemId || undefined,
           labourTypeItemId: data.labourTypeItemId || undefined,
           subWorkTypeItemId: data.subWorkTypeItemId || undefined,
@@ -408,7 +408,7 @@ export function AddExpenseModal({
                       Expense Type <span className="text-destructive">*</span>
                     </Label>
                     <Controller
-                      name="expenseCategoryItemId"
+                      name="expenseTypeItemId"
                       control={control}
                       render={({ field }) => (
                         <Select onValueChange={field.onChange} value={field.value}>
@@ -435,8 +435,8 @@ export function AddExpenseModal({
                         </Select>
                       )}
                     />
-                    {errors.expenseCategoryItemId && (
-                      <p className="text-sm text-destructive">{errors.expenseCategoryItemId.message}</p>
+                    {errors.expenseTypeItemId && (
+                      <p className="text-sm text-destructive">{errors.expenseTypeItemId.message}</p>
                     )}
                   </div>
 

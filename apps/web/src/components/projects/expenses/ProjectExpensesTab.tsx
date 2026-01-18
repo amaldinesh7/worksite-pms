@@ -2,20 +2,20 @@
  * Project Expenses Tab
  *
  * Displays expenses for a project with:
- * - Search input
- * - Filters button
- * - Sort dropdown
+ * - Expense type filter (clearable)
+ * - Date range filter (clearable)
+ * - Sort dropdown (backend sorting)
  * - Add expense button
- * - Expenses table with pagination
+ * - Expenses table with pagination and loading states
  */
 
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
-import { MagnifyingGlass, FunnelSimple, Plus, DotsThree, PencilSimple, Trash, Eye } from '@phosphor-icons/react';
+import type { DateRange } from 'react-day-picker';
+import { Plus, DotsThree, PencilSimple, Trash, Eye, CircleNotch } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -47,10 +47,11 @@ import {
   EmptyContent,
 } from '@/components/ui/empty';
 import { TablePagination } from '@/components/ui/table-pagination';
+import { DateRangePicker } from '@/components/ui/custom/date-range-picker';
 import { useExpenses, useDeleteExpense } from '@/lib/hooks/useExpenses';
-import { useDebounce } from '@/lib/hooks/useDebounce';
+import { useCategoryItems } from '@/lib/hooks/useCategories';
 import { AddExpenseModal } from './AddExpenseModal';
-import type { Expense, ExpenseStatus } from '@/lib/api/expenses';
+import type { Expense, ExpenseStatus, ExpenseSortBy, ExpenseSortOrder } from '@/lib/api/expenses';
 
 // ============================================
 // Types
@@ -89,20 +90,26 @@ function getStatusLabel(status: ExpenseStatus): string {
 export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
   // State
   const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState('');
-  const [sortBy, setSortBy] = useState<'expenseDate' | 'amount'>('expenseDate');
+  const [sortBy, setSortBy] = useState<ExpenseSortBy>('expenseDate');
+  const [sortOrder, setSortOrder] = useState<ExpenseSortOrder>('desc');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [expenseTypeFilter, setExpenseTypeFilter] = useState<string | undefined>(undefined);
 
-  // Debounced search
-  const debouncedSearch = useDebounce(searchInput, 300);
+  // Fetch expense types for filter dropdown
+  const { data: expenseTypes = [] } = useCategoryItems('expense_type');
 
-  // Data fetching
-  const { data: expensesData, isLoading } = useExpenses({
+  // Data fetching with isFetching for loading overlay
+  const { data: expensesData, isLoading, isFetching } = useExpenses({
     projectId,
     page,
     limit: PAGINATION_LIMIT,
-    search: debouncedSearch || undefined,
+    startDate: dateRange?.from?.toISOString(),
+    endDate: dateRange?.to?.toISOString(),
+    expenseTypeItemId: expenseTypeFilter,
+    sortBy,
+    sortOrder,
   });
 
   // Mutations
@@ -132,6 +139,37 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
     setPage(newPage);
   }, []);
 
+  const handleDateRangeUpdate = useCallback(
+    (values: { range: DateRange; compareRange?: DateRange }) => {
+      setDateRange(values.range);
+      setPage(1); // Reset to first page when filter changes
+    },
+    []
+  );
+
+  const handleExpenseTypeChange = useCallback((value: string) => {
+    setExpenseTypeFilter(value || undefined);
+    setPage(1); // Reset to first page when filter changes
+  }, []);
+
+  const handleClearExpenseTypeFilter = useCallback(() => {
+    setExpenseTypeFilter(undefined);
+    setPage(1);
+  }, []);
+
+  const handleClearDateRange = useCallback(() => {
+    setDateRange(undefined);
+    setPage(1);
+  }, []);
+
+  const handleSortChange = useCallback((value: string) => {
+    // Value format: "field-order" e.g., "expenseDate-desc" or "amount-asc"
+    const [field, order] = value.split('-') as [ExpenseSortBy, ExpenseSortOrder];
+    setSortBy(field);
+    setSortOrder(order);
+    setPage(1);
+  }, []);
+
   // Derived state
   const expenses = expensesData?.items ?? [];
   const pagination = expensesData?.pagination ?? {
@@ -142,26 +180,42 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
     hasMore: false,
   };
 
+  // Get selected expense type name for display
+  const selectedExpenseTypeName = expenseTypes.find((t) => t.id === expenseTypeFilter)?.name;
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex items-center gap-3">
-        {/* Search */}
-        <div className="relative flex-1 max-w-xs">
-          <MagnifyingGlass className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search expense..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-9"
-          />
-        </div>
+        {/* Expense Type Filter */}
+        <Select value={expenseTypeFilter || ''} onValueChange={handleExpenseTypeChange}>
+          <SelectTrigger
+            className="w-[160px] cursor-pointer"
+            isClearable
+            hasValue={!!expenseTypeFilter}
+            onClear={handleClearExpenseTypeFilter}
+          >
+            <SelectValue placeholder="Expense type" />
+          </SelectTrigger>
+          <SelectContent>
+            {expenseTypes.map((type) => (
+              <SelectItem key={type.id} value={type.id} className="cursor-pointer">
+                {type.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        {/* Filters Button */}
-        <Button variant="outline" className="cursor-pointer">
-          <FunnelSimple className="h-4 w-4 mr-2" />
-          Filters
-        </Button>
+        {/* Date Range Filter */}
+        <DateRangePicker
+          onUpdate={handleDateRangeUpdate}
+          initialDateFrom={dateRange?.from}
+          initialDateTo={dateRange?.to}
+          align="start"
+          showCompare={false}
+          isClearable
+          onClear={handleClearDateRange}
+        />
 
         {/* Spacer */}
         <div className="flex-1" />
@@ -169,16 +223,22 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
         {/* Sort By */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Sort by:</span>
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-            <SelectTrigger className="w-[140px] cursor-pointer">
+          <Select value={`${sortBy}-${sortOrder}`} onValueChange={handleSortChange}>
+            <SelectTrigger className="w-[160px] cursor-pointer">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="expenseDate" className="cursor-pointer">
-                Last created
+              <SelectItem value="expenseDate-desc" className="cursor-pointer">
+                Date (Newest)
               </SelectItem>
-              <SelectItem value="amount" className="cursor-pointer">
-                Amount
+              <SelectItem value="expenseDate-asc" className="cursor-pointer">
+                Date (Oldest)
+              </SelectItem>
+              <SelectItem value="amount-desc" className="cursor-pointer">
+                Amount (High-Low)
+              </SelectItem>
+              <SelectItem value="amount-asc" className="cursor-pointer">
+                Amount (Low-High)
               </SelectItem>
             </SelectContent>
           </Select>
@@ -198,16 +258,12 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
             <div className="h-11 bg-muted border-b" />
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="h-16 border-b last:border-0 flex items-center px-4 gap-4">
-                <div className="h-4 w-4 bg-muted rounded" />
                 <div className="h-4 w-20 bg-muted rounded" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-muted rounded w-1/3" />
-                  <div className="h-3 bg-muted rounded w-1/4" />
-                </div>
                 <div className="h-4 w-16 bg-muted rounded" />
-                <div className="h-4 w-16 bg-muted rounded" />
+                <div className="h-4 w-20 bg-muted rounded" />
                 <div className="h-4 w-20 bg-muted rounded" />
                 <div className="h-6 w-16 bg-muted rounded" />
+                <div className="h-4 w-8 bg-muted rounded" />
               </div>
             ))}
           </div>
@@ -216,12 +272,12 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
         <Empty className="py-16">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <MagnifyingGlass className="h-6 w-6" />
+              <Funnel className="h-6 w-6" />
             </EmptyMedia>
             <EmptyTitle>No expenses found</EmptyTitle>
             <EmptyDescription>
-              {debouncedSearch
-                ? `No expenses match "${debouncedSearch}"`
+              {expenseTypeFilter || dateRange?.from
+                ? `No expenses match the selected filters${selectedExpenseTypeName ? ` (${selectedExpenseTypeName})` : ''}`
                 : 'Get started by adding your first expense'}
             </EmptyDescription>
           </EmptyHeader>
@@ -233,18 +289,20 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
           </EmptyContent>
         </Empty>
       ) : (
-        <div className="rounded-lg border overflow-hidden bg-white">
+        <div className="relative rounded-lg border overflow-hidden bg-white">
+          {/* Loading overlay for refetch */}
+          {isFetching && !isLoading && (
+            <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center">
+              <CircleNotch className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          )}
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">
-                  <input type="checkbox" className="rounded border-gray-300" />
-                </TableHead>
                 <TableHead>DATE</TableHead>
-                <TableHead>DESCRIPTION</TableHead>
-                <TableHead>CATEGORY</TableHead>
-                <TableHead>VENDOR</TableHead>
+                <TableHead>EXPENSE TYPE</TableHead>
                 <TableHead className="text-right">AMOUNT</TableHead>
+                <TableHead className="text-right">PAID</TableHead>
                 <TableHead>STATUS</TableHead>
                 <TableHead className="w-12">ACTIONS</TableHead>
               </TableRow>
@@ -252,36 +310,21 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
             <TableBody>
               {expenses.map((expense) => {
                 const totalAmount = expense.rate * expense.quantity;
-                const categoryName = expense.expenseCategory?.name ?? 'Unknown';
-                const partyName = expense.party?.name ?? 'Unknown';
+                const expenseTypeName = expense.expenseType?.name ?? 'Unknown';
+                const paidAmount = expense.payments?.reduce((sum, p) => sum + Number(p.amount), 0) ?? 0;
                 return (
                   <TableRow key={expense.id}>
-                    <TableCell>
-                      <input type="checkbox" className="rounded border-gray-300" />
-                    </TableCell>
                     <TableCell className="text-sm">
                       {format(new Date(expense.expenseDate), 'MMM d, yyyy')}
                     </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium text-sm">
-                          {expense.description || categoryName}
-                        </div>
-                        {expense.notes && (
-                          <div className="text-xs text-muted-foreground truncate max-w-[200px]">
-                            {expense.notes}
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {categoryName}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {partyName}
+                    <TableCell className="text-sm font-medium">
+                      {expenseTypeName}
                     </TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCurrency(totalAmount)}
+                    </TableCell>
+                    <TableCell className="text-right text-sm">
+                      {formatCurrency(paidAmount)}
                     </TableCell>
                     <TableCell>
                       <Badge variant={getStatusBadgeVariant(expense.status)}>
@@ -325,19 +368,20 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
               })}
             </TableBody>
           </Table>
-        </div>
-      )}
 
-      {/* Pagination */}
-      {!isLoading && pagination.pages > 1 && (
-        <TablePagination
-          page={page}
-          pages={pagination.pages}
-          total={pagination.total}
-          limit={PAGINATION_LIMIT}
-          onPageChange={handlePageChange}
-          itemLabel="expenses"
-        />
+          {/* Pagination inside table container */}
+          {pagination.total > 0 && (
+            <TablePagination
+              page={page}
+              pages={pagination.pages}
+              total={pagination.total}
+              limit={PAGINATION_LIMIT}
+              onPageChange={handlePageChange}
+              itemLabel="expenses"
+              className="border-t"
+            />
+          )}
+        </div>
       )}
 
       {/* Add/Edit Expense Modal */}
