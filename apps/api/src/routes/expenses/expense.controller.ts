@@ -25,8 +25,20 @@ const handle = createErrorHandler('expense');
 export const listExpenses = handle(
   'fetch',
   async (request: FastifyRequest<{ Querystring: ExpenseQuery }>, reply: FastifyReply) => {
-    const { page, limit, projectId, partyId, stageId, search, status, startDate, endDate } =
-      request.query;
+    const {
+      page,
+      limit,
+      projectId,
+      partyId,
+      stageId,
+      search,
+      status,
+      startDate,
+      endDate,
+      expenseTypeItemId,
+      sortBy,
+      sortOrder,
+    } = request.query;
     const skip = (page - 1) * limit;
 
     const { expenses, total } = await expenseService.findAll(request.organizationId, {
@@ -39,6 +51,9 @@ export const listExpenses = handle(
       status: status as ExpenseStatus | undefined,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
+      expenseTypeItemId,
+      sortBy,
+      sortOrder,
     });
 
     return sendPaginated(reply, expenses, buildPagination(page, limit, total));

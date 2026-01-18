@@ -6,6 +6,12 @@ const paymentModeValues = ['CASH', 'CHEQUE', 'ONLINE'] as const;
 // Expense status enum values
 const expenseStatusValues = ['PENDING', 'APPROVED'] as const;
 
+// Sort field values
+const sortByValues = ['expenseDate', 'amount', 'createdAt'] as const;
+
+// Sort order values
+const sortOrderValues = ['asc', 'desc'] as const;
+
 // ============================================
 // Request Schemas
 // ============================================
@@ -54,6 +60,9 @@ export const expenseQuerySchema = z.object({
   status: z.enum(expenseStatusValues).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
+  expenseTypeItemId: z.string().optional(),
+  sortBy: z.enum(sortByValues).default('expenseDate'),
+  sortOrder: z.enum(sortOrderValues).default('desc'),
 });
 
 export const expenseParamsSchema = z.object({
