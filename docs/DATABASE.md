@@ -1,7 +1,7 @@
 # Database Schema
 
 > Auto-generated from `apps/api/prisma/schema.prisma`
-> Last generated: 2026-01-17T20:41:14.017Z
+> Last generated: 2026-01-18T12:49:30.310Z
 
 ---
 
@@ -14,7 +14,6 @@
 | `createdAt` | `DateTime` | @default(now()) |
 | `members` | `OrganizationMember[]` | - |
 | `projects` | `Project[]` | - |
-| `categoryTypes` | `CategoryType[]` | - |
 | `categoryItems` | `CategoryItem[]` | - |
 | `parties` | `Party[]` | - |
 | `expenses` | `Expense[]` | - |
@@ -88,13 +87,11 @@
 | Field | Type | Attributes |
 |-------|------|------------|
 | `id` | `String` | @id @default(cuid()) |
-| `organizationId` | `String` | - |
-| `key` | `String` | // project_type | expense_category | material_type | labour_type | sub_work_type |
+| `key` | `String` | @unique // project_type | expense_type | material_type | labour_type | sub_work_type |
 | `label` | `String` | - |
 | `isActive` | `Boolean` | @default(true) |
 | `createdAt` | `DateTime` | @default(now()) |
 | `updatedAt` | `DateTime` | @updatedAt |
-| `organization` | `Organization` | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
 | `items` | `CategoryItem[]` | - |
 
 ### CategoryItem
@@ -106,12 +103,13 @@
 | `categoryTypeId` | `String` | - |
 | `name` | `String` | - |
 | `isActive` | `Boolean` | @default(true) |
+| `isEditable` | `Boolean` | @default(true) |
 | `createdAt` | `DateTime` | @default(now()) |
 | `updatedAt` | `DateTime` | @updatedAt |
 | `organization` | `Organization` | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
 | `categoryType` | `CategoryType` | @relation(fields: [categoryTypeId], references: [id], onDelete: Cascade) |
 | `projectsAsType` | `Project[]` | @relation("ProjectType") |
-| `expensesAsCategory` | `Expense[]` | @relation("ExpenseCategory") |
+| `expensesAsType` | `Expense[]` | @relation("ExpenseType") |
 | `expensesAsMaterial` | `Expense[]` | @relation("MaterialType") |
 | `expensesAsLabour` | `Expense[]` | @relation("LabourType") |
 | `expensesAsSubWork` | `Expense[]` | @relation("SubWorkType") |
@@ -186,20 +184,22 @@
 | `projectId` | `String` | - |
 | `partyId` | `String` | - |
 | `stageId` | `String?` | - |
-| `expenseCategoryItemId` | `String` | - |
+| `expenseTypeItemId` | `String` | - |
 | `materialTypeItemId` | `String?` | - |
 | `labourTypeItemId` | `String?` | - |
 | `subWorkTypeItemId` | `String?` | - |
+| `description` | `String?` | - |
 | `rate` | `Decimal` | @db.Decimal(15, 2) |
 | `quantity` | `Decimal` | @db.Decimal(15, 4) |
 | `expenseDate` | `DateTime` | - |
+| `status` | `ExpenseStatus` | @default(PENDING) |
 | `notes` | `String?` | @db.Text |
 | `createdAt` | `DateTime` | @default(now()) |
 | `organization` | `Organization` | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
 | `project` | `Project` | @relation(fields: [projectId], references: [id], onDelete: Cascade) |
 | `party` | `Party` | @relation(fields: [partyId], references: [id]) |
 | `stage` | `Stage?` | @relation(fields: [stageId], references: [id]) |
-| `expenseCategory` | `CategoryItem` | @relation("ExpenseCategory", fields: [expenseCategoryItemId], references: [id]) |
+| `expenseType` | `CategoryItem` | @relation("ExpenseType", fields: [expenseTypeItemId], references: [id]) |
 | `materialType` | `CategoryItem?` | @relation("MaterialType", fields: [materialTypeItemId], references: [id]) |
 | `labourType` | `CategoryItem?` | @relation("LabourType", fields: [labourTypeItemId], references: [id]) |
 | `subWorkType` | `CategoryItem?` | @relation("SubWorkType", fields: [subWorkTypeItemId], references: [id]) |

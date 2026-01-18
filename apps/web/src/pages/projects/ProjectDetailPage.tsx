@@ -11,8 +11,8 @@
  * - Analytics: (future)
  */
 
-import { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   House,
   CurrencyDollar,
@@ -74,7 +74,13 @@ function getStatusLabel(status: ProjectStatus): string {
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // URL-based tab state for persistence
+  const activeTab = searchParams.get('tab') || 'overview';
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab }, { replace: true });
+  };
 
   // Data fetching
   const { data: project, isLoading: isProjectLoading } = useProject(id || '');
