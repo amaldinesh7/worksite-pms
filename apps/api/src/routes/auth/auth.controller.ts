@@ -69,7 +69,7 @@ export const verifyOtp = withError(
     const { user, isNewUser } = await authRepository.findOrCreate(normalizedPhone);
 
     // Generate JWT token
-    const tokens = await jwtService.generateTokens(user.id, user.phone);
+    const tokens = await jwtService.generateTokens(user.id, user.phone || normalizedPhone);
 
     // Get first organization membership (if any)
     const primaryMembership = user.memberships[0] ?? null;

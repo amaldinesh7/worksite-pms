@@ -20,6 +20,11 @@ export interface StageListOptions {
   projectId?: string;
 }
 
+// Include object for stage queries
+const stageInclude = {
+  project: true,
+} as const;
+
 export class StageRepository {
   async create(organizationId: string, data: CreateStageData): Promise<Stage> {
     try {
@@ -42,9 +47,7 @@ export class StageRepository {
           name: data.name,
           budgetAmount: new Decimal(data.budgetAmount),
         },
-        include: {
-          project: true,
-        },
+        include: stageInclude,
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -78,9 +81,7 @@ export class StageRepository {
           organizationId,
           projectId,
         },
-        include: {
-          project: true,
-        },
+        include: stageInclude,
         orderBy: { createdAt: 'asc' },
       });
     } catch (error) {
@@ -103,9 +104,7 @@ export class StageRepository {
           where,
           skip: options?.skip,
           take: options?.take,
-          include: {
-            project: true,
-          },
+          include: stageInclude,
           orderBy: { createdAt: 'asc' },
         }),
         prisma.stage.count({ where }),
@@ -119,24 +118,22 @@ export class StageRepository {
 
   async update(organizationId: string, id: string, data: UpdateStageData): Promise<Stage> {
     try {
-      const existing = await prisma.stage.findFirst({
+      // Atomic org-scoped update
+      const result = await prisma.stage.updateMany({
         where: { id, organizationId },
+        data: {
+          ...data,
+          budgetAmount: data.budgetAmount !== undefined ? new Decimal(data.budgetAmount) : undefined,
+        },
       });
 
-      if (!existing) {
+      if (result.count === 0) {
         throw handlePrismaError({ code: 'P2025' });
       }
 
-      return await prisma.stage.update({
+      return await prisma.stage.findUniqueOrThrow({
         where: { id },
-        data: {
-          ...data,
-          budgetAmount:
-            data.budgetAmount !== undefined ? new Decimal(data.budgetAmount) : undefined,
-        },
-        include: {
-          project: true,
-        },
+        include: stageInclude,
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -145,17 +142,14 @@ export class StageRepository {
 
   async delete(organizationId: string, id: string): Promise<void> {
     try {
-      const existing = await prisma.stage.findFirst({
+      // Atomic org-scoped delete
+      const result = await prisma.stage.deleteMany({
         where: { id, organizationId },
       });
 
-      if (!existing) {
+      if (result.count === 0) {
         throw handlePrismaError({ code: 'P2025' });
       }
-
-      await prisma.stage.delete({
-        where: { id },
-      });
     } catch (error) {
       throw handlePrismaError(error);
     }

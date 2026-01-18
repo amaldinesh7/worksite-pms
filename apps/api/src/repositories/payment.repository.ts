@@ -118,20 +118,21 @@ export class PaymentRepository {
 
   async update(organizationId: string, id: string, data: UpdatePaymentData): Promise<Payment> {
     try {
-      const existing = await prisma.payment.findFirst({
+      // Atomic org-scoped update
+      const result = await prisma.payment.updateMany({
         where: { id, organizationId },
-      });
-
-      if (!existing) {
-        throw handlePrismaError({ code: 'P2025' });
-      }
-
-      return await prisma.payment.update({
-        where: { id },
         data: {
           ...data,
           amount: data.amount !== undefined ? new Decimal(data.amount) : undefined,
         },
+      });
+
+      if (result.count === 0) {
+        throw handlePrismaError({ code: 'P2025' });
+      }
+
+      return await prisma.payment.findUniqueOrThrow({
+        where: { id },
         include: paymentInclude,
       });
     } catch (error) {
@@ -141,17 +142,14 @@ export class PaymentRepository {
 
   async delete(organizationId: string, id: string): Promise<void> {
     try {
-      const existing = await prisma.payment.findFirst({
+      // Atomic org-scoped delete
+      const result = await prisma.payment.deleteMany({
         where: { id, organizationId },
       });
 
-      if (!existing) {
+      if (result.count === 0) {
         throw handlePrismaError({ code: 'P2025' });
       }
-
-      await prisma.payment.delete({
-        where: { id },
-      });
     } catch (error) {
       throw handlePrismaError(error);
     }

@@ -3,7 +3,6 @@ import { projectRepository } from '../../repositories/project.repository';
 import { createErrorHandler } from '../../lib/error-handler';
 import {
   sendSuccess,
-  sendPaginated,
   sendNotFound,
   sendNoContent,
   buildPagination,
@@ -13,6 +12,8 @@ import type {
   UpdateProjectInput,
   ProjectQuery,
   ProjectParams,
+  AddProjectMemberInput,
+  ProjectMemberParams,
 } from './project.schema';
 
 const handle = createErrorHandler('project');
@@ -23,16 +24,32 @@ const handle = createErrorHandler('project');
 export const listProjects = handle(
   'fetch',
   async (request: FastifyRequest<{ Querystring: ProjectQuery }>, reply: FastifyReply) => {
-    const { page, limit, search } = request.query;
+    const { page, limit, search, status } = request.query;
     const skip = (page - 1) * limit;
 
-    const { projects, total } = await projectRepository.findAll(request.organizationId, {
+    const { projects, total, counts } = await projectRepository.findAll(request.organizationId, {
       skip,
       take: limit,
       search,
+      status,
     });
 
-    return sendPaginated(reply, projects, buildPagination(page, limit, total));
+    // Add progress to each project
+    const projectsWithProgress = await Promise.all(
+      projects.map(async (project) => {
+        const progress = await projectRepository.calculateProgress(
+          request.organizationId,
+          project.id
+        );
+        return { ...project, progress };
+      })
+    );
+
+    return sendSuccess(reply, {
+      items: projectsWithProgress,
+      pagination: buildPagination(page, limit, total),
+      counts,
+    });
   }
 );
 
@@ -58,9 +75,12 @@ export const getProject = handle(
 export const createProject = handle(
   'create',
   async (request: FastifyRequest<{ Body: CreateProjectInput }>, reply: FastifyReply) => {
+    const { startDate, endDate, ...rest } = request.body;
+    
     const project = await projectRepository.create(request.organizationId, {
-      ...request.body,
-      startDate: new Date(request.body.startDate),
+      ...rest,
+      startDate: new Date(startDate),
+      endDate: endDate ? new Date(endDate) : undefined,
     });
 
     return sendSuccess(reply, project, 201);
@@ -76,9 +96,12 @@ export const updateProject = handle(
     request: FastifyRequest<{ Params: ProjectParams; Body: UpdateProjectInput }>,
     reply: FastifyReply
   ) => {
+    const { startDate, endDate, ...rest } = request.body;
+    
     const updateData = {
-      ...request.body,
-      startDate: request.body.startDate ? new Date(request.body.startDate) : undefined,
+      ...rest,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : endDate === null ? null : undefined,
     };
 
     const project = await projectRepository.update(
@@ -114,5 +137,50 @@ export const getProjectStats = handle(
     );
 
     return sendSuccess(reply, stats);
+  }
+);
+
+// ============================================
+// Project Members Management
+// ============================================
+
+export const getProjectMembers = handle(
+  'fetch',
+  async (request: FastifyRequest<{ Params: ProjectParams }>, reply: FastifyReply) => {
+    const members = await projectRepository.getProjectMembers(
+      request.organizationId,
+      request.params.id
+    );
+
+    return sendSuccess(reply, members);
+  }
+);
+
+export const addProjectMember = handle(
+  'create',
+  async (
+    request: FastifyRequest<{ Params: ProjectParams; Body: AddProjectMemberInput }>,
+    reply: FastifyReply
+  ) => {
+    const access = await projectRepository.addMember(
+      request.organizationId,
+      request.params.id,
+      request.body.memberId
+    );
+
+    return sendSuccess(reply, access, 201);
+  }
+);
+
+export const removeProjectMember = handle(
+  'delete',
+  async (request: FastifyRequest<{ Params: ProjectMemberParams }>, reply: FastifyReply) => {
+    await projectRepository.removeMember(
+      request.organizationId,
+      request.params.id,
+      request.params.memberId
+    );
+
+    return sendNoContent(reply);
   }
 );

@@ -7,6 +7,68 @@ function randomDate(start: Date, end: Date): Date {
   return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
 }
 
+// Global category types (shared across all organizations)
+const GLOBAL_CATEGORY_TYPES = [
+  { key: 'expense_type', label: 'Expense Types' },
+  { key: 'material_type', label: 'Material Types' },
+  { key: 'labour_type', label: 'Labour Types' },
+  { key: 'sub_work_type', label: 'Sub Work Types' },
+  { key: 'project_type', label: 'Project Types' },
+];
+
+// Default category items per organization (only expense_type has defaults)
+const DEFAULT_CATEGORY_ITEMS = [
+  { typeKey: 'expense_type', name: 'Material', isEditable: false },
+  { typeKey: 'expense_type', name: 'Labour', isEditable: false },
+  { typeKey: 'expense_type', name: 'Sub Work', isEditable: false },
+];
+
+/**
+ * Create global category types (run once, shared by all orgs)
+ */
+async function createGlobalCategoryTypes() {
+  const existingTypes = await prisma.categoryType.findMany();
+  if (existingTypes.length > 0) {
+    console.log('✅ Global category types already exist');
+    return;
+  }
+
+  await prisma.categoryType.createMany({
+    data: GLOBAL_CATEGORY_TYPES,
+  });
+  console.log('✅ Created global category types');
+}
+
+/**
+ * Create organization with default category items
+ */
+async function createOrganizationWithDefaults(name: string) {
+  return await prisma.$transaction(async (tx) => {
+    // Create organization
+    const organization = await tx.organization.create({
+      data: { name },
+    });
+
+    // Get global category types
+    const categoryTypes = await tx.categoryType.findMany();
+    const typeIdMap = new Map(categoryTypes.map((t) => [t.key, t.id]));
+
+    // Create default category items for this organization
+    const itemsToCreate = DEFAULT_CATEGORY_ITEMS.map((item) => ({
+      organizationId: organization.id,
+      categoryTypeId: typeIdMap.get(item.typeKey)!,
+      name: item.name,
+      isEditable: item.isEditable,
+    }));
+
+    if (itemsToCreate.length > 0) {
+      await tx.categoryItem.createMany({ data: itemsToCreate });
+    }
+
+    return organization;
+  });
+}
+
 async function main() {
   console.log('🌱 Seeding database...');
 
@@ -30,22 +92,106 @@ async function main() {
   console.log('✅ Cleanup complete');
 
   // ============================================
-  // Create 2 Demo Organizations
+  // Create Global Category Types (FIRST)
+  // ============================================
+  await createGlobalCategoryTypes();
+
+  // ============================================
+  // Create 2 Demo Organizations (with default category items)
   // ============================================
 
-  const org1 = await prisma.organization.create({
-    data: {
-      name: 'Premier Construction Group',
-    },
-  });
-  console.log(`✅ Created organization: ${org1.name}`);
+  const org1 = await createOrganizationWithDefaults('Premier Construction Group');
+  console.log(`✅ Created organization: ${org1.name} (with default category items)`);
 
-  const org2 = await prisma.organization.create({
+  const org2 = await createOrganizationWithDefaults('Elite Builders & Developers');
+  console.log(`✅ Created organization: ${org2.name} (with default category items)`);
+
+  // ============================================
+  // Query category types and items for org1
+  // ============================================
+
+  // Get expense type
+  const expenseTypeCategory = await prisma.categoryType.findFirst({
+    where: { key: 'expense_type' },
+  });
+  const materialExpense = await prisma.categoryItem.findFirst({
+    where: { organizationId: org1.id, categoryTypeId: expenseTypeCategory!.id, name: 'Material' },
+  });
+  const labourExpense = await prisma.categoryItem.findFirst({
+    where: { organizationId: org1.id, categoryTypeId: expenseTypeCategory!.id, name: 'Labour' },
+  });
+
+  // Get material type category and create some items for seed data
+  const materialTypeCategory = await prisma.categoryType.findFirst({
+    where: { key: 'material_type' },
+  });
+  const steelMaterial = await prisma.categoryItem.create({
     data: {
-      name: 'Elite Builders & Developers',
+      organizationId: org1.id,
+      categoryTypeId: materialTypeCategory!.id,
+      name: 'Steel',
+      isEditable: true,
     },
   });
-  console.log(`✅ Created organization: ${org2.name}`);
+  const cementMaterial = await prisma.categoryItem.create({
+    data: {
+      organizationId: org1.id,
+      categoryTypeId: materialTypeCategory!.id,
+      name: 'Cement',
+      isEditable: true,
+    },
+  });
+
+  // Get labour type category and create some items for seed data
+  const labourTypeCategory = await prisma.categoryType.findFirst({
+    where: { key: 'labour_type' },
+  });
+  const paintingLabour = await prisma.categoryItem.create({
+    data: {
+      organizationId: org1.id,
+      categoryTypeId: labourTypeCategory!.id,
+      name: 'Painting',
+      isEditable: true,
+    },
+  });
+  const electricianLabour = await prisma.categoryItem.create({
+    data: {
+      organizationId: org1.id,
+      categoryTypeId: labourTypeCategory!.id,
+      name: 'Electrician',
+      isEditable: true,
+    },
+  });
+
+  // Get project type category and create project types for seed data
+  const projectTypeCategory = await prisma.categoryType.findFirst({
+    where: { key: 'project_type' },
+  });
+
+  // Create project types (these are user-defined, not defaults)
+  const residentialType = await prisma.categoryItem.create({
+    data: {
+      organizationId: org1.id,
+      categoryTypeId: projectTypeCategory!.id,
+      name: 'Residential',
+    },
+  });
+  const commercialType = await prisma.categoryItem.create({
+    data: {
+      organizationId: org1.id,
+      categoryTypeId: projectTypeCategory!.id,
+      name: 'Commercial',
+    },
+  });
+  const industrialType = await prisma.categoryItem.create({
+    data: {
+      organizationId: org1.id,
+      categoryTypeId: projectTypeCategory!.id,
+      name: 'Industrial',
+    },
+  });
+
+  console.log('✅ Created additional category items for seed data');
 
   // ============================================
   // Create Admin Users for Both Organizations
@@ -84,328 +230,6 @@ async function main() {
   });
 
   console.log('✅ Created admin users for both organizations');
-
-  // ============================================
-  // Category Types & Items (for org1)
-  // ============================================
-
-  const expenseType = await prisma.categoryType.create({
-    data: {
-      organizationId: org1.id,
-      key: 'expense_type',
-      label: 'Expense Types',
-    },
-  });
-
-  const materialType = await prisma.categoryType.create({
-    data: {
-      organizationId: org1.id,
-      key: 'material_type',
-      label: 'Material Types',
-    },
-  });
-
-  const labourType = await prisma.categoryType.create({
-    data: {
-      organizationId: org1.id,
-      key: 'labour_type',
-      label: 'Labour Types',
-    },
-  });
-
-  const subworkType = await prisma.categoryType.create({
-    data: {
-      organizationId: org1.id,
-      key: 'subwork_type',
-      label: 'Subwork Types',
-    },
-  });
-
-  const projectType = await prisma.categoryType.create({
-    data: {
-      organizationId: org1.id,
-      key: 'project_type',
-      label: 'Project Types',
-    },
-  });
-
-  // Expense Category Items
-  const labourExpense = await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: expenseType.id,
-      name: 'Labor Cost',
-    },
-  });
-  const materialsExpense = await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: expenseType.id,
-      name: 'Material Purchase',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: expenseType.id,
-      name: 'Equipment Rental',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: expenseType.id,
-      name: 'Transportation',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: expenseType.id,
-      name: 'Utilities',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: expenseType.id,
-      name: 'Permits & Licenses',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: expenseType.id,
-      name: 'Insurance',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: expenseType.id,
-      name: 'Subcontractor Fees',
-    },
-  });
-
-  // Material Types
-  const cementMaterial = await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: materialType.id,
-      name: 'Cement',
-    },
-  });
-  const steelMaterial = await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: materialType.id,
-      name: 'Steel Bars',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: materialType.id,
-      name: 'Bricks',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: materialType.id,
-      name: 'Sand',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: materialType.id,
-      name: 'Gravel',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: materialType.id,
-      name: 'Timber',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: materialType.id,
-      name: 'Paint',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: materialType.id,
-      name: 'Tiles',
-    },
-  });
-
-  // Labour Types
-  const generalLabour = await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: labourType.id,
-      name: 'General Labourer',
-    },
-  });
-  const carpenterLabour = await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: labourType.id,
-      name: 'Carpenter',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: labourType.id,
-      name: 'Electrician',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: labourType.id,
-      name: 'Plumber',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: labourType.id,
-      name: 'Mason',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: labourType.id,
-      name: 'Site Supervisor',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: labourType.id,
-      name: 'Welder',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: labourType.id,
-      name: 'HVAC Technician',
-    },
-  });
-
-  // Subwork Types
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: subworkType.id,
-      name: 'Excavation',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: subworkType.id,
-      name: 'Foundation Work',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: subworkType.id,
-      name: 'Framing',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: subworkType.id,
-      name: 'Roofing',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: subworkType.id,
-      name: 'Plumbing Installation',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: subworkType.id,
-      name: 'Electrical Installation',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: subworkType.id,
-      name: 'Flooring',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: subworkType.id,
-      name: 'Painting',
-    },
-  });
-
-  // Project Types
-  const residentialType = await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: projectType.id,
-      name: 'Residential',
-    },
-  });
-  const commercialType = await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: projectType.id,
-      name: 'Commercial',
-    },
-  });
-  const industrialType = await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: projectType.id,
-      name: 'Industrial',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: projectType.id,
-      name: 'Infrastructure',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: projectType.id,
-      name: 'Renovation',
-    },
-  });
-  await prisma.categoryItem.create({
-    data: {
-      organizationId: org1.id,
-      categoryTypeId: projectType.id,
-      name: 'Mixed-Use',
-    },
-  });
-
-  console.log('✅ Created category types and items');
 
   // ============================================
   // Create 10 Vendors
@@ -725,7 +549,9 @@ async function main() {
       clientLocation: 'Downtown Business Center, Tower A',
       location: 'Downtown City, Plot 123',
       startDate: new Date('2024-01-15'),
+      endDate: new Date('2025-06-30'),
       amount: 5000000,
+      area: '45000',
       projectType: residentialType,
     },
     {
@@ -736,7 +562,9 @@ async function main() {
       clientLocation: 'Business District, Office Tower 5',
       location: 'Tech Zone, Sector 7',
       startDate: new Date('2024-02-01'),
+      endDate: new Date('2025-12-15'),
       amount: 8500000,
+      area: '75000',
       projectType: commercialType,
     },
     {
@@ -747,7 +575,9 @@ async function main() {
       clientLocation: 'Developer Hub, Building 12',
       location: 'Suburban Area, Phase 2',
       startDate: new Date('2024-03-10'),
+      endDate: new Date('2026-03-10'),
       amount: 12000000,
+      area: '120000',
       projectType: residentialType,
     },
     {
@@ -758,7 +588,9 @@ async function main() {
       clientLocation: 'Industrial Estate, Unit 45',
       location: 'Industrial Zone, Plot 89',
       startDate: new Date('2024-04-05'),
+      endDate: new Date('2025-10-01'),
       amount: 15000000,
+      area: '85000',
       projectType: industrialType,
     },
     {
@@ -769,7 +601,9 @@ async function main() {
       clientLocation: 'Mall Management Office, Floor 3',
       location: 'City Center, Mall Complex',
       startDate: new Date('2024-05-20'),
+      endDate: null, // No end date
       amount: 3200000,
+      area: null, // No area
       projectType: commercialType,
     },
     {
@@ -780,7 +614,9 @@ async function main() {
       clientLocation: 'Government Complex, Block 2',
       location: 'Highway 45, KM 12',
       startDate: new Date('2024-06-01'),
+      endDate: null, // No end date
       amount: 25000000,
+      area: null, // No area
       projectType: residentialType, // Using residential as fallback
     },
   ];
@@ -828,7 +664,9 @@ async function main() {
         clientId: clientParty.id,
         location: proj.location,
         startDate: proj.startDate,
+        endDate: proj.endDate,
         amount: proj.amount,
+        area: proj.area,
         projectTypeItemId: proj.projectType.id,
       },
     });
@@ -916,8 +754,8 @@ async function main() {
             projectId: project.id,
             partyId: vendor.id,
             stageId: stage.id,
-            expenseCategoryItemId: materialsExpense.id,
-            materialTypeItemId: Math.random() > 0.5 ? cementMaterial.id : steelMaterial.id,
+            expenseTypeItemId: materialExpense!.id,
+            materialTypeItemId: Math.random() > 0.5 ? cementMaterial!.id : steelMaterial!.id,
             rate,
             quantity,
             expenseDate: randomDate(project.startDate, new Date()),
@@ -960,8 +798,8 @@ async function main() {
             projectId: project.id,
             partyId: labour.id,
             stageId: stage.id,
-            expenseCategoryItemId: labourExpense.id,
-            labourTypeItemId: Math.random() > 0.5 ? generalLabour.id : carpenterLabour.id,
+            expenseTypeItemId: labourExpense!.id,
+            labourTypeItemId: Math.random() > 0.5 ? paintingLabour!.id : electricianLabour!.id,
             rate,
             quantity,
             expenseDate: randomDate(project.startDate, new Date()),
@@ -1004,8 +842,8 @@ async function main() {
             projectId: project.id,
             partyId: subcontractor.id,
             stageId: stage.id,
-            expenseCategoryItemId: labourExpense.id,
-            labourTypeItemId: generalLabour.id,
+            expenseTypeItemId: labourExpense!.id,
+            labourTypeItemId: paintingLabour!.id,
             rate,
             quantity,
             expenseDate: randomDate(project.startDate, new Date()),

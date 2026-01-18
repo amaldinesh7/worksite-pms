@@ -58,12 +58,11 @@ export const testData = {
   },
 
   /**
-   * Create a test category type
+   * Create a test category type (global, not per-organization)
    */
-  async createCategoryType(organizationId: string, key: string, label?: string) {
+  async createCategoryType(key: string, label?: string) {
     return prisma.categoryType.create({
       data: {
-        organizationId,
         key,
         label: label || key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
       },
@@ -130,7 +129,7 @@ export const testData = {
         organizationId,
         name: data?.name || faker.company.name(),
         phone: data?.phone || faker.phone.number(),
-        location: data?.location,
+        location: data?.location || faker.location.streetAddress(),
         type,
         isInternal: data?.isInternal ?? false,
         profilePicture: data?.profilePicture,
@@ -169,7 +168,7 @@ export const testData = {
         organizationId,
         name,
         phone,
-        location: data?.location,
+        location: data?.location || faker.location.streetAddress(),
         type,
         isInternal: data?.isInternal ?? false,
         userId: user.id,
@@ -225,7 +224,7 @@ export const testData = {
     organizationId: string,
     projectId: string,
     partyId: string,
-    expenseCategoryItemId: string,
+    expenseTypeItemId: string,
     data?: Partial<{
       stageId: string;
       rate: number;
@@ -239,7 +238,7 @@ export const testData = {
         organizationId,
         projectId,
         partyId,
-        expenseCategoryItemId,
+        expenseTypeItemId,
         stageId: data?.stageId,
         rate: data?.rate || faker.number.int({ min: 100, max: 10000 }),
         quantity: data?.quantity || faker.number.int({ min: 1, max: 100 }),
@@ -371,7 +370,7 @@ export const cleanup = {
     await prisma.project.deleteMany({ where: { organizationId } });
     await prisma.party.deleteMany({ where: { organizationId } });
     await prisma.categoryItem.deleteMany({ where: { organizationId } });
-    await prisma.categoryType.deleteMany({ where: { organizationId } });
+    // CategoryTypes are global, don't delete them per-org
     await prisma.organizationMember.deleteMany({ where: { organizationId } });
     await prisma.organization.delete({ where: { id: organizationId } });
   },
@@ -419,17 +418,15 @@ export function authHeaders(
 export async function setupTestContext() {
   const organization = await testData.createOrganization('Test Organization');
 
-  // Create base category types
-  const projectType = await testData.createCategoryType(
-    organization.id,
-    'project_type',
-    'Project Type'
-  );
-  const expenseCategory = await testData.createCategoryType(
-    organization.id,
-    'expense_category',
-    'Expense Category'
-  );
+  // Create or find global category types
+  let projectType = await prisma.categoryType.findUnique({ where: { key: 'project_type' } });
+  if (!projectType) {
+    projectType = await testData.createCategoryType('project_type', 'Project Type');
+  }
+  let expenseType = await prisma.categoryType.findUnique({ where: { key: 'expense_type' } });
+  if (!expenseType) {
+    expenseType = await testData.createCategoryType('expense_type', 'Expense Type');
+  }
 
   // Create base category items
   const residentialType = await testData.createCategoryItem(
@@ -444,19 +441,19 @@ export async function setupTestContext() {
   );
   const materialsCategory = await testData.createCategoryItem(
     organization.id,
-    expenseCategory.id,
+    expenseType.id,
     'Materials'
   );
   const labourCategory = await testData.createCategoryItem(
     organization.id,
-    expenseCategory.id,
+    expenseType.id,
     'Labour'
   );
 
   return {
     organization,
     projectType,
-    expenseCategory,
+    expenseType,
     residentialType,
     commercialType,
     materialsCategory,

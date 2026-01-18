@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { organizationRepository } from '../../repositories/organization.repository';
+import { organizationService } from '../../services/organization.service';
 import { createErrorHandler } from '../../lib/error-handler';
 import {
   sendSuccess,
@@ -34,7 +34,7 @@ export const listOrganizations = withError(
     const { page, limit, search } = request.query;
     const skip = (page - 1) * limit;
 
-    const { organizations, total } = await organizationRepository.findAll({
+    const { organizations, total } = await organizationService.findAll({
       skip,
       take: limit,
       search,
@@ -48,7 +48,7 @@ export const getOrganization = withError(
   'fetch',
   async (request: FastifyRequest<{ Params: OrganizationIdParamsType }>, reply: FastifyReply) => {
     const { id } = request.params;
-    const organization = await organizationRepository.findById(id);
+    const organization = await organizationService.findById(id);
 
     if (!organization) {
       return sendNotFound(reply, 'Organization not found');
@@ -61,7 +61,7 @@ export const getOrganization = withError(
 export const createOrganization = withError(
   'create',
   async (request: FastifyRequest<{ Body: CreateOrganizationInput }>, reply: FastifyReply) => {
-    const organization = await organizationRepository.create(request.body);
+    const organization = await organizationService.create(request.body);
     return sendCreated(reply, organization);
   }
 );
@@ -76,7 +76,7 @@ export const updateOrganization = withError(
     reply: FastifyReply
   ) => {
     const { id } = request.params;
-    const organization = await organizationRepository.update(id, request.body);
+    const organization = await organizationService.update(id, request.body);
     return sendSuccess(reply, organization);
   }
 );
@@ -85,7 +85,7 @@ export const deleteOrganization = withError(
   'delete',
   async (request: FastifyRequest<{ Params: OrganizationIdParamsType }>, reply: FastifyReply) => {
     const { id } = request.params;
-    await organizationRepository.delete(id);
+    await organizationService.delete(id);
     return sendNoContent(reply);
   }
 );
@@ -98,7 +98,7 @@ export const listMembers = withError(
   'fetch members for',
   async (request: FastifyRequest<{ Params: OrganizationIdParamsType }>, reply: FastifyReply) => {
     const { id } = request.params;
-    const members = await organizationRepository.getMembers(id);
+    const members = await organizationService.getMembers(id);
     return sendSuccess(reply, members);
   }
 );
@@ -113,7 +113,7 @@ export const addMember = withError(
     reply: FastifyReply
   ) => {
     const { id } = request.params;
-    const member = await organizationRepository.addMember(id, request.body);
+    const member = await organizationService.addMember(id, request.body);
     return sendCreated(reply, member);
   }
 );
@@ -128,7 +128,7 @@ export const updateMemberRole = withError(
     reply: FastifyReply
   ) => {
     const { id, userId } = request.params;
-    const member = await organizationRepository.updateMemberRole(id, userId, request.body);
+    const member = await organizationService.updateMemberRole(id, userId, request.body);
     return sendSuccess(reply, member);
   }
 );
@@ -137,7 +137,7 @@ export const removeMember = withError(
   'remove member from',
   async (request: FastifyRequest<{ Params: MemberParamsType }>, reply: FastifyReply) => {
     const { id, userId } = request.params;
-    await organizationRepository.removeMember(id, userId);
+    await organizationService.removeMember(id, userId);
     return sendNoContent(reply);
   }
 );

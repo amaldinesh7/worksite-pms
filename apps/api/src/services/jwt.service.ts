@@ -103,7 +103,7 @@ export class JwtService {
     await prisma.refreshToken.delete({ where: { id: storedToken.id } });
 
     // Generate new token pair
-    return this.generateTokens(storedToken.userId, storedToken.user.phone);
+    return this.generateTokens(storedToken.userId, storedToken.user.phone || '');
   }
 
   /**

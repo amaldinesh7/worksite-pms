@@ -179,14 +179,11 @@ describe('Projects API', () => {
     it('should not return projects from other organizations', async () => {
       // Create project in different org
       const otherOrg = await testData.createOrganization('Other Org');
-      const otherCategoryType = await testData.createCategoryType(
-        otherOrg.id,
-        'project_type',
-        'Project Type'
-      );
+      // Use existing global project_type category type
+      const projectType = await prisma.categoryType.findUnique({ where: { key: 'project_type' } });
       const otherCategoryItem = await testData.createCategoryItem(
         otherOrg.id,
-        otherCategoryType.id,
+        projectType!.id,
         'Commercial'
       );
 

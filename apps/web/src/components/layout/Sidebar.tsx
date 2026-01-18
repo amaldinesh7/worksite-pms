@@ -16,9 +16,7 @@ import {
   NavSection,
   ProfileMenu,
   mainNavItems,
-  managementSection,
   settingsSection,
-  creditsHubSection,
 } from './sidebar/index';
 
 interface SidebarProps {
@@ -111,14 +109,6 @@ export function Sidebar({ className }: SidebarProps) {
               </li>
             ))}
           </ul>
-
-          <div className="mt-6">
-            <NavSection
-              section={managementSection}
-              isCollapsed={effectiveCollapsed}
-              onItemClick={handleNavClick}
-            />
-          </div>
 
           <div className="mt-6">
             <NavSection

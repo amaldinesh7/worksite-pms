@@ -1,3 +1,9 @@
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateEnum
 CREATE TYPE "OrganizationRole" AS ENUM ('ADMIN', 'MANAGER', 'ACCOUNTANT', 'SUPERVISOR', 'CLIENT');
 
@@ -12,6 +18,12 @@ CREATE TYPE "PaymentMode" AS ENUM ('CASH', 'CHEQUE', 'ONLINE');
 
 -- CreateEnum
 CREATE TYPE "EntityType" AS ENUM ('EXPENSE', 'PAYMENT', 'DOCUMENT');
+
+-- CreateEnum
+CREATE TYPE "ProjectStatus" AS ENUM ('ACTIVE', 'ON_HOLD', 'COMPLETED');
+
+-- CreateEnum
+CREATE TYPE "ExpenseStatus" AS ENUM ('PENDING', 'APPROVED');
 
 -- CreateTable
 CREATE TABLE "organizations" (
@@ -81,7 +93,6 @@ CREATE TABLE "project_access" (
 -- CreateTable
 CREATE TABLE "category_types" (
     "id" TEXT NOT NULL,
-    "organizationId" TEXT NOT NULL,
     "key" TEXT NOT NULL,
     "label" TEXT NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
@@ -98,6 +109,7 @@ CREATE TABLE "category_items" (
     "categoryTypeId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "isEditable" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -112,9 +124,14 @@ CREATE TABLE "projects" (
     "clientId" TEXT,
     "location" TEXT NOT NULL,
     "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3),
     "amount" DECIMAL(15,2),
     "projectTypeItemId" TEXT NOT NULL,
+    "area" TEXT,
+    "projectPicture" TEXT,
+    "status" "ProjectStatus" NOT NULL DEFAULT 'ACTIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "projects_pkey" PRIMARY KEY ("id")
 );
@@ -154,13 +171,15 @@ CREATE TABLE "expenses" (
     "projectId" TEXT NOT NULL,
     "partyId" TEXT NOT NULL,
     "stageId" TEXT,
-    "expenseCategoryItemId" TEXT NOT NULL,
+    "expenseTypeItemId" TEXT NOT NULL,
     "materialTypeItemId" TEXT,
     "labourTypeItemId" TEXT,
     "subWorkTypeItemId" TEXT,
+    "description" TEXT,
     "rate" DECIMAL(15,2) NOT NULL,
     "quantity" DECIMAL(15,4) NOT NULL,
     "expenseDate" TIMESTAMP(3) NOT NULL,
+    "status" "ExpenseStatus" NOT NULL DEFAULT 'PENDING',
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -257,10 +276,7 @@ CREATE INDEX "project_access_projectId_idx" ON "project_access"("projectId");
 CREATE UNIQUE INDEX "project_access_memberId_projectId_key" ON "project_access"("memberId", "projectId");
 
 -- CreateIndex
-CREATE INDEX "category_types_organizationId_idx" ON "category_types"("organizationId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "category_types_organizationId_key_key" ON "category_types"("organizationId", "key");
+CREATE UNIQUE INDEX "category_types_key_key" ON "category_types"("key");
 
 -- CreateIndex
 CREATE INDEX "category_items_organizationId_idx" ON "category_items"("organizationId");
@@ -269,7 +285,7 @@ CREATE INDEX "category_items_organizationId_idx" ON "category_items"("organizati
 CREATE INDEX "category_items_categoryTypeId_idx" ON "category_items"("categoryTypeId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "category_items_categoryTypeId_name_key" ON "category_items"("categoryTypeId", "name");
+CREATE UNIQUE INDEX "category_items_organizationId_categoryTypeId_name_key" ON "category_items"("organizationId", "categoryTypeId", "name");
 
 -- CreateIndex
 CREATE INDEX "projects_organizationId_idx" ON "projects"("organizationId");
@@ -279,6 +295,9 @@ CREATE INDEX "projects_clientId_idx" ON "projects"("clientId");
 
 -- CreateIndex
 CREATE INDEX "projects_projectTypeItemId_idx" ON "projects"("projectTypeItemId");
+
+-- CreateIndex
+CREATE INDEX "projects_status_idx" ON "projects"("status");
 
 -- CreateIndex
 CREATE INDEX "stages_organizationId_idx" ON "stages"("organizationId");
@@ -368,9 +387,6 @@ ALTER TABLE "project_access" ADD CONSTRAINT "project_access_memberId_fkey" FOREI
 ALTER TABLE "project_access" ADD CONSTRAINT "project_access_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "category_types" ADD CONSTRAINT "category_types_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "category_items" ADD CONSTRAINT "category_items_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -410,7 +426,7 @@ ALTER TABLE "expenses" ADD CONSTRAINT "expenses_partyId_fkey" FOREIGN KEY ("part
 ALTER TABLE "expenses" ADD CONSTRAINT "expenses_stageId_fkey" FOREIGN KEY ("stageId") REFERENCES "stages"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "expenses" ADD CONSTRAINT "expenses_expenseCategoryItemId_fkey" FOREIGN KEY ("expenseCategoryItemId") REFERENCES "category_items"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "expenses" ADD CONSTRAINT "expenses_expenseTypeItemId_fkey" FOREIGN KEY ("expenseTypeItemId") REFERENCES "category_items"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "expenses" ADD CONSTRAINT "expenses_materialTypeItemId_fkey" FOREIGN KEY ("materialTypeItemId") REFERENCES "category_items"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -444,3 +460,4 @@ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_organizationId_fkey" FOREI
 
 -- AddForeignKey
 ALTER TABLE "entity_attachments" ADD CONSTRAINT "entity_attachments_attachmentId_fkey" FOREIGN KEY ("attachmentId") REFERENCES "attachments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

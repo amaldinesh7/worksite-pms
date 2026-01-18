@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 'react';
-import { MagnifyingGlass, Plus, PencilSimple } from '@phosphor-icons/react';
+import { MagnifyingGlass, Plus, PencilSimple, Trash } from '@phosphor-icons/react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,17 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import type { CategoryType, CategoryItem } from '@/lib/api/categories';
 
@@ -33,6 +44,10 @@ interface CategoryDetailsProps {
   isCreating?: boolean;
   /** Callback when editing an item */
   onEditItem?: (item: CategoryItem, newName: string) => void;
+  /** Callback when deleting an item */
+  onDeleteItem?: (item: CategoryItem) => void;
+  /** Whether item deletion is in progress */
+  isDeleting?: boolean;
 }
 
 /**
@@ -54,6 +69,8 @@ export function CategoryDetails({
   onCreateItem,
   isCreating = false,
   onEditItem,
+  onDeleteItem,
+  isDeleting = false,
 }: CategoryDetailsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [newItemName, setNewItemName] = useState('');
@@ -112,6 +129,13 @@ export function CategoryDetails({
   const handleEditKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSaveEdit();
+    }
+  };
+
+  // Handle delete
+  const handleDelete = (item: CategoryItem) => {
+    if (onDeleteItem) {
+      onDeleteItem(item);
     }
   };
 
@@ -187,7 +211,12 @@ export function CategoryDetails({
           ) : filteredItems.length === 0 ? (
             <EmptyState hasSearch={!!searchQuery} />
           ) : (
-            <ItemsList items={filteredItems} onEditItem={onEditItem ? handleOpenEdit : undefined} />
+            <ItemsList
+              items={filteredItems}
+              onEditItem={onEditItem ? handleOpenEdit : undefined}
+              onDeleteItem={onDeleteItem ? handleDelete : undefined}
+              isDeleting={isDeleting}
+            />
           )}
         </div>
       </Card>
@@ -256,9 +285,11 @@ function EmptyState({ hasSearch }: { hasSearch: boolean }) {
 interface ItemsListProps {
   items: CategoryItem[];
   onEditItem?: (item: CategoryItem) => void;
+  onDeleteItem?: (item: CategoryItem) => void;
+  isDeleting?: boolean;
 }
 
-function ItemsList({ items, onEditItem }: ItemsListProps) {
+function ItemsList({ items, onEditItem, onDeleteItem, isDeleting }: ItemsListProps) {
   return (
     <div className="border-t border-neutral-200">
       {items.map((item, index) => (
@@ -270,22 +301,63 @@ function ItemsList({ items, onEditItem }: ItemsListProps) {
           )}
         >
           <span className="text-neutral-800 text-sm">{item.name}</span>
-          {onEditItem && (
+          {/* Only show actions for editable items */}
+          {item.isEditable && (onEditItem || onDeleteItem) && (
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => onEditItem(item)}
-                className={cn(
-                  'inline-flex items-center px-3 py-1 cursor-pointer',
-                  'text-xs border border-neutral-200 rounded-md',
-                  'text-neutral-600 bg-white hover:bg-neutral-100',
-                  'transition-all duration-150',
-                  'opacity-40 group-hover:opacity-100 focus-visible:opacity-100',
-                  'focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:outline-none'
-                )}
-              >
-                <PencilSimple className="mr-1.5 h-3 w-3" weight="bold" />
-                Edit
-              </button>
+              {onEditItem && (
+                <button
+                  onClick={() => onEditItem(item)}
+                  className={cn(
+                    'inline-flex items-center px-3 py-1 cursor-pointer',
+                    'text-xs border border-neutral-200 rounded-md',
+                    'text-neutral-600 bg-white hover:bg-neutral-100',
+                    'transition-all duration-150',
+                    'opacity-40 group-hover:opacity-100 focus-visible:opacity-100',
+                    'focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:outline-none'
+                  )}
+                >
+                  <PencilSimple className="mr-1.5 h-3 w-3" weight="bold" />
+                  Edit
+                </button>
+              )}
+              {onDeleteItem && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      disabled={isDeleting}
+                      className={cn(
+                        'inline-flex items-center px-3 py-1 cursor-pointer',
+                        'text-xs border border-red-200 rounded-md',
+                        'text-red-600 bg-white hover:bg-red-50',
+                        'transition-all duration-150',
+                        'opacity-40 group-hover:opacity-100 focus-visible:opacity-100',
+                        'focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none',
+                        isDeleting && 'opacity-50 cursor-not-allowed'
+                      )}
+                    >
+                      <Trash className="mr-1.5 h-3 w-3" weight="bold" />
+                      Delete
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Item</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{item.name}"? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => onDeleteItem(item)}
+                        className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
           )}
         </div>
