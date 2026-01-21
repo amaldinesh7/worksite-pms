@@ -7,6 +7,7 @@
  */
 
 import { ListPanel } from '@/components/ui/list-panel';
+import { TypographySmall } from '@/components/ui/typography';
 import { cn } from '@/lib/utils';
 import type { CategoryType } from '@/lib/api/categories';
 
@@ -69,12 +70,11 @@ export function CategoryTypesNav({
                 isSelected={isSelected}
                 onClick={() => onSelect(categoryType)}
               >
-                <span className={cn(
-                  'text-sm',
-                  isSelected ? 'font-medium text-neutral-900' : 'text-neutral-700'
+                <TypographySmall className={cn(
+                  isSelected ? 'font-medium text-neutral-900' : 'text-neutral-700 font-normal'
                 )}>
                   {label}
-                </span>
+                </TypographySmall>
               </ListPanel.Item>
             );
           })

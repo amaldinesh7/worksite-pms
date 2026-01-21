@@ -7,6 +7,7 @@
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { TypographyH3, TypographyMuted } from '@/components/ui/typography';
 import {
   Table,
   TableBody,
@@ -108,17 +109,17 @@ export function PartyTransactionsPanel({
       <Card className="p-6 shrink-0 flex flex-col gap-4">
         <div className="flex items-center justify-between gap-8">
           <div className="flex flex-col gap-1">
-            <p className="text-sm text-muted-foreground mb-1">Paid</p>
-            <p className="text-2xl font-semibold">
+            <TypographyMuted className="mb-1">Paid</TypographyMuted>
+            <TypographyH3 className="font-semibold">
               {formatCurrency(totalPaid)}
-            </p>
+            </TypographyH3>
           </div>
 
           <div className="flex flex-col gap-1 text-right">
-            <p className="text-sm text-muted-foreground mb-1">{expensesLabel}</p>
-            <p className="text-2xl font-semibold">
+            <TypographyMuted className="mb-1">{expensesLabel}</TypographyMuted>
+            <TypographyH3 className="font-semibold">
               {formatCurrency(totalExpenses)}
-            </p>
+            </TypographyH3>
           </div>
         </div>
         <div className="flex-1">
@@ -146,74 +147,74 @@ export function PartyTransactionsPanel({
         </div>
 
         {/* Table */}
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>
-                  Date
-                </TableHead>
-                <TableHead>
-                  Title
-                </TableHead>
-                <TableHead>
-                  Amount
-                </TableHead>
-                <TableHead className="text-center">
-                  Actions
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                // Loading skeleton
-                Array.from({ length: 5 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="h-4 w-16 bg-gray-200 rounded animate-pulse ml-auto" />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="h-8 w-8 bg-gray-200 rounded animate-pulse ml-auto" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : transactions.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="h-32 text-center">
-                    <p className="text-sm text-muted-foreground">No transactions found</p>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>
+                Date
+              </TableHead>
+              <TableHead>
+                Title
+              </TableHead>
+              <TableHead>
+                Amount
+              </TableHead>
+              <TableHead className="text-center">
+                Actions
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              // Loading skeleton
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell>
+                    <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="h-4 w-16 bg-gray-200 rounded animate-pulse ml-auto" />
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="h-8 w-8 bg-gray-200 rounded animate-pulse ml-auto" />
                   </TableCell>
                 </TableRow>
-              ) : (
-                transactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell>
-                      {formatDate(transaction.date)}
-                    </TableCell>
-                    <TableCell>
-                      {transaction.title}
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(transaction.amount)}
-                    </TableCell>
-                    <TableCell className='text-center'>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 cursor-pointer"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+              ))
+            ) : transactions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="h-32 text-center">
+                  <TypographyMuted>No transactions found</TypographyMuted>
+                </TableCell>
+              </TableRow>
+            ) : (
+              transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell>
+                    {formatDate(transaction.date)}
+                  </TableCell>
+                  <TableCell>
+                    {transaction.title}
+                  </TableCell>
+                  <TableCell>
+                    {formatCurrency(transaction.amount)}
+                  </TableCell>
+                  <TableCell className='text-center'>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 cursor-pointer"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
 
         {/* Pagination */}
         {!isLoading && pagination.total > 0 && (

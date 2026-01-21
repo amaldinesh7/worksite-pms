@@ -10,6 +10,7 @@ import { MagnifyingGlass, Plus, PencilSimple, Trash } from '@phosphor-icons/reac
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { TypographyH4, TypographyMuted, TypographySmall } from '@/components/ui/typography';
 import {
   Dialog,
   DialogContent,
@@ -142,7 +143,7 @@ export function CategoryDetails({
   if (!categoryType) {
     return (
       <Card className="bg-white border border-neutral-200 rounded-lg p-6 flex items-center justify-center h-full">
-        <p className="text-neutral-500 text-sm">Select a category type to view items</p>
+        <TypographyMuted>Select a category type to view items</TypographyMuted>
       </Card>
     );
   }
@@ -152,7 +153,7 @@ export function CategoryDetails({
       <Card className="bg-white border border-neutral-200 rounded-lg flex flex-col h-full min-h-0 overflow-hidden">
         {/* Header */}
         <div className="p-6 border-b border-neutral-200 shrink-0 flex flex-row items-center justify-between gap-4">
-          <h2 className="text-xl font-medium text-neutral-800">{categoryType.label}</h2>
+          <TypographyH4 className="font-medium text-neutral-800">{categoryType.label}</TypographyH4>
           {/* Search Input */}
           <div className="relative">
             <MagnifyingGlass
@@ -275,9 +276,9 @@ function LoadingState() {
 function EmptyState({ hasSearch }: { hasSearch: boolean }) {
   return (
     <div className="text-center py-12">
-      <p className="text-neutral-500 text-sm">
+      <TypographyMuted>
         {hasSearch ? 'No items match your search' : 'No items yet. Add one above.'}
-      </p>
+      </TypographyMuted>
     </div>
   );
 }
@@ -300,7 +301,7 @@ function ItemsList({ items, onEditItem, onDeleteItem, isDeleting }: ItemsListPro
             index < items.length - 1 && 'border-b border-neutral-200'
           )}
         >
-          <span className="text-neutral-800 text-sm">{item.name}</span>
+          <TypographySmall className="text-neutral-800 font-normal">{item.name}</TypographySmall>
           {/* Only show actions for editable items */}
           {item.isEditable && (onEditItem || onDeleteItem) && (
             <div className="flex items-center gap-2">

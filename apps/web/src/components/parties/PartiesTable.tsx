@@ -22,6 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TablePagination } from '@/components/ui/table-pagination';
+import { TypographySmall, TypographyMuted } from '@/components/ui/typography';
 import { MoreHorizontal, Search, Plus, Eye, Pencil, Trash2, Users } from 'lucide-react';
 import type { Party, PartyType } from '@/lib/api/parties';
 
@@ -114,8 +115,8 @@ export function PartiesTable({
               <Users className="h-4 w-4" />
             </div>
             <div>
-              <p className="font-medium text-sm">{party.name}</p>
-              <p className="text-xs text-muted-foreground">{party.location || '—'}</p>
+              <TypographySmall className="font-medium">{party.name}</TypographySmall>
+              <TypographyMuted className="text-xs">{party.location || '—'}</TypographyMuted>
             </div>
           </div>
         );
@@ -127,7 +128,7 @@ export function PartiesTable({
       cell: () => {
         // Credit calculation will be 0 for now as per plan
         return (
-            formatCurrency(0)
+          formatCurrency(0)
         );
       },
     },
@@ -137,9 +138,9 @@ export function PartiesTable({
       cell: ({ row }) => {
         const phone = row.original.phone;
         return (
-          <span className="text-muted-foreground">
+          <TypographySmall className="text-muted-foreground font-normal">
             {phone || '—'}
-          </span>
+          </TypographySmall>
         );
       },
     },
@@ -284,7 +285,7 @@ export function PartiesTable({
                 <TableCell colSpan={columns.length} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Users className="h-8 w-8 text-muted-foreground/50" />
-                    <p className="text-sm text-muted-foreground">No parties found</p>
+                    <TypographyMuted>No parties found</TypographyMuted>
                     <Button
                       variant="outline"
                       size="sm"

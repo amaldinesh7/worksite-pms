@@ -7,6 +7,7 @@
  */
 
 import { ListPanel } from '@/components/ui/list-panel';
+import { TypographySmall } from '@/components/ui/typography';
 import { cn } from '@/lib/utils';
 import type { PartyProject } from '@/lib/api/parties';
 
@@ -73,22 +74,22 @@ export function PartyProjectsList({
                   onClick={() => onSelectProject(project.id)}
                 >
                   <div className="flex items-center justify-between gap-1">
-                    <span
+                    <TypographySmall
                       className={cn(
-                        'text-sm truncate',
-                        isSelected ? 'text-neutral-900 font-medium' : 'text-neutral-700'
+                        'truncate',
+                        isSelected ? 'text-neutral-900 font-medium' : 'text-neutral-700 font-normal'
                       )}
                     >
                       {project.name}
-                    </span>
-                    <span
+                    </TypographySmall>
+                    <TypographySmall
                       className={cn(
-                        'text-sm font-medium shrink-0',
-                        isSelected ? 'text-neutral-900' : 'text-neutral-600'
+                        'shrink-0',
+                        isSelected ? 'text-neutral-900' : 'text-neutral-600 font-normal'
                       )}
                     >
                       {formatCurrency(project.credit)}
-                    </span>
+                    </TypographySmall>
                   </div>
                 </ListPanel.Item>
               );

@@ -9,6 +9,7 @@ import {
 } from '@phosphor-icons/react';
 
 import { cn } from '@/lib/utils';
+import { TypographySmall, TypographyMuted, TypographyLarge } from '@/components/ui/typography';
 import { useSidebarStore } from '@/stores/sidebar';
 import { useAuthStore } from '@/stores/auth.store';
 import {
@@ -189,10 +190,10 @@ function SidebarHeader({ isCollapsed, onCloseMobile }: SidebarHeaderProps) {
           </div>
           {!isCollapsed && (
             <div>
-              <p className="font-heading font-semibold text-neutral-800 leading-tight">
+              <TypographyLarge className="font-heading font-semibold text-neutral-800 leading-tight text-base">
                 Acme Construction
-              </p>
-              <p className="text-xs text-neutral-500">Company Portal</p>
+              </TypographyLarge>
+              <TypographyMuted className="text-xs">Company Portal</TypographyMuted>
             </div>
           )}
         </div>
@@ -241,17 +242,17 @@ function SidebarFooter({
               !isCollapsed && 'mr-3'
             )}
           >
-            <span className="text-sm font-medium text-neutral-600">
+            <TypographySmall className="text-neutral-600 font-medium">
               {user?.name?.charAt(0).toUpperCase() || 'U'}
-            </span>
+            </TypographySmall>
           </div>
           {!isCollapsed && (
             <>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-neutral-800 truncate">
+                <TypographySmall className="text-neutral-800 truncate">
                   {user?.name || 'User'}
-                </p>
-                <p className="text-xs text-neutral-500 truncate">{user?.phone || ''}</p>
+                </TypographySmall>
+                <TypographyMuted className="text-xs truncate">{user?.phone || ''}</TypographyMuted>
               </div>
               <button
                 onClick={onToggleProfileMenu}
@@ -287,8 +288,8 @@ function SidebarFooter({
         </div>
         {!isCollapsed && (
           <div>
-            <p className="text-xs text-neutral-600">Powered by</p>
-            <p className="text-sm font-medium text-neutral-800">SiteMate</p>
+            <TypographyMuted className="text-xs">Powered by</TypographyMuted>
+            <TypographySmall className="text-neutral-800">SiteMate</TypographySmall>
           </div>
         )}
       </div>

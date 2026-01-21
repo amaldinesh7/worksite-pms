@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 
 import { useAuthStore } from './stores/auth.store';
 import { Layout, PageContent, Header } from '@/components/layout';
+import { TypographyH2, TypographyMuted } from '@/components/ui/typography';
 import PhoneInput from './pages/auth/PhoneInput';
 import VerifyOtp from './pages/auth/VerifyOtp';
 import CategoriesPage from './pages/settings/CategoriesPage';
@@ -53,16 +54,16 @@ function DashboardPage() {
       <PageContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="bg-white rounded-xl border border-neutral-200 p-6">
-            <h3 className="text-sm font-medium text-neutral-500">Active Projects</h3>
-            <p className="text-3xl font-semibold text-neutral-800 mt-2">12</p>
+            <TypographyMuted>Active Projects</TypographyMuted>
+            <TypographyH2 className="mt-2 border-none pb-0">12</TypographyH2>
           </div>
           <div className="bg-white rounded-xl border border-neutral-200 p-6">
-            <h3 className="text-sm font-medium text-neutral-500">Total Expenses</h3>
-            <p className="text-3xl font-semibold text-neutral-800 mt-2">₹4.2L</p>
+            <TypographyMuted>Total Expenses</TypographyMuted>
+            <TypographyH2 className="mt-2 border-none pb-0">₹4.2L</TypographyH2>
           </div>
           <div className="bg-white rounded-xl border border-neutral-200 p-6">
-            <h3 className="text-sm font-medium text-neutral-500">Pending Payments</h3>
-            <p className="text-3xl font-semibold text-neutral-800 mt-2">8</p>
+            <TypographyMuted>Pending Payments</TypographyMuted>
+            <TypographyH2 className="mt-2 border-none pb-0">8</TypographyH2>
           </div>
         </div>
       </PageContent>

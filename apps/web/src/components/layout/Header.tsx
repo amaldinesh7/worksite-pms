@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { List, MagnifyingGlass, Bell, Plus } from '@phosphor-icons/react';
 
 import { cn } from '@/lib/utils';
+import { TypographyH3, TypographyMuted } from '@/components/ui/typography';
 import { Button } from '@/components/ui/button';
 import { useSidebarStore } from '@/stores/sidebar';
 
@@ -68,11 +69,11 @@ export function Header({
           {/* Title Section */}
           <div>
             {title && (
-              <h1 className="font-heading text-2xl font-semibold text-neutral-800 leading-tight">
+              <TypographyH3 className="font-heading font-semibold text-neutral-800 leading-tight">
                 {title}
-              </h1>
+              </TypographyH3>
             )}
-            {subtitle && <p className="text-sm text-neutral-500 mt-0.5">{subtitle}</p>}
+            {subtitle && <TypographyMuted className="mt-0.5">{subtitle}</TypographyMuted>}
           </div>
         </div>
 

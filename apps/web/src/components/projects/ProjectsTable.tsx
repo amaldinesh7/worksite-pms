@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { TypographySmall, TypographyMuted } from '@/components/ui/typography';
 import type { Project } from '@/lib/api/projects';
 
 // ============================================
@@ -159,10 +160,10 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{project.name}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <TypographySmall className="font-medium">{project.name}</TypographySmall>
+                      <TypographyMuted className="text-xs">
                         {project.projectType?.name || 'Unknown'}
-                      </p>
+                      </TypographyMuted>
                     </div>
                   </div>
                 </TableCell>
@@ -173,11 +174,11 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                 {/* Budget */}
                 <TableCell>
                   <div>
-                    <p className="font-medium text-sm">{formatCurrency(project.amount)}</p>
+                    <TypographySmall className="font-medium">{formatCurrency(project.amount)}</TypographySmall>
                     {project.amount && (
-                      <p className="text-xs text-muted-foreground">
+                      <TypographyMuted className="text-xs">
                         of {formatCurrency(project.amount)}
-                      </p>
+                      </TypographyMuted>
                     )}
                   </div>
                 </TableCell>
@@ -186,9 +187,9 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                 <TableCell>
                   <div className="flex items-center gap-2 min-w-[100px]">
                     <Progress value={project.progress || 0} className="h-2 flex-1" />
-                    <span className="text-sm text-muted-foreground w-10 text-right">
+                    <TypographySmall className="text-muted-foreground font-normal w-10 text-right">
                       {project.progress || 0}%
-                    </span>
+                    </TypographySmall>
                   </div>
                 </TableCell>
 
@@ -199,10 +200,10 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                       <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
                         {manager.name.charAt(0).toUpperCase()}
                       </div>
-                      <span className="text-sm">{manager.name}</span>
+                      <TypographySmall className="font-normal">{manager.name}</TypographySmall>
                     </div>
                   ) : (
-                    <span className="text-sm text-muted-foreground">—</span>
+                    <TypographyMuted>—</TypographyMuted>
                   )}
                 </TableCell>
 
@@ -210,11 +211,11 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                 <TableCell>
                   {deadline ? (
                     <div>
-                      <p className="text-sm">{deadline.date}</p>
-                      <p className="text-xs text-muted-foreground">{deadline.daysLeft}</p>
+                      <TypographySmall className="font-normal">{deadline.date}</TypographySmall>
+                      <TypographyMuted className="text-xs">{deadline.daysLeft}</TypographyMuted>
                     </div>
                   ) : (
-                    <span className="text-sm text-muted-foreground">—</span>
+                    <TypographyMuted>—</TypographyMuted>
                   )}
                 </TableCell>
 

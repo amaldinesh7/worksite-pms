@@ -32,6 +32,7 @@
 
 import { createContext, useContext, type ReactNode } from 'react';
 import { Card } from '@/components/ui/card';
+import { TypographyLarge, TypographyMuted } from '@/components/ui/typography';
 import { cn } from '@/lib/utils';
 
 // ============================================
@@ -93,9 +94,9 @@ function ListPanelHeader({ title, rightContent, className }: ListPanelHeaderProp
   return (
     <div className={cn('p-4 border-b border-neutral-200 shrink-0', className)}>
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-medium text-neutral-800">{title}</h2>
+        <TypographyLarge className="text-base font-medium text-neutral-800">{title}</TypographyLarge>
         {rightContent && (
-          <span className="text-base font-semibold text-neutral-900">{rightContent}</span>
+          <TypographyLarge className="text-base font-semibold text-neutral-900">{rightContent}</TypographyLarge>
         )}
       </div>
     </div>
@@ -184,7 +185,9 @@ interface ListPanelEmptyProps {
 function ListPanelEmpty({ children, className }: ListPanelEmptyProps) {
   useListPanelContext();
   return (
-    <div className={cn('p-4 text-center text-sm text-neutral-500', className)}>{children}</div>
+    <div className={cn('p-4 text-center', className)}>
+      <TypographyMuted>{children}</TypographyMuted>
+    </div>
   );
 }
 

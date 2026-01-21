@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { TypographyMuted, TypographyLarge, TypographySmall } from '@/components/ui/typography';
 import { Users, HardHat, Building2 } from 'lucide-react';
 import type { PartySummary } from '@/lib/api/parties';
 
@@ -79,19 +80,19 @@ function StatCard({ title, count, balance, icon, color, isLoading }: StatCardPro
             {icon}
           </div>
           <div className="flex-1">
-            <p className="text-xs text-muted-foreground font-medium">{title}</p>
-            <p className="text-xl font-semibold">{count}</p>
+            <TypographyMuted className="text-xs font-medium">{title}</TypographyMuted>
+            <TypographyLarge className="text-xl">{count}</TypographyLarge>
           </div>
         </div>
         <div className="mt-3">
           <div className="flex items-center justify-between text-sm mb-1">
-            <span className="text-muted-foreground">Outstanding Balance</span>
-            <span className="font-medium">{formatCurrency(balance)}</span>
+            <TypographySmall className="text-muted-foreground font-normal">Outstanding Balance</TypographySmall>
+            <TypographySmall>{formatCurrency(balance)}</TypographySmall>
           </div>
           <Progress
             value={progressPercent}
             className="h-2 bg-gray-200"
-            // indicatorClassName={classes.progress}
+          // indicatorClassName={classes.progress}
           />
         </div>
       </CardContent>
