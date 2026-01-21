@@ -339,7 +339,12 @@ export function DateRangePicker({
   const hasValue = !!range.from;
 
   const handleClear = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
+    // Clear internal state
+    setRange({ from: undefined, to: undefined });
+    setIsOpen(false);
+    // Notify parent
     onClear?.();
   };
 
@@ -349,7 +354,7 @@ export function DateRangePicker({
         <Button
           variant="outline"
           className={cn(
-            'group justify-start text-left font-normal cursor-pointer',
+            'group justify-start text-left font-normal cursor-pointer bg-white',
             !range.from && 'text-muted-foreground',
             className
           )}
@@ -361,6 +366,10 @@ export function DateRangePicker({
               <div className="h-4 w-px bg-border mx-1.5 opacity-0 group-hover:opacity-100 transition-opacity" />
               <X
                 className="h-4 w-4 opacity-0 group-hover:opacity-50 hover:!opacity-100 cursor-pointer transition-opacity"
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
                 onClick={handleClear}
               />
             </div>

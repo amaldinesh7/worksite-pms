@@ -12,7 +12,7 @@
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
-import { Plus, DotsThree, PencilSimple, Trash, Eye, CircleNotch } from '@phosphor-icons/react';
+import { Plus, DotsThree, PencilSimple, Trash, Eye, CircleNotch, FunnelIcon } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -272,7 +272,7 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
         <Empty className="py-16">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <Funnel className="h-6 w-6" />
+              <FunnelIcon className="h-6 w-6" />
             </EmptyMedia>
             <EmptyTitle>No expenses found</EmptyTitle>
             <EmptyDescription>

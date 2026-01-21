@@ -35,7 +35,12 @@ const SelectTrigger = React.forwardRef<
         <>
           <X
             className="h-4 w-4 opacity-0 group-hover:opacity-50 hover:!opacity-100 cursor-pointer transition-opacity"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               onClear?.();
             }}
