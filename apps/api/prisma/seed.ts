@@ -1,4 +1,10 @@
-import { PrismaClient, type User, type Party, type OrganizationMember } from '@prisma/client';
+import {
+  PrismaClient,
+  type User,
+  type Party,
+  type OrganizationMember,
+  type Role,
+} from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -23,6 +29,147 @@ const DEFAULT_CATEGORY_ITEMS = [
   { typeKey: 'expense_type', name: 'Sub Work', isEditable: false },
 ];
 
+// Global permissions (shared across all organizations)
+const GLOBAL_PERMISSIONS = [
+  // Projects
+  {
+    key: 'projects.view',
+    name: 'View Projects',
+    category: 'Projects',
+    description: 'View all projects',
+  },
+  {
+    key: 'projects.create',
+    name: 'Create Projects',
+    category: 'Projects',
+    description: 'Create new projects',
+  },
+  {
+    key: 'projects.edit',
+    name: 'Edit Projects',
+    category: 'Projects',
+    description: 'Edit existing projects',
+  },
+  {
+    key: 'projects.delete',
+    name: 'Delete Projects',
+    category: 'Projects',
+    description: 'Delete projects',
+  },
+  // Expenses
+  {
+    key: 'expenses.view',
+    name: 'View Expenses',
+    category: 'Expenses',
+    description: 'View all expenses',
+  },
+  {
+    key: 'expenses.create',
+    name: 'Create Expenses',
+    category: 'Expenses',
+    description: 'Create new expenses',
+  },
+  {
+    key: 'expenses.approve',
+    name: 'Approve Expenses',
+    category: 'Expenses',
+    description: 'Approve pending expenses',
+  },
+  // Payments
+  {
+    key: 'payments.view',
+    name: 'View Payments',
+    category: 'Payments',
+    description: 'View all payments',
+  },
+  {
+    key: 'payments.create',
+    name: 'Create Payments',
+    category: 'Payments',
+    description: 'Create new payments',
+  },
+  // Team
+  { key: 'team.view', name: 'View Team', category: 'Team', description: 'View team members' },
+  {
+    key: 'team.manage',
+    name: 'Manage Team',
+    category: 'Team',
+    description: 'Add, edit, or remove team members',
+  },
+  // Roles
+  {
+    key: 'roles.view',
+    name: 'View Roles',
+    category: 'Roles',
+    description: 'View roles and permissions',
+  },
+  {
+    key: 'roles.manage',
+    name: 'Manage Roles',
+    category: 'Roles',
+    description: 'Create, edit, or delete roles',
+  },
+  // Parties
+  {
+    key: 'parties.view',
+    name: 'View Parties',
+    category: 'Parties',
+    description: 'View vendors, labours, and subcontractors',
+  },
+  {
+    key: 'parties.manage',
+    name: 'Manage Parties',
+    category: 'Parties',
+    description: 'Add, edit, or remove parties',
+  },
+];
+
+// Default roles per organization with their permissions
+const DEFAULT_ROLES = [
+  {
+    name: 'Admin',
+    description: 'Full access to all features and settings',
+    isSystemRole: true,
+    permissions: ['*'], // All permissions
+  },
+  {
+    name: 'Project Manager',
+    description: 'Manage projects, expenses, and team assignments',
+    isSystemRole: false,
+    permissions: [
+      'projects.view',
+      'projects.create',
+      'projects.edit',
+      'projects.delete',
+      'expenses.view',
+      'expenses.create',
+      'payments.view',
+      'team.view',
+      'parties.view',
+      'parties.manage',
+    ],
+  },
+  {
+    name: 'Supervisor',
+    description: 'View projects and create expenses',
+    isSystemRole: false,
+    permissions: ['projects.view', 'expenses.view', 'expenses.create', 'payments.view'],
+  },
+  {
+    name: 'Accountant',
+    description: 'Manage expenses and payments',
+    isSystemRole: false,
+    permissions: [
+      'projects.view',
+      'expenses.view',
+      'expenses.create',
+      'expenses.approve',
+      'payments.view',
+      'payments.create',
+    ],
+  },
+];
+
 /**
  * Create global category types (run once, shared by all orgs)
  */
@@ -40,7 +187,60 @@ async function createGlobalCategoryTypes() {
 }
 
 /**
- * Create organization with default category items
+ * Create global permissions (run once, shared by all orgs)
+ */
+async function createGlobalPermissions() {
+  const existingPermissions = await prisma.permission.findMany();
+  if (existingPermissions.length > 0) {
+    console.log('✅ Global permissions already exist');
+    return;
+  }
+
+  await prisma.permission.createMany({
+    data: GLOBAL_PERMISSIONS,
+  });
+  console.log('✅ Created global permissions');
+}
+
+/**
+ * Create default roles for an organization
+ */
+async function createDefaultRoles(organizationId: string): Promise<Map<string, Role>> {
+  const allPermissions = await prisma.permission.findMany();
+  const roleMap = new Map<string, Role>();
+
+  for (const roleDef of DEFAULT_ROLES) {
+    const role = await prisma.role.create({
+      data: {
+        organizationId,
+        name: roleDef.name,
+        description: roleDef.description,
+        isSystemRole: roleDef.isSystemRole,
+      },
+    });
+
+    // Assign permissions
+    const permissionsToAssign = roleDef.permissions.includes('*')
+      ? allPermissions
+      : allPermissions.filter((p) => roleDef.permissions.includes(p.key));
+
+    if (permissionsToAssign.length > 0) {
+      await prisma.rolePermission.createMany({
+        data: permissionsToAssign.map((p) => ({
+          roleId: role.id,
+          permissionId: p.id,
+        })),
+      });
+    }
+
+    roleMap.set(role.name, role);
+  }
+
+  return roleMap;
+}
+
+/**
+ * Create organization with default category items and roles
  */
 async function createOrganizationWithDefaults(name: string) {
   return await prisma.$transaction(async (tx) => {
@@ -85,7 +285,10 @@ async function main() {
   await prisma.party.deleteMany();
   await prisma.categoryItem.deleteMany();
   await prisma.categoryType.deleteMany();
+  await prisma.rolePermission.deleteMany();
   await prisma.organizationMember.deleteMany();
+  await prisma.role.deleteMany();
+  await prisma.permission.deleteMany();
   await prisma.refreshToken.deleteMany();
   await prisma.user.deleteMany();
   await prisma.organization.deleteMany();
@@ -97,6 +300,11 @@ async function main() {
   await createGlobalCategoryTypes();
 
   // ============================================
+  // Create Global Permissions
+  // ============================================
+  await createGlobalPermissions();
+
+  // ============================================
   // Create 2 Demo Organizations (with default category items)
   // ============================================
 
@@ -105,6 +313,16 @@ async function main() {
 
   const org2 = await createOrganizationWithDefaults('Elite Builders & Developers');
   console.log(`✅ Created organization: ${org2.name} (with default category items)`);
+
+  // ============================================
+  // Create Default Roles for Both Organizations
+  // ============================================
+
+  const org1Roles = await createDefaultRoles(org1.id);
+  console.log(`✅ Created default roles for ${org1.name}`);
+
+  const org2Roles = await createDefaultRoles(org2.id);
+  console.log(`✅ Created default roles for ${org2.name}`);
 
   // ============================================
   // Query category types and items for org1
@@ -202,6 +420,7 @@ async function main() {
       name: 'Rajesh Kumar',
       phone: '+919876543210',
       email: 'admin@premier.com',
+      location: 'Head Office, Floor 5',
     },
   });
 
@@ -210,6 +429,7 @@ async function main() {
       name: 'Priya Sharma',
       phone: '+919876543211',
       email: 'admin@elite.com',
+      location: 'Corporate Office',
     },
   });
 
@@ -217,7 +437,7 @@ async function main() {
     data: {
       organizationId: org1.id,
       userId: admin1.id,
-      role: 'ADMIN',
+      roleId: org1Roles.get('Admin')!.id,
     },
   });
 
@@ -225,7 +445,7 @@ async function main() {
     data: {
       organizationId: org2.id,
       userId: admin2.id,
-      role: 'ADMIN',
+      roleId: org2Roles.get('Admin')!.id,
     },
   });
 
@@ -285,7 +505,6 @@ async function main() {
         phone: vendor.phone,
         location: vendor.location,
         type: 'VENDOR',
-        isInternal: false,
       },
     });
     vendorParties.push(party);
@@ -358,7 +577,6 @@ async function main() {
         phone: sub.phone,
         location: sub.location,
         type: 'SUBCONTRACTOR',
-        isInternal: false,
       },
     });
     subcontractorParties.push(party);
@@ -403,7 +621,6 @@ async function main() {
         phone: labor.phone,
         location: labor.location,
         type: 'LABOUR',
-        isInternal: false,
       },
     });
     laborParties.push(party);
@@ -411,7 +628,7 @@ async function main() {
   console.log(`✅ Created ${laborParties.length} labor parties`);
 
   // ============================================
-  // Create 10 Team Members (Internal Parties)
+  // Create 10 Team Members (Internal Users)
   // ============================================
 
   const teamMembers = [
@@ -419,85 +636,74 @@ async function main() {
       name: 'Amit Kumar',
       phone: '+919876543001',
       email: 'amit@premier.com',
-      role: 'PROJECT_MANAGER',
-      orgRole: 'MANAGER',
+      role: 'Project Manager',
       location: 'Head Office, Floor 2',
     },
     {
       name: 'Priya Patel',
       phone: '+919876543002',
       email: 'priya@premier.com',
-      role: 'PROJECT_MANAGER',
-      orgRole: 'MANAGER',
+      role: 'Project Manager',
       location: 'Head Office, Floor 2',
     },
     {
       name: 'Rajesh Singh',
       phone: '+919876543003',
       email: 'rajesh.accountant@premier.com',
-      role: 'ACCOUNTANT',
-      orgRole: 'ACCOUNTANT',
+      role: 'Accountant',
       location: 'Finance Department, Floor 1',
     },
     {
       name: 'Sunita Verma',
       phone: '+919876543004',
       email: 'sunita.accountant@premier.com',
-      role: 'ACCOUNTANT',
-      orgRole: 'ACCOUNTANT',
+      role: 'Accountant',
       location: 'Finance Department, Floor 1',
     },
     {
       name: 'Vikram Sharma',
       phone: '+919876543005',
       email: 'vikram@premier.com',
-      role: 'SUPERVISOR',
-      orgRole: 'SUPERVISOR',
+      role: 'Supervisor',
       location: 'Site Office, Project Site A',
     },
     {
       name: 'Anjali Reddy',
       phone: '+919876543006',
       email: 'anjali@premier.com',
-      role: 'SUPERVISOR',
-      orgRole: 'SUPERVISOR',
+      role: 'Supervisor',
       location: 'Site Office, Project Site B',
     },
     {
       name: 'Rahul Mehta',
       phone: '+919876543007',
       email: 'rahul@premier.com',
-      role: 'SUPERVISOR',
-      orgRole: 'SUPERVISOR',
+      role: 'Supervisor',
       location: 'Site Office, Project Site C',
     },
     {
       name: 'Neha Gupta',
       phone: '+919876543008',
       email: 'neha@premier.com',
-      role: 'PROJECT_MANAGER',
-      orgRole: 'MANAGER',
+      role: 'Project Manager',
       location: 'Head Office, Floor 3',
     },
     {
       name: 'Suresh Nair',
       phone: '+919876543009',
       email: 'suresh@premier.com',
-      role: 'SUPERVISOR',
-      orgRole: 'SUPERVISOR',
+      role: 'Supervisor',
       location: 'Site Office, Project Site D',
     },
     {
       name: 'Kavita Desai',
       phone: '+919876543010',
       email: 'kavita@premier.com',
-      role: 'PROJECT_MANAGER',
-      orgRole: 'MANAGER',
+      role: 'Project Manager',
       location: 'Head Office, Floor 3',
     },
   ];
 
-  const teamMemberParties: Party[] = [];
   const teamMemberUsers: User[] = [];
   const teamMemberMemberships: OrganizationMember[] = [];
 
@@ -507,34 +713,28 @@ async function main() {
         name: member.name,
         phone: member.phone,
         email: member.email,
+        location: member.location,
       },
     });
 
-    const party = await prisma.party.create({
-      data: {
-        organizationId: org1.id,
-        name: member.name,
-        phone: member.phone,
-        location: member.location,
-        type: member.role as any,
-        isInternal: true,
-        userId: user.id,
-      },
-    });
+    const role = org1Roles.get(member.role);
+    if (!role) {
+      console.error(`Role ${member.role} not found`);
+      continue;
+    }
 
     const orgMember = await prisma.organizationMember.create({
       data: {
         organizationId: org1.id,
         userId: user.id,
-        role: member.orgRole as any,
+        roleId: role.id,
       },
     });
 
-    teamMemberParties.push(party);
     teamMemberUsers.push(user);
     teamMemberMemberships.push(orgMember);
   }
-  console.log(`✅ Created ${teamMemberParties.length} team members`);
+  console.log(`✅ Created ${teamMemberUsers.length} team members`);
 
   // ============================================
   // Create 6 Projects with Clients
@@ -545,7 +745,6 @@ async function main() {
       name: 'Sunrise Luxury Apartments',
       clientName: 'Sunrise Real Estate LLC',
       clientPhone: '+919876550001',
-      clientEmail: 'contact@sunrise.com',
       clientLocation: 'Downtown Business Center, Tower A',
       location: 'Downtown City, Plot 123',
       startDate: new Date('2024-01-15'),
@@ -558,7 +757,6 @@ async function main() {
       name: 'Tech Park Commercial Complex',
       clientName: 'TechCorp Industries',
       clientPhone: '+919876550002',
-      clientEmail: 'projects@techcorp.com',
       clientLocation: 'Business District, Office Tower 5',
       location: 'Tech Zone, Sector 7',
       startDate: new Date('2024-02-01'),
@@ -571,7 +769,6 @@ async function main() {
       name: 'Green Valley Residential Colony',
       clientName: 'Green Valley Developers',
       clientPhone: '+919876550003',
-      clientEmail: 'info@greenvalley.com',
       clientLocation: 'Developer Hub, Building 12',
       location: 'Suburban Area, Phase 2',
       startDate: new Date('2024-03-10'),
@@ -584,7 +781,6 @@ async function main() {
       name: 'Manufacturing Plant Expansion',
       clientName: 'Industrial Solutions Ltd',
       clientPhone: '+919876550004',
-      clientEmail: 'operations@industrialsolutions.com',
       clientLocation: 'Industrial Estate, Unit 45',
       location: 'Industrial Zone, Plot 89',
       startDate: new Date('2024-04-05'),
@@ -597,7 +793,6 @@ async function main() {
       name: 'Shopping Mall Renovation',
       clientName: 'Retail Ventures Inc',
       clientPhone: '+919876550005',
-      clientEmail: 'renovation@retailventures.com',
       clientLocation: 'Mall Management Office, Floor 3',
       location: 'City Center, Mall Complex',
       startDate: new Date('2024-05-20'),
@@ -610,7 +805,6 @@ async function main() {
       name: 'Highway Bridge Construction',
       clientName: 'Infrastructure Authority',
       clientPhone: '+919876550006',
-      clientEmail: 'projects@infraauth.gov',
       clientLocation: 'Government Complex, Block 2',
       location: 'Highway 45, KM 12',
       startDate: new Date('2024-06-01'),
@@ -622,19 +816,10 @@ async function main() {
   ];
 
   const projects = [];
-  const clients = [];
+  const clients: Party[] = [];
 
   for (const proj of projectData) {
-    // Create client user
-    const clientUser = await prisma.user.create({
-      data: {
-        name: proj.clientName,
-        phone: proj.clientPhone,
-        email: proj.clientEmail,
-      },
-    });
-
-    // Create client party
+    // Create client party (no user association needed for external clients)
     const clientParty = await prisma.party.create({
       data: {
         organizationId: org1.id,
@@ -642,17 +827,6 @@ async function main() {
         phone: proj.clientPhone,
         location: proj.clientLocation,
         type: 'CLIENT',
-        isInternal: false,
-        userId: clientUser.id,
-      },
-    });
-
-    // Create organization member for client
-    const clientMember = await prisma.organizationMember.create({
-      data: {
-        organizationId: org1.id,
-        userId: clientUser.id,
-        role: 'CLIENT',
       },
     });
 
@@ -671,16 +845,8 @@ async function main() {
       },
     });
 
-    // Grant project access to client
-    await prisma.projectAccess.create({
-      data: {
-        memberId: clientMember.id,
-        projectId: project.id,
-      },
-    });
-
     projects.push(project);
-    clients.push({ party: clientParty, member: clientMember });
+    clients.push(clientParty);
   }
   console.log(`✅ Created ${projects.length} projects with clients`);
 
@@ -900,7 +1066,7 @@ async function main() {
 
   // Create client payments (IN)
   for (const project of projects) {
-    const client = clients.find((c) => c.party.id === project.clientId);
+    const client = clients.find((c) => c.id === project.clientId);
     if (client) {
       const numPayments = 2 + Math.floor(Math.random() * 3);
       const projectAmount = Number(project.amount || 0);
@@ -909,7 +1075,7 @@ async function main() {
           data: {
             organizationId: org1.id,
             projectId: project.id,
-            partyId: client.party.id,
+            partyId: client.id,
             type: 'IN',
             paymentMode: 'ONLINE',
             amount: projectAmount * (0.15 + Math.random() * 0.25), // 15-40% per payment
@@ -926,16 +1092,12 @@ async function main() {
   // Grant Project Access to Team Members
   // ============================================
 
-  // Assign supervisors and managers to projects
-  const supervisors = teamMemberMemberships.filter((m) => {
-    const user = teamMemberUsers.find((u) => u.id === m.userId);
-    return user && teamMembers.find((tm) => tm.email === user.email)?.orgRole === 'SUPERVISOR';
-  });
+  // Get supervisors and managers
+  const supervisorRole = org1Roles.get('Supervisor');
+  const managerRole = org1Roles.get('Project Manager');
 
-  const managers = teamMemberMemberships.filter((m) => {
-    const user = teamMemberUsers.find((u) => u.id === m.userId);
-    return user && teamMembers.find((tm) => tm.email === user.email)?.orgRole === 'MANAGER';
-  });
+  const supervisors = teamMemberMemberships.filter((m) => m.roleId === supervisorRole?.id);
+  const managers = teamMemberMemberships.filter((m) => m.roleId === managerRole?.id);
 
   // Assign supervisors to projects (2-3 per project)
   for (const project of projects) {
@@ -973,10 +1135,12 @@ async function main() {
   console.log('\n🎉 Seeding complete!\n');
   console.log('📊 Summary:');
   console.log(`   - Organizations: 2`);
+  console.log(`   - Permissions: ${GLOBAL_PERMISSIONS.length}`);
+  console.log(`   - Roles per org: ${DEFAULT_ROLES.length}`);
   console.log(`   - Vendors: ${vendorParties.length}`);
   console.log(`   - Subcontractors: ${subcontractorParties.length}`);
   console.log(`   - Labors: ${laborParties.length}`);
-  console.log(`   - Team Members: ${teamMemberParties.length}`);
+  console.log(`   - Team Members: ${teamMemberUsers.length}`);
   console.log(`   - Projects: ${projects.length}`);
   console.log(`   - Clients: ${clients.length}`);
   console.log(`   - Expenses: ${createdExpenses.length}`);
@@ -985,22 +1149,20 @@ async function main() {
   );
 
   console.log('\n👤 Test Users (Organization 1):');
-  console.log(`   Admin:      ${admin1.email} (role: ADMIN)`);
+  console.log(`   Admin:           ${admin1.email} (role: Admin)`);
   console.log(
-    `   Manager:    ${teamMembers.find((tm) => tm.orgRole === 'MANAGER')?.email} (role: MANAGER)`
+    `   Project Manager: ${teamMembers.find((tm) => tm.role === 'Project Manager')?.email} (role: Project Manager)`
   );
   console.log(
-    `   Accountant: ${teamMembers.find((tm) => tm.orgRole === 'ACCOUNTANT')?.email} (role: ACCOUNTANT)`
+    `   Accountant:      ${teamMembers.find((tm) => tm.role === 'Accountant')?.email} (role: Accountant)`
   );
   console.log(
-    `   Supervisor: ${teamMembers.find((tm) => tm.orgRole === 'SUPERVISOR')?.email} (role: SUPERVISOR)`
+    `   Supervisor:      ${teamMembers.find((tm) => tm.role === 'Supervisor')?.email} (role: Supervisor)`
   );
-  console.log(`   Client:     ${projectData[0].clientEmail} (role: CLIENT)`);
 
   console.log('\n💡 Use these headers for API testing (Org 1):');
   console.log(`   x-organization-id: ${org1.id}`);
   console.log(`   x-user-id: ${admin1.id}`);
-  console.log('   x-user-role: ADMIN');
 }
 
 main()

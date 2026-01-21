@@ -11,22 +11,11 @@ datasource db {
 // Enums
 // ============================================
 
-enum OrganizationRole {
-  ADMIN      // Full access to everything
-  MANAGER    // Manage projects, parties, expenses, payments
-  ACCOUNTANT // View/manage expenses and payments only
-  SUPERVISOR // View assigned projects, add expenses
-  CLIENT     // View their project progress and payments
-}
-
 enum PartyType {
   VENDOR
   LABOUR
   SUBCONTRACTOR
   CLIENT
-  ACCOUNTANT
-  SUPERVISOR
-  PROJECT_MANAGER
 }
 
 enum PaymentType {
@@ -76,6 +65,7 @@ model Organization {
   documents     Document[]
   stages        Stage[]
   attachments   Attachment[]
+  roles         Role[]
 
   @@map("organizations")
 }
@@ -85,14 +75,66 @@ model User {
   name      String
   phone     String?  @unique
   email     String?  @unique
+  location  String?
   createdAt DateTime @default(now())
 
   // Relations
   memberships   OrganizationMember[]
   refreshTokens RefreshToken[]
-  party         Party?
 
   @@map("users")
+}
+
+// ============================================
+// Roles & Permissions System
+// ============================================
+
+model Role {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  isSystemRole   Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  permissions  RolePermission[]
+  members      OrganizationMember[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  category    String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String @id @default(cuid())
+  roleId       String
+  permissionId String
+
+  // Relations
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
 }
 
 // ============================================
@@ -126,20 +168,22 @@ model RefreshToken {
 }
 
 model OrganizationMember {
-  id             String           @id @default(cuid())
+  id             String   @id @default(cuid())
   organizationId String
   userId         String
-  role           OrganizationRole
-  createdAt      DateTime         @default(now())
+  roleId         String
+  createdAt      DateTime @default(now())
 
   // Relations
   organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role          Role            @relation(fields: [roleId], references: [id])
   projectAccess ProjectAccess[]
 
   @@unique([organizationId, userId])
   @@index([organizationId])
   @@index([userId])
+  @@index([roleId])
   @@map("organization_members")
 }
 
@@ -271,7 +315,7 @@ model Stage {
 }
 
 // ============================================
-// Parties
+// Parties (External: Vendors, Labour, Subcontractors, Clients)
 // ============================================
 
 model Party {
@@ -281,22 +325,17 @@ model Party {
   phone          String?
   location       String
   type           PartyType
-  isInternal     Boolean   @default(false)
   profilePicture String?
-  userId         String?   @unique
   createdAt      DateTime  @default(now())
 
   // Relations
   organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user             User?        @relation(fields: [userId], references: [id])
   expenses         Expense[]
   payments         Payment[]
   projectsAsClient Project[]    @relation("ProjectClient")
 
   @@index([organizationId])
   @@index([type])
-  @@index([isInternal])
-  @@index([userId])
   @@map("parties")
 }
 
