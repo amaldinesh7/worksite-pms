@@ -51,7 +51,7 @@ export function NavItemButton({
         'flex items-center rounded-lg',
         'transition-colors duration-150',
         isCollapsed ? 'px-3 py-2 justify-center' : 'px-3 py-2',
-        isActive ? 'bg-neutral-100 text-neutral-800' : 'text-neutral-600 hover:bg-neutral-50'
+        isActive ? 'bg-neutral-100 text-gray-800' : 'text-gray-600 hover:bg-neutral-50'
       )}
       aria-current={isActive ? 'page' : undefined}
     >

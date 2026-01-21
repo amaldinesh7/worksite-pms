@@ -94,9 +94,9 @@ function ListPanelHeader({ title, rightContent, className }: ListPanelHeaderProp
   return (
     <div className={cn('p-4 border-b border-neutral-200 shrink-0', className)}>
       <div className="flex items-center justify-between">
-        <TypographyLarge className="text-base font-medium text-neutral-800">{title}</TypographyLarge>
+        <TypographyLarge>{title}</TypographyLarge>
         {rightContent && (
-          <TypographyLarge className="text-base font-semibold text-neutral-900">{rightContent}</TypographyLarge>
+          <TypographyLarge>{rightContent}</TypographyLarge>
         )}
       </div>
     </div>

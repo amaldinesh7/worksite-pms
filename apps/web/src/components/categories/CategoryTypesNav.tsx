@@ -71,7 +71,7 @@ export function CategoryTypesNav({
                 onClick={() => onSelect(categoryType)}
               >
                 <TypographySmall className={cn(
-                  isSelected ? 'font-medium text-neutral-900' : 'text-neutral-700 font-normal'
+                  isSelected ? 'font-medium text-foreground' : 'text-muted-foreground font-normal'
                 )}>
                   {label}
                 </TypographySmall>

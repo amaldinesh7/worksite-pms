@@ -122,13 +122,13 @@ export default function PartyDetailPage() {
   if (isPartyLoading) {
     return (
       <PageContent className="overflow-hidden min-h-0">
-        <div className="h-6 w-48 bg-neutral-100 rounded animate-pulse mb-6" />
+        <div className="h-6 w-48 bg-muted rounded animate-pulse mb-6" />
         <div className="grid grid-cols-12 gap-6 h-full min-h-0 overflow-hidden">
           <div className="col-span-3 h-full">
-            <div className="bg-white border border-neutral-200 rounded-lg h-full animate-pulse" />
+            <div className="bg-card border border-border rounded-lg h-full animate-pulse" />
           </div>
           <div className="col-span-9 h-full">
-            <div className="bg-white border border-neutral-200 rounded-lg h-full animate-pulse" />
+            <div className="bg-card border border-border rounded-lg h-full animate-pulse" />
           </div>
         </div>
       </PageContent>
@@ -140,7 +140,7 @@ export default function PartyDetailPage() {
     return (
       <PageContent>
         <div className="flex flex-col items-center justify-center h-64">
-          <p className="text-neutral-500 mb-4">Party not found</p>
+          <p className="text-muted-foreground mb-4">Party not found</p>
           <button
             onClick={() => navigate('/parties')}
             className="text-primary hover:underline cursor-pointer"
@@ -158,7 +158,7 @@ export default function PartyDetailPage() {
       <Breadcrumb items={breadcrumbItems} className="mb-2" />
 
       {/* Page Title */}
-      <h1 className="text-2xl font-semibold text-neutral-900 mb-6">{party.name}</h1>
+      <h1 className="text-2xl font-semibold text-foreground mb-6">{party.name}</h1>
 
       {/* 2-Column Layout */}
       <div className="grid grid-cols-12 gap-6 h-[calc(100%-80px)] min-h-0 overflow-hidden">
