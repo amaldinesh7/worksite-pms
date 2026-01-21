@@ -1,7 +1,7 @@
 # Database Schema
 
 > Auto-generated from `apps/api/prisma/schema.prisma`
-> Last generated: 2026-01-18T12:49:30.310Z
+> Last generated: 2026-01-21T15:32:34.249Z
 
 ---
 
@@ -21,6 +21,7 @@
 | `documents` | `Document[]` | - |
 | `stages` | `Stage[]` | - |
 | `attachments` | `Attachment[]` | - |
+| `roles` | `Role[]` | - |
 
 ### User
 
@@ -30,10 +31,47 @@
 | `name` | `String` | - |
 | `phone` | `String?` | @unique |
 | `email` | `String?` | @unique |
+| `location` | `String?` | - |
 | `createdAt` | `DateTime` | @default(now()) |
 | `memberships` | `OrganizationMember[]` | - |
 | `refreshTokens` | `RefreshToken[]` | - |
-| `party` | `Party?` | - |
+
+### Role
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `organizationId` | `String` | - |
+| `name` | `String` | - |
+| `description` | `String?` | - |
+| `isSystemRole` | `Boolean` | @default(false) |
+| `createdAt` | `DateTime` | @default(now()) |
+| `updatedAt` | `DateTime` | @updatedAt |
+| `organization` | `Organization` | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
+| `permissions` | `RolePermission[]` | - |
+| `members` | `OrganizationMember[]` | - |
+
+### Permission
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `key` | `String` | @unique |
+| `name` | `String` | - |
+| `description` | `String?` | - |
+| `category` | `String` | - |
+| `createdAt` | `DateTime` | @default(now()) |
+| `roles` | `RolePermission[]` | - |
+
+### RolePermission
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `roleId` | `String` | - |
+| `permissionId` | `String` | - |
+| `role` | `Role` | @relation(fields: [roleId], references: [id], onDelete: Cascade) |
+| `permission` | `Permission` | @relation(fields: [permissionId], references: [id], onDelete: Cascade) |
 
 ### OtpVerification
 
@@ -65,10 +103,11 @@
 | `id` | `String` | @id @default(cuid()) |
 | `organizationId` | `String` | - |
 | `userId` | `String` | - |
-| `role` | `OrganizationRole` | - |
+| `roleId` | `String` | - |
 | `createdAt` | `DateTime` | @default(now()) |
 | `organization` | `Organization` | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
 | `user` | `User` | @relation(fields: [userId], references: [id], onDelete: Cascade) |
+| `role` | `Role` | @relation(fields: [roleId], references: [id]) |
 | `projectAccess` | `ProjectAccess[]` | - |
 
 ### ProjectAccess
@@ -165,12 +204,9 @@
 | `phone` | `String?` | - |
 | `location` | `String` | - |
 | `type` | `PartyType` | - |
-| `isInternal` | `Boolean` | @default(false) |
 | `profilePicture` | `String?` | - |
-| `userId` | `String?` | @unique |
 | `createdAt` | `DateTime` | @default(now()) |
 | `organization` | `Organization` | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
-| `user` | `User?` | @relation(fields: [userId], references: [id]) |
 | `expenses` | `Expense[]` | - |
 | `payments` | `Payment[]` | - |
 | `projectsAsClient` | `Project[]` | @relation("ProjectClient") |
