@@ -14,6 +14,9 @@ import paymentRoutes from './routes/payments/index';
 import stageRoutes from './routes/stages/index';
 import documentRoutes from './routes/documents/index';
 import authRoutes from './routes/auth/index';
+import permissionRoutes from './routes/permissions/index';
+import roleRoutes from './routes/roles/index';
+import teamRoutes from './routes/team/index';
 
 // Middleware
 import { registerAuthMiddleware } from './middleware/auth.middleware';
@@ -70,6 +73,9 @@ export async function buildApp(options: AppOptions = {}) {
       '/api/payments',
       '/api/stages',
       '/api/documents',
+      '/api/permissions',
+      '/api/roles',
+      '/api/team',
     ],
   }));
 
@@ -84,6 +90,9 @@ export async function buildApp(options: AppOptions = {}) {
   await fastify.register(paymentRoutes, { prefix: '/api/payments' });
   await fastify.register(stageRoutes, { prefix: '/api/stages' });
   await fastify.register(documentRoutes, { prefix: '/api/documents' });
+  await fastify.register(permissionRoutes, { prefix: '/api/permissions' });
+  await fastify.register(roleRoutes, { prefix: '/api/roles' });
+  await fastify.register(teamRoutes, { prefix: '/api/team' });
 
   // Global error handler
   fastify.setErrorHandler((error: FastifyError, request, reply) => {
