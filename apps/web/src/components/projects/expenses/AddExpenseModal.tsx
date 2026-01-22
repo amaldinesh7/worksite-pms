@@ -117,7 +117,7 @@ function PaymentModeToggle({ value, onChange }: PaymentModeToggleProps) {
             className={cn(
               'flex flex-1 flex-col items-center justify-center px-3 py-1.5 rounded-md border transition-colors cursor-pointer h-full',
               isSelected
-                ? 'border-foreground bg-white'
+                ? 'border-foreground bg-card'
                 : 'border-transparent bg-muted hover:bg-muted/80'
             )}
           >
@@ -233,7 +233,7 @@ export function AddExpenseModal({
       if (expense) {
         const category = expenseCategories.find((c) => c.id === expense.expenseTypeItemId);
         setSelectedExpenseType(category?.name as ExpenseType || null);
-        
+
         reset({
           expenseTypeItemId: expense.expenseTypeItemId,
           expenseDate: new Date(expense.expenseDate),
@@ -632,7 +632,7 @@ export function AddExpenseModal({
                     <Label>Remarks</Label>
                     <Textarea
                       placeholder="Enter remarks"
-                      className="h-[56px] min-h-[56px] bg-white resize-none"
+                      className="h-[56px] min-h-[56px] bg-card resize-none"
                       {...register('notes')}
                     />
                   </div>
@@ -734,8 +734,8 @@ export function AddExpenseModal({
                   {createMutation.isPending || updateMutation.isPending
                     ? 'Saving...'
                     : isEditing
-                    ? 'Save Changes'
-                    : 'Create Expense'}
+                      ? 'Save Changes'
+                      : 'Create Expense'}
                 </Button>
               </DialogFooter>
             </form>

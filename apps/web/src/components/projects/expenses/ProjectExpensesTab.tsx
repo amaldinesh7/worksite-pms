@@ -289,10 +289,10 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
           </EmptyContent>
         </Empty>
       ) : (
-        <div className="relative rounded-lg border overflow-hidden bg-white">
+        <div className="relative rounded-lg border overflow-hidden bg-card">
           {/* Loading overlay for refetch */}
           {isFetching && !isLoading && (
-            <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center">
+            <div className="absolute inset-0 bg-background/60 z-10 flex items-center justify-center">
               <CircleNotch className="h-6 w-6 animate-spin text-primary" />
             </div>
           )}

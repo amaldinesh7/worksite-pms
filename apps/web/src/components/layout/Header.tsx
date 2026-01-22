@@ -8,7 +8,7 @@ import { useSidebarStore } from '@/stores/sidebar';
 
 interface HeaderProps {
   /** Page title displayed in the header */
-  title?: string;
+  title?: ReactNode;
   /** Subtitle/description below the title */
   subtitle?: string;
   /** Search placeholder text */

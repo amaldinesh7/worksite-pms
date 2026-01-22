@@ -89,6 +89,11 @@ export default function VerifyOtp() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleVerify();
+  };
+
   const isLoading = verifyOtpMutation.isPending || sendOtpMutation.isPending;
   const displayPhone = `${countryCode} ${phoneNumber}`;
 
@@ -108,21 +113,23 @@ export default function VerifyOtp() {
         </>
       }
     >
-      {/* OTP Input */}
-      <div className="text-left">
-        <label className="text-sm font-medium text-neutral-700">Verification Code</label>
-        <div className="mt-2">
-          <OtpInput value={otp} onChange={setOtp} error={!!error} disabled={isLoading} />
+      <form onSubmit={handleSubmit}>
+        {/* OTP Input */}
+        <div className="text-left">
+          <label className="text-sm font-medium text-foreground">Verification Code</label>
+          <div className="mt-2">
+            <OtpInput value={otp} onChange={setOtp} error={!!error} disabled={isLoading} />
+          </div>
         </div>
-      </div>
 
-      {/* Error Message */}
-      {error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
+        {/* Error Message */}
+        {error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
 
-      {/* Submit Button */}
-      <Button onClick={handleVerify} disabled={isLoading} className="w-full mt-6" size="lg">
-        {verifyOtpMutation.isPending ? 'Verifying...' : 'Verify & Continue'}
-      </Button>
+        {/* Submit Button */}
+        <Button type="submit" disabled={isLoading} className="w-full mt-6" size="lg">
+          {verifyOtpMutation.isPending ? 'Verifying...' : 'Verify & Continue'}
+        </Button>
+      </form>
 
       {/* Resend */}
       <p className="text-sm text-neutral-500 mt-6">

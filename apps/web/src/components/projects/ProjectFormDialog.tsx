@@ -439,7 +439,7 @@ export function ProjectFormDialog({
                               : 'bg-muted hover:bg-muted/80 border-transparent'
                           )}
                         >
-                          <div className="h-5 w-5 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                          <div className="h-5 w-5 rounded-full bg-background/20 flex items-center justify-center text-xs">
                             {member.user.name.charAt(0).toUpperCase()}
                           </div>
                           <span>{member.user.name}</span>

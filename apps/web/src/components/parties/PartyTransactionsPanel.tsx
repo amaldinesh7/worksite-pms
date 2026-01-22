@@ -130,7 +130,7 @@ export function PartyTransactionsPanel({
       {/* Table Container (matching PartiesTable style) */}
       <div className="rounded-lg border overflow-hidden flex flex-col">
         {/* Tabs Header (replacing search bar position) */}
-        <div className="bg-white p-3">
+        <div className="bg-card p-3">
           <Tabs
             value={activeTab}
             onValueChange={(v) => onTabChange(v as 'payments' | 'expenses')}

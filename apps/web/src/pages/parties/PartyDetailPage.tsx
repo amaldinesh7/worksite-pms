@@ -11,7 +11,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-import { PageContent } from '@/components/layout';
+import { PageContent, Header } from '@/components/layout';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { PartyProjectsList, PartyTransactionsPanel } from '@/components/parties';
 import { useParty, usePartyProjects, usePartyTransactions } from '@/lib/hooks/useParties';
@@ -153,41 +153,43 @@ export default function PartyDetailPage() {
   }
 
   return (
-    <PageContent className="overflow-hidden min-h-0">
-      {/* Breadcrumb */}
-      <Breadcrumb items={breadcrumbItems} className="mb-2" />
+    <>
+      <Header title={party.name} />
+      <PageContent className="overflow-hidden min-h-0 pt-4">
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} className="mb-2" />
 
-      {/* Page Title */}
-      <h1 className="text-2xl font-semibold text-foreground mb-6">{party.name}</h1>
+        {/* 2-Column Layout */}
 
-      {/* 2-Column Layout */}
-      <div className="grid grid-cols-12 gap-6 h-[calc(100%-80px)] min-h-0 overflow-hidden">
-        {/* Left Panel - Projects List */}
-        <div className="col-span-3 h-full overflow-hidden">
-          <PartyProjectsList
-            projects={projects}
-            selectedProjectId={selectedProjectId}
-            onSelectProject={handleSelectProject}
-            isLoading={isProjectsLoading}
-            totalAmount={totals.totalCredit}
-          />
+        {/* 2-Column Layout */}
+        <div className="grid grid-cols-12 gap-6 h-[calc(100%-80px)] min-h-0 overflow-hidden">
+          {/* Left Panel - Projects List */}
+          <div className="col-span-3 h-full overflow-hidden">
+            <PartyProjectsList
+              projects={projects}
+              selectedProjectId={selectedProjectId}
+              onSelectProject={handleSelectProject}
+              isLoading={isProjectsLoading}
+              totalAmount={totals.totalCredit}
+            />
+          </div>
+
+          {/* Right Panel - Transactions */}
+          <div className="col-span-9 h-full overflow-hidden">
+            <PartyTransactionsPanel
+              partyType={party.type}
+              totalPaid={selectedProjectTotals.totalPaid}
+              totalExpenses={selectedProjectTotals.totalExpenses}
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              transactions={transactions}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              isLoading={isTransactionsLoading}
+            />
+          </div>
         </div>
-
-        {/* Right Panel - Transactions */}
-        <div className="col-span-9 h-full overflow-hidden">
-          <PartyTransactionsPanel
-            partyType={party.type}
-            totalPaid={selectedProjectTotals.totalPaid}
-            totalExpenses={selectedProjectTotals.totalExpenses}
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            transactions={transactions}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            isLoading={isTransactionsLoading}
-          />
-        </div>
-      </div>
-    </PageContent>
+      </PageContent>
+    </>
   );
 }

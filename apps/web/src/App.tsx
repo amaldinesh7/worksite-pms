@@ -56,15 +56,15 @@ function DashboardPage() {
       />
       <PageContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-white rounded-xl border border-neutral-200 p-6">
+          <div className="bg-card rounded-xl border border-border p-6">
             <TypographyMuted>Active Projects</TypographyMuted>
             <TypographyH2 className="mt-2 border-none pb-0">12</TypographyH2>
           </div>
-          <div className="bg-white rounded-xl border border-neutral-200 p-6">
+          <div className="bg-card rounded-xl border border-border p-6">
             <TypographyMuted>Total Expenses</TypographyMuted>
             <TypographyH2 className="mt-2 border-none pb-0">₹4.2L</TypographyH2>
           </div>
-          <div className="bg-white rounded-xl border border-neutral-200 p-6">
+          <div className="bg-card rounded-xl border border-border p-6">
             <TypographyMuted>Pending Payments</TypographyMuted>
             <TypographyH2 className="mt-2 border-none pb-0">8</TypographyH2>
           </div>

@@ -7,6 +7,7 @@ import { initAuthMutations } from '@worksite/data';
 import { request } from './lib/api';
 
 import App from './App';
+import { ThemeProvider } from '@/components/theme-provider';
 import './index.css';
 import './styles/globals.css';
 
@@ -29,8 +30,10 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <App />
-      <Toaster position="bottom-right" richColors closeButton />
+      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
+        <App />
+        <Toaster position="bottom-right" richColors closeButton />
+      </ThemeProvider>
     </QueryClientProvider>
   </React.StrictMode>
 );

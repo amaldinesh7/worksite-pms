@@ -209,7 +209,7 @@ export function PartiesTable({
   return (
     <div className="rounded-lg border overflow-hidden">
       {/* Search and Add Button */}
-      <div className="flex items-center justify-between gap-4 bg-white  p-3">
+      <div className="flex items-center justify-between gap-4 bg-card  p-3">
         <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input

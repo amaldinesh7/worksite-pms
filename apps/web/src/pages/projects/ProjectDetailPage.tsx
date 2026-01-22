@@ -23,9 +23,8 @@ import {
   ChartLine,
 } from '@phosphor-icons/react';
 
-import { PageContent } from '@/components/layout';
+import { PageContent, Header } from '@/components/layout';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
-import { Badge } from '@/components/ui/badge';
 import {
   SecondaryTabs,
   SecondaryTabsList,
@@ -35,37 +34,12 @@ import {
 import { useProject, useProjectStats } from '@/lib/hooks/useProjects';
 import { ProjectOverviewTab } from '@/components/projects/overview/ProjectOverviewTab';
 import { ProjectExpensesTab } from '@/components/projects/expenses/ProjectExpensesTab';
-import type { ProjectStatus } from '@/lib/api/projects';
 
 // ============================================
 // Helpers
 // ============================================
 
-function getStatusBadgeVariant(status: ProjectStatus): 'default' | 'secondary' | 'outline' {
-  switch (status) {
-    case 'ACTIVE':
-      return 'default';
-    case 'ON_HOLD':
-      return 'secondary';
-    case 'COMPLETED':
-      return 'outline';
-    default:
-      return 'default';
-  }
-}
 
-function getStatusLabel(status: ProjectStatus): string {
-  switch (status) {
-    case 'ACTIVE':
-      return 'In Progress';
-    case 'ON_HOLD':
-      return 'On Hold';
-    case 'COMPLETED':
-      return 'Completed';
-    default:
-      return status;
-  }
-}
 
 // ============================================
 // Component
@@ -132,89 +106,82 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <PageContent className="overflow-hidden min-h-0">
-      {/* Breadcrumb */}
-      <Breadcrumb items={breadcrumbItems} className="mb-2" />
+    <>
+      <Header title={project.name} />
+      <PageContent className="overflow-hidden min-h-0 pt-4">
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} className="mb-2" />
 
-      {/* Page Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <h1 className="text-2xl font-semibold text-neutral-900">{project.name}</h1>
-        <Badge variant={getStatusBadgeVariant(project.status)}>
-          {getStatusLabel(project.status)}
-        </Badge>
-      </div>
 
-      {/* Project Type Subtitle */}
-      <p className="text-sm text-muted-foreground mb-6">{project.projectType?.name}</p>
+        {/* Tabs */}
+        <SecondaryTabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+          <SecondaryTabsList>
+            <SecondaryTabsTrigger value="overview" icon={House}>
+              Overview
+            </SecondaryTabsTrigger>
+            <SecondaryTabsTrigger value="expenses" icon={CurrencyDollar}>
+              Expenses
+            </SecondaryTabsTrigger>
+            <SecondaryTabsTrigger value="payments" icon={Money}>
+              Payments
+            </SecondaryTabsTrigger>
+            <SecondaryTabsTrigger value="stages" icon={Stack}>
+              Stages
+            </SecondaryTabsTrigger>
+            <SecondaryTabsTrigger value="documents" icon={FileText}>
+              Documents
+            </SecondaryTabsTrigger>
+            <SecondaryTabsTrigger value="reports" icon={ChartBar}>
+              Reports
+            </SecondaryTabsTrigger>
+            <SecondaryTabsTrigger value="analytics" icon={ChartLine}>
+              Analytics
+            </SecondaryTabsTrigger>
+          </SecondaryTabsList>
 
-      {/* Tabs */}
-      <SecondaryTabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-        <SecondaryTabsList>
-          <SecondaryTabsTrigger value="overview" icon={House}>
-            Overview
-          </SecondaryTabsTrigger>
-          <SecondaryTabsTrigger value="expenses" icon={CurrencyDollar}>
-            Expenses
-          </SecondaryTabsTrigger>
-          <SecondaryTabsTrigger value="payments" icon={Money}>
-            Payments
-          </SecondaryTabsTrigger>
-          <SecondaryTabsTrigger value="stages" icon={Stack}>
-            Stages
-          </SecondaryTabsTrigger>
-          <SecondaryTabsTrigger value="documents" icon={FileText}>
-            Documents
-          </SecondaryTabsTrigger>
-          <SecondaryTabsTrigger value="reports" icon={ChartBar}>
-            Reports
-          </SecondaryTabsTrigger>
-          <SecondaryTabsTrigger value="analytics" icon={ChartLine}>
-            Analytics
-          </SecondaryTabsTrigger>
-        </SecondaryTabsList>
+          <SecondaryTabsContent value="overview" className="mt-6">
+            <ProjectOverviewTab
+              project={project}
+              stats={stats}
+              isStatsLoading={isStatsLoading}
+            />
+          </SecondaryTabsContent>
 
-        <SecondaryTabsContent value="overview" className="mt-6">
-          <ProjectOverviewTab
-            project={project}
-            stats={stats}
-            isStatsLoading={isStatsLoading}
-          />
-        </SecondaryTabsContent>
+          <SecondaryTabsContent value="expenses" className="mt-6">
+            <ProjectExpensesTab projectId={project.id} />
+          </SecondaryTabsContent>
 
-        <SecondaryTabsContent value="expenses" className="mt-6">
-          <ProjectExpensesTab projectId={project.id} />
-        </SecondaryTabsContent>
+          <SecondaryTabsContent value="payments" className="mt-6">
+            <div className="flex items-center justify-center h-64 text-muted-foreground">
+              Payments tab coming soon
+            </div>
+          </SecondaryTabsContent>
 
-        <SecondaryTabsContent value="payments" className="mt-6">
-          <div className="flex items-center justify-center h-64 text-muted-foreground">
-            Payments tab coming soon
-          </div>
-        </SecondaryTabsContent>
+          <SecondaryTabsContent value="stages" className="mt-6">
+            <div className="flex items-center justify-center h-64 text-muted-foreground">
+              Stages tab coming soon
+            </div>
+          </SecondaryTabsContent>
 
-        <SecondaryTabsContent value="stages" className="mt-6">
-          <div className="flex items-center justify-center h-64 text-muted-foreground">
-            Stages tab coming soon
-          </div>
-        </SecondaryTabsContent>
+          <SecondaryTabsContent value="documents" className="mt-6">
+            <div className="flex items-center justify-center h-64 text-muted-foreground">
+              Documents tab coming soon
+            </div>
+          </SecondaryTabsContent>
 
-        <SecondaryTabsContent value="documents" className="mt-6">
-          <div className="flex items-center justify-center h-64 text-muted-foreground">
-            Documents tab coming soon
-          </div>
-        </SecondaryTabsContent>
+          <SecondaryTabsContent value="reports" className="mt-6">
+            <div className="flex items-center justify-center h-64 text-muted-foreground">
+              Reports tab coming soon
+            </div>
+          </SecondaryTabsContent>
 
-        <SecondaryTabsContent value="reports" className="mt-6">
-          <div className="flex items-center justify-center h-64 text-muted-foreground">
-            Reports tab coming soon
-          </div>
-        </SecondaryTabsContent>
-
-        <SecondaryTabsContent value="analytics" className="mt-6">
-          <div className="flex items-center justify-center h-64 text-muted-foreground">
-            Analytics tab coming soon
-          </div>
-        </SecondaryTabsContent>
-      </SecondaryTabs>
-    </PageContent>
+          <SecondaryTabsContent value="analytics" className="mt-6">
+            <div className="flex items-center justify-center h-64 text-muted-foreground">
+              Analytics tab coming soon
+            </div>
+          </SecondaryTabsContent>
+        </SecondaryTabs>
+      </PageContent>
+    </>
   );
 }

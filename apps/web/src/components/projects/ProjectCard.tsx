@@ -92,7 +92,7 @@ export function ProjectCard({ project, onEdit, onDelete, onClick }: ProjectCardP
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 bg-white/80 hover:bg-white cursor-pointer"
+              className="h-8 w-8 bg-card/80 hover:bg-card cursor-pointer"
               onClick={(e) => e.stopPropagation()}
             >
               <MoreVertical className="h-4 w-4" />

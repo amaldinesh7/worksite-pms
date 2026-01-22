@@ -15,58 +15,162 @@
    DESIGN TOKENS (Tailwind v4)
    Derived from BuildPro reference design
    ======================================== */
+@layer base {
+  :root {
+    /* Neutral Color Scale */
+    --neutral-50: #fafafa;
+    --neutral-100: #f5f5f5;
+    --neutral-200: #e5e5e5;
+    --neutral-300: #d4d4d4;
+    --neutral-400: #a3a3a3;
+    --neutral-500: #737373;
+    --neutral-600: #525252;
+    --neutral-700: #404040;
+    --neutral-800: #262626;
+    --neutral-900: #171717;
+    --neutral-950: #0a0a0a;
+
+    --background: #fafafa;
+    --foreground: #171717;
+
+    --card: #ffffff;
+    --card-foreground: #171717;
+
+    --popover: #ffffff;
+    --popover-foreground: #171717;
+
+    --primary: #171717;
+    --primary-foreground: #fafafa;
+
+    --secondary: #f5f5f5;
+    --secondary-foreground: #171717;
+
+    --muted: #f5f5f5;
+    --muted-foreground: #737373;
+
+    --accent: #f5f5f5;
+    --accent-foreground: #171717;
+
+    --destructive: #ef4444;
+    --destructive-foreground: #fafafa;
+
+    --border: #e5e5e5;
+    --input: #e5e5e5;
+    --ring: #171717;
+
+    --radius: 0.5rem;
+
+    /* Sidebar */
+    --sidebar-background: #ffffff;
+    --sidebar-foreground: #404040;
+    --sidebar-primary: #171717;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #f5f5f5;
+    --sidebar-accent-foreground: #171717;
+    --sidebar-border: #e5e5e5;
+    --sidebar-ring: #a3a3a3;
+  }
+
+  .dark {
+    --neutral-50: #171717;
+    /* Inverted for utility mapping if needed, but usually kept static */
+
+    --background: #09090b;
+    /* zinc-950 - slightly lighter than pure black */
+    --foreground: #fafafa;
+
+    --card: #18181b;
+    /* zinc-900 - elevated surface */
+    --card-foreground: #fafafa;
+
+    --popover: #18181b;
+    /* zinc-900 - matches card */
+    --popover-foreground: #fafafa;
+
+    --primary: #fafafa;
+    --primary-foreground: #18181b;
+
+    --secondary: #27272a;
+    /* zinc-800 */
+    --secondary-foreground: #fafafa;
+
+    --muted: #27272a;
+    /* zinc-800 */
+    --muted-foreground: #a1a1aa;
+    /* zinc-400 */
+
+    --accent: #27272a;
+    /* zinc-800 */
+    --accent-foreground: #fafafa;
+
+    --destructive: #7f1d1d;
+    --destructive-foreground: #fafafa;
+
+    --border: #27272a;
+    /* zinc-800 */
+    --input: #27272a;
+    /* zinc-800 */
+    --ring: #d4d4d4;
+
+    /* Sidebar Dark */
+    --sidebar-background: #09090b;
+    /* Match main background */
+    --sidebar-foreground: #a1a1aa;
+    --sidebar-primary: #fafafa;
+    --sidebar-primary-foreground: #18181b;
+    --sidebar-accent: #27272a;
+    --sidebar-accent-foreground: #fafafa;
+    --sidebar-border: #27272a;
+    --sidebar-ring: #a1a1aa;
+  }
+}
+
 @theme {
-  /* Neutral Color Scale - Primary palette */
-  --color-neutral-50: #fafafa;
-  --color-neutral-100: #f5f5f5;
-  --color-neutral-200: #e5e5e5;
-  --color-neutral-300: #d4d4d4;
-  --color-neutral-400: #a3a3a3;
-  --color-neutral-500: #737373;
-  --color-neutral-600: #525252;
-  --color-neutral-700: #404040;
-  --color-neutral-800: #262626;
-  --color-neutral-900: #171717;
-  --color-neutral-950: #0a0a0a;
+  /* Use CSS variables for semantic tokens */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 
-  /* Semantic Colors */
-  --color-background: #fafafa;
-  --color-foreground: #262626;
-  --color-muted: #f5f5f5;
-  --color-muted-foreground: #737373;
-  --color-card: #ffffff;
-  --color-card-foreground: #262626;
-  --color-border: #e5e5e5;
-  --color-input: #e5e5e5;
-  --color-ring: #a3a3a3;
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
 
-  /* Primary - Dark neutral for buttons */
-  --color-primary: #262626;
-  --color-primary-foreground: #ffffff;
-  --color-primary-hover: #171717;
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
 
-  /* Secondary - Light backgrounds */
-  --color-secondary: #f5f5f5;
-  --color-secondary-foreground: #262626;
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
 
-  /* Accent - Hover states */
-  --color-accent: #f5f5f5;
-  --color-accent-foreground: #171717;
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
 
-  /* Destructive */
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #ffffff;
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
 
-  /* Sidebar specific */
-  --color-sidebar-bg: #ffffff;
-  --color-sidebar-foreground: #404040;
-  --color-sidebar-muted: #737373;
-  --color-sidebar-border: #e5e5e5;
-  --color-sidebar-active-bg: #f5f5f5;
-  --color-sidebar-active-text: #171717;
-  --color-sidebar-hover-bg: #f5f5f5;
-  --color-sidebar-icon: #737373;
-  --color-sidebar-icon-active: #404040;
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Sidebar Tokens mapping */
+  --color-sidebar-bg: var(--sidebar-background);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Fallbacks for older bindings if needed */
+  --color-sidebar-active-bg: var(--sidebar-accent);
+  --color-sidebar-active-text: var(--sidebar-accent-foreground);
+  --color-sidebar-hover-bg: var(--sidebar-accent);
+  --color-sidebar-icon: var(--muted-foreground);
+  --color-sidebar-icon-active: var(--sidebar-foreground);
 
   /* Layout Dimensions */
   --sidebar-width: 18rem;
@@ -74,10 +178,10 @@
   --header-height: 4rem;
 
   /* Border Radius */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
   --radius-full: 9999px;
 
   /* Fonts */

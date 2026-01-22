@@ -54,8 +54,8 @@ export default function RolesPage() {
   const roles = rolesData?.items || [];
   const filteredRoles = debouncedSearch
     ? roles.filter((role) =>
-        role.name.toLowerCase().includes(debouncedSearch.toLowerCase())
-      )
+      role.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+    )
     : roles;
 
   // Handlers
@@ -128,7 +128,7 @@ export default function RolesPage() {
               {Array.from({ length: 4 }).map((_, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-4 p-4 rounded-lg border bg-white animate-pulse"
+                  className="flex items-center gap-4 p-4 rounded-lg border bg-card animate-pulse"
                 >
                   <div className="h-10 w-10 rounded-lg bg-gray-200" />
                   <div className="flex-1 space-y-2">
@@ -164,7 +164,7 @@ export default function RolesPage() {
                 <div
                   key={role.id}
                   onClick={() => handleViewRole(role)}
-                  className="flex items-center gap-4 p-4 rounded-lg border bg-white hover:bg-muted/30 transition-colors cursor-pointer"
+                  className="flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-muted/30 transition-colors cursor-pointer"
                 >
                   {/* Icon */}
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">

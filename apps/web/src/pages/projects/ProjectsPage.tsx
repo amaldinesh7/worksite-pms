@@ -265,7 +265,7 @@ export default function ProjectsPage() {
             </div>
 
             {/* View Toggle */}
-            <div className="flex items-center border rounded-md bg-white">
+            <div className="flex items-center border rounded-md bg-card">
               <Button
                 variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
                 size="icon"

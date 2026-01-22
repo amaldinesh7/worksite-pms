@@ -354,7 +354,7 @@ export function DateRangePicker({
         <Button
           variant="outline"
           className={cn(
-            'group justify-start text-left font-normal cursor-pointer bg-white',
+            'group justify-start text-left font-normal cursor-pointer bg-background',
             !range.from && 'text-muted-foreground',
             className
           )}
@@ -457,7 +457,7 @@ export function DateRangePicker({
                   selected={range}
                   onSelect={handleCalendarSelect}
                   month={prevMonth}
-                  onMonthChange={() => {}}
+                  onMonthChange={() => { }}
                   showOutsideDays={false}
                   className="p-0"
                 />
@@ -484,7 +484,7 @@ export function DateRangePicker({
                   selected={range}
                   onSelect={handleCalendarSelect}
                   month={calendarMonth}
-                  onMonthChange={() => {}}
+                  onMonthChange={() => { }}
                   showOutsideDays={false}
                   className="p-0"
                 />

@@ -44,6 +44,11 @@ export default function PhoneInput() {
     return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 10)}`;
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSendOtp();
+  };
+
   return (
     <AuthCard
       icon={<Buildings className="h-7 w-7" weight="fill" />}
@@ -57,42 +62,45 @@ export default function PhoneInput() {
         </>
       }
     >
-      {/* Phone Input */}
-      <div className="text-left">
-        <label htmlFor="phone" className="text-sm font-medium text-neutral-700">
-          Phone Number
-        </label>
-        <div className="flex mt-2">
-          <CountryCodeSelect
-            value={countryCode}
-            onValueChange={setCountryCode}
-            disabled={sendOtpMutation.isPending}
-          />
-          <Input
-            id="phone"
-            type="tel"
-            placeholder="701 229 0437"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
-            maxLength={12}
-            disabled={sendOtpMutation.isPending}
-            className="flex-1 rounded-l-none"
-          />
+      {/* Form Wrapper */}
+      <form onSubmit={handleSubmit}>
+        {/* Phone Input */}
+        <div className="text-left">
+          <label htmlFor="phone" className="text-sm font-medium text-foreground">
+            Phone Number
+          </label>
+          <div className="flex mt-2">
+            <CountryCodeSelect
+              value={countryCode}
+              onValueChange={setCountryCode}
+              disabled={sendOtpMutation.isPending}
+            />
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="701 229 0437"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+              maxLength={12}
+              disabled={sendOtpMutation.isPending}
+              className="flex-1 rounded-l-none"
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Error Message */}
-      {error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
+        {/* Error Message */}
+        {error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
 
-      {/* Submit Button */}
-      <Button
-        onClick={handleSendOtp}
-        disabled={sendOtpMutation.isPending}
-        className="w-full mt-6"
-        size="lg"
-      >
-        {sendOtpMutation.isPending ? 'Sending...' : 'Send OTP'}
-      </Button>
+        {/* Submit Button */}
+        <Button
+          type="submit"
+          disabled={sendOtpMutation.isPending}
+          className="w-full mt-6"
+          size="lg"
+        >
+          {sendOtpMutation.isPending ? 'Sending...' : 'Send OTP'}
+        </Button>
+      </form>
     </AuthCard>
   );
 }

@@ -142,7 +142,7 @@ export function CategoryDetails({
 
   if (!categoryType) {
     return (
-      <Card className="bg-white border border-border rounded-lg p-6 flex items-center justify-center h-full">
+      <Card className="bg-card border border-border rounded-lg p-6 flex items-center justify-center h-full">
         <TypographyMuted>Select a category type to view items</TypographyMuted>
       </Card>
     );
@@ -150,7 +150,7 @@ export function CategoryDetails({
 
   return (
     <>
-      <Card className="bg-white border border-border rounded-lg flex flex-col h-full min-h-0 overflow-hidden">
+      <Card className="bg-card border border-border rounded-lg flex flex-col h-full min-h-0 overflow-hidden">
         {/* Header */}
         <div className="p-6 border-b border-border shrink-0 flex flex-row items-center justify-between gap-4">
           <TypographyH4 >{categoryType.label}</TypographyH4>
@@ -311,7 +311,7 @@ function ItemsList({ items, onEditItem, onDeleteItem, isDeleting }: ItemsListPro
                   className={cn(
                     'inline-flex items-center px-3 py-1 cursor-pointer',
                     'text-xs border border-border rounded-md',
-                    'text-muted-foreground bg-white hover:bg-muted',
+                    'text-muted-foreground bg-card hover:bg-muted',
                     'transition-all duration-150',
                     'opacity-40 group-hover:opacity-100 focus-visible:opacity-100',
                     'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
@@ -329,7 +329,7 @@ function ItemsList({ items, onEditItem, onDeleteItem, isDeleting }: ItemsListPro
                       className={cn(
                         'inline-flex items-center px-3 py-1 cursor-pointer',
                         'text-xs border border-red-200 rounded-md',
-                        'text-red-600 bg-white hover:bg-red-50',
+                        'text-red-600 bg-card hover:bg-red-50',
                         'transition-all duration-150',
                         'opacity-40 group-hover:opacity-100 focus-visible:opacity-100',
                         'focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none',

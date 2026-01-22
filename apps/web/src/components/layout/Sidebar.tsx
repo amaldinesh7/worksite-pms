@@ -19,6 +19,7 @@ import {
   mainNavItems,
   settingsSection,
 } from './sidebar/index';
+import { ThemeToggle } from './sidebar/ThemeToggle';
 
 interface SidebarProps {
   className?: string;
@@ -254,6 +255,7 @@ function SidebarFooter({
                 </TypographySmall>
                 <TypographyMuted className="text-xs truncate">{user?.phone || ''}</TypographyMuted>
               </div>
+              <ThemeToggle />
               <button
                 onClick={onToggleProfileMenu}
                 className="text-neutral-400 hover:text-neutral-600 p-1"
@@ -293,7 +295,7 @@ function SidebarFooter({
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 }
 

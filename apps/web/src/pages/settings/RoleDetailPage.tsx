@@ -305,7 +305,7 @@ export default function RoleDetailPage() {
           </div>
 
           {/* Role Details Card */}
-          <div className="rounded-lg border bg-white p-6">
+          <div className="rounded-lg border bg-card p-6">
             <h3 className="text-base font-semibold mb-4">Role Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -341,7 +341,7 @@ export default function RoleDetailPage() {
           </div>
 
           {/* Permissions Card */}
-          <div className="rounded-lg border bg-white p-6">
+          <div className="rounded-lg border bg-card p-6">
             <div className="mb-4">
               <h3 className="text-base font-semibold">Permissions</h3>
               <TypographyMuted className="text-sm">

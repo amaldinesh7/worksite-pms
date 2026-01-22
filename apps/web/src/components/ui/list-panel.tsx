@@ -67,7 +67,7 @@ function ListPanelRoot({ children, className }: ListPanelProps) {
     <ListPanelContext.Provider value={{}}>
       <Card
         className={cn(
-          'bg-white border border-neutral-200 rounded-lg h-full flex flex-col',
+          'bg-card border border-neutral-200 rounded-lg h-full flex flex-col',
           className
         )}
       >

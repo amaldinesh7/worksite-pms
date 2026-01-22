@@ -83,7 +83,7 @@ export function TablePagination({
   };
 
   return (
-    <div className={cn('flex items-center justify-between p-3 bg-white', className)}>
+    <div className={cn('flex items-center justify-between p-3 bg-card', className)}>
       <p className="text-sm text-muted-foreground">
         Showing {startItem} to {endItem} of {total} {itemLabel}
       </p>

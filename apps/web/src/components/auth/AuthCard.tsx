@@ -25,7 +25,7 @@ export function AuthCard({ icon, title, subtitle, children, footer, className }:
           </div>
 
           {/* Title */}
-          <TypographyH2 className="border-none pb-0 font-normal text-neutral-900">{title}</TypographyH2>
+          <TypographyH2 className="border-none pb-0 text-foreground">{title}</TypographyH2>
           <TypographyMuted className="mt-2">{subtitle}</TypographyMuted>
 
           {/* Content */}

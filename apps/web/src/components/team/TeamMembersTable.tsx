@@ -122,7 +122,7 @@ export function TeamMembersTable({
   });
 
   return (
-    <div className="rounded-lg border overflow-hidden bg-white">
+    <div className="rounded-lg border overflow-hidden bg-card">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
