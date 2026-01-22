@@ -142,7 +142,7 @@ export function CategoryDetails({
 
   if (!categoryType) {
     return (
-      <Card className="bg-white border border-neutral-200 rounded-lg p-6 flex items-center justify-center h-full">
+      <Card className="bg-white border border-border rounded-lg p-6 flex items-center justify-center h-full">
         <TypographyMuted>Select a category type to view items</TypographyMuted>
       </Card>
     );
@@ -150,14 +150,14 @@ export function CategoryDetails({
 
   return (
     <>
-      <Card className="bg-white border border-neutral-200 rounded-lg flex flex-col h-full min-h-0 overflow-hidden">
+      <Card className="bg-white border border-border rounded-lg flex flex-col h-full min-h-0 overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-neutral-200 shrink-0 flex flex-row items-center justify-between gap-4">
-          <TypographyH4 className="font-medium text-neutral-800">{categoryType.label}</TypographyH4>
+        <div className="p-6 border-b border-border shrink-0 flex flex-row items-center justify-between gap-4">
+          <TypographyH4 >{categoryType.label}</TypographyH4>
           {/* Search Input */}
           <div className="relative">
             <MagnifyingGlass
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
               weight="bold"
             />
             <Input
@@ -166,10 +166,10 @@ export function CategoryDetails({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={cn(
-                'w-64 bg-neutral-50 border-neutral-200',
+                'w-64 bg-muted border-input',
                 'pl-10 pr-4 py-2 h-10',
-                'placeholder:text-neutral-400 text-neutral-800 text-sm',
-                'focus:ring-neutral-300'
+                'placeholder:text-muted-foreground text-foreground text-sm',
+                'focus:ring-ring'
               )}
             />
           </div>
@@ -178,12 +178,12 @@ export function CategoryDetails({
         {/* Controls */}
         <div className="p-6 shrink-0">
           {/* Create Input */}
-          <div className="border border-neutral-200 rounded-lg bg-neutral-50/50">
+          <div className="border border-border rounded-lg bg-muted/50">
             <div className="p-3 flex items-center gap-3">
               <Plus
                 className={cn(
                   'h-4 w-4 shrink-0',
-                  isCreating ? 'text-neutral-300' : 'text-neutral-500'
+                  isCreating ? 'text-muted-foreground/50' : 'text-muted-foreground'
                 )}
                 weight="bold"
               />
@@ -197,7 +197,7 @@ export function CategoryDetails({
                 disabled={isCreating}
                 className={cn(
                   'flex-1 bg-transparent focus:outline-none text-sm',
-                  'placeholder:text-neutral-500 text-neutral-800',
+                  'placeholder:text-muted-foreground text-foreground',
                   isCreating && 'opacity-50 cursor-not-allowed'
                 )}
               />
@@ -260,13 +260,13 @@ export function CategoryDetails({
 
 function LoadingState() {
   return (
-    <div className="border-t border-neutral-200">
+    <div className="border-t border-border">
       {[1, 2, 3, 4, 5].map((i) => (
         <div
           key={i}
-          className="flex items-center justify-between py-3 border-b border-neutral-200 last:border-b-0"
+          className="flex items-center justify-between py-3 border-b border-border last:border-b-0"
         >
-          <div className="h-4 w-32 bg-neutral-100 rounded animate-pulse" />
+          <div className="h-4 w-32 bg-muted rounded animate-pulse" />
         </div>
       ))}
     </div>
@@ -292,16 +292,16 @@ interface ItemsListProps {
 
 function ItemsList({ items, onEditItem, onDeleteItem, isDeleting }: ItemsListProps) {
   return (
-    <div className="border-t border-neutral-200">
+    <div className="border-t border-border">
       {items.map((item, index) => (
         <div
           key={item.id}
           className={cn(
             'flex items-center justify-between py-3 group',
-            index < items.length - 1 && 'border-b border-neutral-200'
+            index < items.length - 1 && 'border-b border-border'
           )}
         >
-          <TypographySmall className="text-neutral-800 font-normal">{item.name}</TypographySmall>
+          <TypographySmall>{item.name}</TypographySmall>
           {/* Only show actions for editable items */}
           {item.isEditable && (onEditItem || onDeleteItem) && (
             <div className="flex items-center gap-2">
@@ -310,11 +310,11 @@ function ItemsList({ items, onEditItem, onDeleteItem, isDeleting }: ItemsListPro
                   onClick={() => onEditItem(item)}
                   className={cn(
                     'inline-flex items-center px-3 py-1 cursor-pointer',
-                    'text-xs border border-neutral-200 rounded-md',
-                    'text-neutral-600 bg-white hover:bg-neutral-100',
+                    'text-xs border border-border rounded-md',
+                    'text-muted-foreground bg-white hover:bg-muted',
                     'transition-all duration-150',
                     'opacity-40 group-hover:opacity-100 focus-visible:opacity-100',
-                    'focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:outline-none'
+                    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
                   )}
                 >
                   <PencilSimple className="mr-1.5 h-3 w-3" weight="bold" />

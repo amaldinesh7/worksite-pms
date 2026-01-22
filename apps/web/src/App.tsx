@@ -10,6 +10,9 @@ import PartiesPage from './pages/parties/PartiesPage';
 import PartyDetailPage from './pages/parties/PartyDetailPage';
 import ProjectsPage from './pages/projects/ProjectsPage';
 import ProjectDetailPage from './pages/projects/ProjectDetailPage';
+import TeamDirectoryPage from './pages/team/TeamDirectoryPage';
+import RolesPage from './pages/settings/RolesPage';
+import RoleDetailPage from './pages/settings/RoleDetailPage';
 
 // Auth Route wrapper - redirects to home if already logged in
 function AuthRoute({ children }: { children: React.ReactNode }) {
@@ -101,7 +104,9 @@ export default function App() {
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="parties" element={<PartiesPage />} />
           <Route path="parties/:id" element={<PartyDetailPage />} />
-          {/* Add more protected routes here as needed */}
+          <Route path="team" element={<TeamDirectoryPage />} />
+          <Route path="settings/roles" element={<RolesPage />} />
+          <Route path="settings/roles/:id" element={<RoleDetailPage />} />
         </Route>
 
         {/* Catch all - redirect to home */}

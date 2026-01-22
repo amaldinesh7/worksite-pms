@@ -1,14 +1,8 @@
-warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
-For more information, see: https://pris.ly/prisma-config
-
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 
 -- CreateEnum
-CREATE TYPE "OrganizationRole" AS ENUM ('ADMIN', 'MANAGER', 'ACCOUNTANT', 'SUPERVISOR', 'CLIENT');
-
--- CreateEnum
-CREATE TYPE "PartyType" AS ENUM ('VENDOR', 'LABOUR', 'SUBCONTRACTOR', 'CLIENT', 'ACCOUNTANT', 'SUPERVISOR', 'PROJECT_MANAGER');
+CREATE TYPE "PartyType" AS ENUM ('VENDOR', 'LABOUR', 'SUBCONTRACTOR', 'CLIENT');
 
 -- CreateEnum
 CREATE TYPE "PaymentType" AS ENUM ('IN', 'OUT');
@@ -40,9 +34,44 @@ CREATE TABLE "users" (
     "name" TEXT NOT NULL,
     "phone" TEXT,
     "email" TEXT,
+    "location" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "roles" (
+    "id" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "isSystemRole" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "roles_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "permissions" (
+    "id" TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "category" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "permissions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "role_permissions" (
+    "id" TEXT NOT NULL,
+    "roleId" TEXT NOT NULL,
+    "permissionId" TEXT NOT NULL,
+
+    CONSTRAINT "role_permissions_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -74,7 +103,7 @@ CREATE TABLE "organization_members" (
     "id" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-    "role" "OrganizationRole" NOT NULL,
+    "roleId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "organization_members_pkey" PRIMARY KEY ("id")
@@ -156,9 +185,7 @@ CREATE TABLE "parties" (
     "phone" TEXT,
     "location" TEXT NOT NULL,
     "type" "PartyType" NOT NULL,
-    "isInternal" BOOLEAN NOT NULL DEFAULT false,
     "profilePicture" TEXT,
-    "userId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "parties_pkey" PRIMARY KEY ("id")
@@ -249,6 +276,24 @@ CREATE UNIQUE INDEX "users_phone_key" ON "users"("phone");
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
+CREATE INDEX "roles_organizationId_idx" ON "roles"("organizationId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "roles_organizationId_name_key" ON "roles"("organizationId", "name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "permissions_key_key" ON "permissions"("key");
+
+-- CreateIndex
+CREATE INDEX "role_permissions_roleId_idx" ON "role_permissions"("roleId");
+
+-- CreateIndex
+CREATE INDEX "role_permissions_permissionId_idx" ON "role_permissions"("permissionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "role_permissions_roleId_permissionId_key" ON "role_permissions"("roleId", "permissionId");
+
+-- CreateIndex
 CREATE INDEX "otp_verifications_phone_expiresAt_idx" ON "otp_verifications"("phone", "expiresAt");
 
 -- CreateIndex
@@ -262,6 +307,9 @@ CREATE INDEX "organization_members_organizationId_idx" ON "organization_members"
 
 -- CreateIndex
 CREATE INDEX "organization_members_userId_idx" ON "organization_members"("userId");
+
+-- CreateIndex
+CREATE INDEX "organization_members_roleId_idx" ON "organization_members"("roleId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "organization_members_organizationId_userId_key" ON "organization_members"("organizationId", "userId");
@@ -309,19 +357,10 @@ CREATE INDEX "stages_projectId_idx" ON "stages"("projectId");
 CREATE UNIQUE INDEX "stages_projectId_name_key" ON "stages"("projectId", "name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "parties_userId_key" ON "parties"("userId");
-
--- CreateIndex
 CREATE INDEX "parties_organizationId_idx" ON "parties"("organizationId");
 
 -- CreateIndex
 CREATE INDEX "parties_type_idx" ON "parties"("type");
-
--- CreateIndex
-CREATE INDEX "parties_isInternal_idx" ON "parties"("isInternal");
-
--- CreateIndex
-CREATE INDEX "parties_userId_idx" ON "parties"("userId");
 
 -- CreateIndex
 CREATE INDEX "expenses_organizationId_idx" ON "expenses"("organizationId");
@@ -372,6 +411,15 @@ CREATE INDEX "entity_attachments_entityType_entityId_idx" ON "entity_attachments
 CREATE UNIQUE INDEX "entity_attachments_attachmentId_entityType_entityId_key" ON "entity_attachments"("attachmentId", "entityType", "entityId");
 
 -- AddForeignKey
+ALTER TABLE "roles" ADD CONSTRAINT "roles_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_permissionId_fkey" FOREIGN KEY ("permissionId") REFERENCES "permissions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -379,6 +427,9 @@ ALTER TABLE "organization_members" ADD CONSTRAINT "organization_members_organiza
 
 -- AddForeignKey
 ALTER TABLE "organization_members" ADD CONSTRAINT "organization_members_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "organization_members" ADD CONSTRAINT "organization_members_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "project_access" ADD CONSTRAINT "project_access_memberId_fkey" FOREIGN KEY ("memberId") REFERENCES "organization_members"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -409,9 +460,6 @@ ALTER TABLE "stages" ADD CONSTRAINT "stages_projectId_fkey" FOREIGN KEY ("projec
 
 -- AddForeignKey
 ALTER TABLE "parties" ADD CONSTRAINT "parties_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "parties" ADD CONSTRAINT "parties_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "expenses" ADD CONSTRAINT "expenses_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -460,4 +508,3 @@ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_organizationId_fkey" FOREI
 
 -- AddForeignKey
 ALTER TABLE "entity_attachments" ADD CONSTRAINT "entity_attachments_attachmentId_fkey" FOREIGN KEY ("attachmentId") REFERENCES "attachments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
