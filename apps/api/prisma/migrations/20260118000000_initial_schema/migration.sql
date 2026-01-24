@@ -287,10 +287,12 @@ CREATE TABLE "payments" (
     "projectId" TEXT NOT NULL,
     "partyId" TEXT,
     "expenseId" TEXT,
+    "recordedById" TEXT,
     "type" "PaymentType" NOT NULL,
     "paymentMode" "PaymentMode" NOT NULL,
     "amount" DECIMAL(15,2) NOT NULL,
     "paymentDate" TIMESTAMP(3) NOT NULL,
+    "referenceNumber" TEXT,
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -334,6 +336,23 @@ CREATE TABLE "entity_attachments" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "entity_attachments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "member_advances" (
+    "id" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "projectId" TEXT NOT NULL,
+    "memberId" TEXT NOT NULL,
+    "amount" DECIMAL(15,2) NOT NULL,
+    "purpose" TEXT NOT NULL,
+    "paymentMode" "PaymentMode" NOT NULL,
+    "advanceDate" TIMESTAMP(3) NOT NULL,
+    "expectedSettlementDate" TIMESTAMP(3),
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "member_advances_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -511,6 +530,9 @@ CREATE INDEX "payments_paymentDate_idx" ON "payments"("paymentDate");
 CREATE INDEX "payments_type_idx" ON "payments"("type");
 
 -- CreateIndex
+CREATE INDEX "payments_recordedById_idx" ON "payments"("recordedById");
+
+-- CreateIndex
 CREATE INDEX "documents_organizationId_idx" ON "documents"("organizationId");
 
 -- CreateIndex
@@ -524,6 +546,18 @@ CREATE INDEX "entity_attachments_entityType_entityId_idx" ON "entity_attachments
 
 -- CreateIndex
 CREATE UNIQUE INDEX "entity_attachments_attachmentId_entityType_entityId_key" ON "entity_attachments"("attachmentId", "entityType", "entityId");
+
+-- CreateIndex
+CREATE INDEX "member_advances_organizationId_idx" ON "member_advances"("organizationId");
+
+-- CreateIndex
+CREATE INDEX "member_advances_projectId_idx" ON "member_advances"("projectId");
+
+-- CreateIndex
+CREATE INDEX "member_advances_memberId_idx" ON "member_advances"("memberId");
+
+-- CreateIndex
+CREATE INDEX "member_advances_advanceDate_idx" ON "member_advances"("advanceDate");
 
 -- AddForeignKey
 ALTER TABLE "roles" ADD CONSTRAINT "roles_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -643,6 +677,9 @@ ALTER TABLE "payments" ADD CONSTRAINT "payments_partyId_fkey" FOREIGN KEY ("part
 ALTER TABLE "payments" ADD CONSTRAINT "payments_expenseId_fkey" FOREIGN KEY ("expenseId") REFERENCES "expenses"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "payments" ADD CONSTRAINT "payments_recordedById_fkey" FOREIGN KEY ("recordedById") REFERENCES "organization_members"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "documents" ADD CONSTRAINT "documents_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -653,3 +690,12 @@ ALTER TABLE "attachments" ADD CONSTRAINT "attachments_organizationId_fkey" FOREI
 
 -- AddForeignKey
 ALTER TABLE "entity_attachments" ADD CONSTRAINT "entity_attachments_attachmentId_fkey" FOREIGN KEY ("attachmentId") REFERENCES "attachments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "member_advances" ADD CONSTRAINT "member_advances_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "member_advances" ADD CONSTRAINT "member_advances_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "member_advances" ADD CONSTRAINT "member_advances_memberId_fkey" FOREIGN KEY ("memberId") REFERENCES "organization_members"("id") ON DELETE CASCADE ON UPDATE CASCADE;

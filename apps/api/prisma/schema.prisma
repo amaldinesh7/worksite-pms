@@ -71,17 +71,18 @@ model Organization {
   createdAt DateTime @default(now())
 
   // Relations
-  members       OrganizationMember[]
-  projects      Project[]
-  categoryItems CategoryItem[]
-  parties       Party[]
-  expenses      Expense[]
-  payments      Payment[]
-  documents     Document[]
-  stages        Stage[]
-  tasks         Task[]
-  attachments   Attachment[]
-  roles         Role[]
+  members        OrganizationMember[]
+  projects       Project[]
+  categoryItems  CategoryItem[]
+  parties        Party[]
+  expenses       Expense[]
+  payments       Payment[]
+  documents      Document[]
+  stages         Stage[]
+  tasks          Task[]
+  attachments    Attachment[]
+  roles          Role[]
+  memberAdvances MemberAdvance[]
 
   @@map("organizations")
 }
@@ -197,6 +198,8 @@ model OrganizationMember {
   projectAccess        ProjectAccess[]
   stageAssignments     StageMemberAssignment[]
   taskAssignments      TaskMemberAssignment[]
+  recordedPayments     Payment[]                 @relation("PaymentRecordedBy")
+  memberAdvances       MemberAdvance[]
 
   @@unique([organizationId, userId])
   @@index([organizationId])
@@ -293,14 +296,15 @@ model Project {
   updatedAt         DateTime      @default(now()) @updatedAt
 
   // Relations
-  organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  client        Party?          @relation("ProjectClient", fields: [clientId], references: [id])
-  projectType   CategoryItem    @relation("ProjectType", fields: [projectTypeItemId], references: [id])
-  stages        Stage[]
-  expenses      Expense[]
-  payments      Payment[]
-  documents     Document[]
-  projectAccess ProjectAccess[]
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  client         Party?          @relation("ProjectClient", fields: [clientId], references: [id])
+  projectType    CategoryItem    @relation("ProjectType", fields: [projectTypeItemId], references: [id])
+  stages         Stage[]
+  expenses       Expense[]
+  payments       Payment[]
+  documents      Document[]
+  projectAccess  ProjectAccess[]
+  memberAdvances MemberAdvance[]
 
   @@index([organizationId])
   @@index([clientId])
@@ -514,28 +518,32 @@ model Expense {
 // ============================================
 
 model Payment {
-  id             String      @id @default(cuid())
-  organizationId String
-  projectId      String
-  partyId        String?
-  expenseId      String?
-  type           PaymentType
-  paymentMode    PaymentMode
-  amount         Decimal     @db.Decimal(15, 2)
-  paymentDate    DateTime
-  notes          String?     @db.Text
-  createdAt      DateTime    @default(now())
+  id              String      @id @default(cuid())
+  organizationId  String
+  projectId       String
+  partyId         String?
+  expenseId       String?
+  recordedById    String?
+  type            PaymentType
+  paymentMode     PaymentMode
+  amount          Decimal     @db.Decimal(15, 2)
+  paymentDate     DateTime
+  referenceNumber String?     // Invoice/Receipt number
+  notes           String?     @db.Text
+  createdAt       DateTime    @default(now())
 
   // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  party        Party?       @relation(fields: [partyId], references: [id])
-  expense      Expense?     @relation(fields: [expenseId], references: [id])
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  party        Party?              @relation(fields: [partyId], references: [id])
+  expense      Expense?            @relation(fields: [expenseId], references: [id])
+  recordedBy   OrganizationMember? @relation("PaymentRecordedBy", fields: [recordedById], references: [id])
 
   @@index([organizationId])
   @@index([projectId])
   @@index([partyId])
   @@index([expenseId])
+  @@index([recordedById])
   @@index([paymentDate])
   @@index([type])
   @@map("payments")
@@ -603,4 +611,33 @@ model EntityAttachment {
   @@unique([attachmentId, entityType, entityId])
   @@index([entityType, entityId])
   @@map("entity_attachments")
+}
+
+// ============================================
+// Member Advances (Cash advances to team members)
+// ============================================
+
+model MemberAdvance {
+  id                     String      @id @default(cuid())
+  organizationId         String
+  projectId              String
+  memberId               String
+  amount                 Decimal     @db.Decimal(15, 2)
+  purpose                String
+  paymentMode            PaymentMode
+  advanceDate            DateTime
+  expectedSettlementDate DateTime?
+  notes                  String?     @db.Text
+  createdAt              DateTime    @default(now())
+
+  // Relations
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  member       OrganizationMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([projectId])
+  @@index([memberId])
+  @@index([advanceDate])
+  @@map("member_advances")
 }
