@@ -1,6 +1,7 @@
 import Fastify, { FastifyError, FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
+import multipart from '@fastify/multipart';
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 
 // Route imports
@@ -19,6 +20,7 @@ import authRoutes from './routes/auth/index';
 import permissionRoutes from './routes/permissions/index';
 import roleRoutes from './routes/roles/index';
 import teamRoutes from './routes/team/index';
+import boqRoutes from './routes/boq/index';
 
 // Middleware
 import { registerAuthMiddleware } from './middleware/auth.middleware';
@@ -54,6 +56,13 @@ export async function buildApp(options: AppOptions = {}) {
     credentials: true, // Allow cookies to be sent cross-origin
   });
 
+  // Multipart for file uploads (documents, BOQ import, etc.)
+  await fastify.register(multipart, {
+    limits: {
+      fileSize: 50 * 1024 * 1024, // 50MB max file size
+    },
+  });
+
   // Register auth middleware (JWT plugin + authenticate decorator)
   await registerAuthMiddleware(app);
 
@@ -80,6 +89,7 @@ export async function buildApp(options: AppOptions = {}) {
       '/api/permissions',
       '/api/roles',
       '/api/team',
+      '/api/boq',
     ],
   }));
 
@@ -99,6 +109,7 @@ export async function buildApp(options: AppOptions = {}) {
   await fastify.register(permissionRoutes, { prefix: '/api/permissions' });
   await fastify.register(roleRoutes, { prefix: '/api/roles' });
   await fastify.register(teamRoutes, { prefix: '/api/team' });
+  await fastify.register(boqRoutes, { prefix: '/api' });
 
   // Global error handler
   fastify.setErrorHandler((error: FastifyError, request, reply) => {
