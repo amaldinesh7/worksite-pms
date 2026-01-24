@@ -62,7 +62,7 @@ export function MultiSelect({
     }
   };
 
-  const handleRemove = (value: string, e: React.MouseEvent) => {
+  const handleRemove = (value: string, e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
     onChange(selected.filter((item) => item !== value));
   };
@@ -92,23 +92,26 @@ export function MultiSelect({
               selected.map((value) => {
                 const option = options.find((opt) => opt.value === value);
                 return (
-                  <Badge
-                    key={value}
-                    variant="secondary"
-                    className="mr-1 mb-1"
-                  >
+                  <Badge key={value} variant="secondary" className="mr-1 mb-1">
                     {option?.label}
-                    <button
-                      type="button"
+                    <span
+                      role="button"
+                      tabIndex={0}
                       className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
                       onMouseDown={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                       }}
                       onClick={(e) => handleRemove(value, e)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleRemove(value, e);
+                        }
+                      }}
                     >
                       <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                    </button>
+                    </span>
                   </Badge>
                 );
               })

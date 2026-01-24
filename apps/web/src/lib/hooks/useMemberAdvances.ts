@@ -16,6 +16,7 @@ import {
   getProjectMembers,
   getMemberBalancesAcrossProjects,
   getMemberTotalBalance,
+  getMemberTotalBalancesBatch,
   type MemberAdvance,
   type MemberAdvancesResponse,
   type MemberAdvanceSummary,
@@ -46,6 +47,8 @@ export const memberAdvanceKeys = {
     [...memberAdvanceKeys.all, 'member-balances', memberId] as const,
   memberTotalBalance: (memberId: string) =>
     [...memberAdvanceKeys.all, 'member-total-balance', memberId] as const,
+  memberTotalBalancesBatch: (memberIds: string[]) =>
+    [...memberAdvanceKeys.all, 'member-total-balances-batch', memberIds.sort().join(',')] as const,
 };
 
 // ============================================
@@ -125,6 +128,18 @@ export function useMemberTotalBalance(memberId: string) {
     queryKey: memberAdvanceKeys.memberTotalBalance(memberId),
     queryFn: () => getMemberTotalBalance(memberId),
     enabled: !!memberId,
+  });
+}
+
+/**
+ * Hook to fetch member total balances in batch (for multiple members at once)
+ * This avoids N+1 queries when displaying balances for a list of members
+ */
+export function useMemberTotalBalancesBatch(memberIds: string[]) {
+  return useQuery<Record<string, number>, Error>({
+    queryKey: memberAdvanceKeys.memberTotalBalancesBatch(memberIds),
+    queryFn: () => getMemberTotalBalancesBatch(memberIds),
+    enabled: memberIds.length > 0,
   });
 }
 

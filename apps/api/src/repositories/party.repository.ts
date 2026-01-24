@@ -75,14 +75,16 @@ export class PartyRepository {
           orderBy: { name: 'asc' },
         });
 
-        // Calculate credit for each party and filter
-        const partiesWithCredit: (Party & { credit: number })[] = [];
-        for (const party of allParties) {
-          const credit = await this.getPartyCredit(organizationId, party.id);
-          if (credit > 0) {
-            partiesWithCredit.push({ ...party, credit });
-          }
-        }
+        // Calculate credit for all parties in parallel (fixes N+1)
+        const partiesWithCredits = await Promise.all(
+          allParties.map(async (party) => ({
+            ...party,
+            credit: await this.getPartyCredit(organizationId, party.id),
+          }))
+        );
+
+        // Filter to only parties with positive credit
+        const partiesWithCredit = partiesWithCredits.filter((p) => p.credit > 0);
 
         // Apply pagination manually
         const total = partiesWithCredit.length;

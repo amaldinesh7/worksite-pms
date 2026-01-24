@@ -9,12 +9,8 @@
  * - Actions (edit/delete)
  */
 
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  type ColumnDef,
-} from '@tanstack/react-table';
+import { useMemo } from 'react';
+import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import {
   Table,
   TableBody,
@@ -33,7 +29,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TypographySmall, TypographyMuted } from '@/components/ui/typography';
 import { MoreVertical, Pencil, Trash2, Phone } from 'lucide-react';
-import { useMemberTotalBalance } from '@/lib/hooks/useMemberAdvances';
+import { useMemberTotalBalancesBatch } from '@/lib/hooks/useMemberAdvances';
 import { MemberBalancePopover } from './MemberBalancePopover';
 import type { TeamMember } from '@/lib/api/team';
 import type { Role } from '@/lib/api/roles';
@@ -54,16 +50,22 @@ interface TeamMembersTableProps {
 // ============================================
 
 /**
- * Cell component that fetches and displays member balance
+ * Cell component that displays member balance (receives balance as prop to avoid N+1)
  */
-function BalanceCell({ memberId }: { memberId: string }) {
-  const { data: totalBalance, isLoading } = useMemberTotalBalance(memberId);
-
+function BalanceCell({
+  memberId,
+  balance,
+  isLoading,
+}: {
+  memberId: string;
+  balance: number | undefined;
+  isLoading: boolean;
+}) {
   if (isLoading) {
     return <div className="h-4 w-16 bg-muted animate-pulse rounded" />;
   }
 
-  return <MemberBalancePopover memberId={memberId} totalBalance={totalBalance ?? 0} />;
+  return <MemberBalancePopover memberId={memberId} totalBalance={balance ?? 0} />;
 }
 
 // ============================================
@@ -71,9 +73,13 @@ function BalanceCell({ memberId }: { memberId: string }) {
 // ============================================
 
 function getInitials(name: string): string {
+  if (!name?.trim()) return '';
   return name
-    .split(' ')
-    .map((n) => n[0])
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((n) => n[0] ?? '')
+    .filter(Boolean)
     .join('')
     .toUpperCase()
     .slice(0, 2);
@@ -95,6 +101,10 @@ export function TeamMembersTable({
   onEditMember,
   onDeleteMember,
 }: TeamMembersTableProps) {
+  // Fetch all member balances in a single batch query (fixes N+1)
+  const memberIds = useMemo(() => members.map((m) => m.membership.id), [members]);
+  const { data: balances, isLoading: isBalancesLoading } = useMemberTotalBalancesBatch(memberIds);
+
   const columns: ColumnDef<TeamMember>[] = [
     {
       accessorKey: 'name',
@@ -151,7 +161,13 @@ export function TeamMembersTable({
       header: 'BALANCE',
       cell: ({ row }) => {
         const member = row.original;
-        return <BalanceCell memberId={member.membership.id} />;
+        return (
+          <BalanceCell
+            memberId={member.membership.id}
+            balance={balances?.[member.membership.id]}
+            isLoading={isBalancesLoading}
+          />
+        );
       },
     },
     {

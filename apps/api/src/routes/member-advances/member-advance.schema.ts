@@ -57,6 +57,10 @@ export const memberBalancesParamsSchema = z.object({
   memberId: z.string().min(1),
 });
 
+export const batchMemberBalancesBodySchema = z.object({
+  memberIds: z.array(z.string().min(1)).min(1, 'At least one member ID is required'),
+});
+
 // ============================================
 // Type Exports
 // ============================================
@@ -68,3 +72,4 @@ export type MemberAdvanceParams = z.infer<typeof memberAdvanceParamsSchema>;
 export type ProjectMemberAdvanceParams = z.infer<typeof projectMemberAdvanceParamsSchema>;
 export type MemberSummaryParams = z.infer<typeof memberSummaryParamsSchema>;
 export type MemberBalancesParams = z.infer<typeof memberBalancesParamsSchema>;
+export type BatchMemberBalancesBody = z.infer<typeof batchMemberBalancesBodySchema>;

@@ -364,10 +364,7 @@ export class MemberAdvanceRepository {
   }
 
   // Get total balance for a member across all projects
-  async getMemberTotalBalance(
-    organizationId: string,
-    memberId: string
-  ): Promise<number> {
+  async getMemberTotalBalance(organizationId: string, memberId: string): Promise<number> {
     try {
       const result = await prisma.memberAdvance.aggregate({
         where: {
@@ -378,6 +375,41 @@ export class MemberAdvanceRepository {
       });
 
       return result._sum.amount?.toNumber() || 0;
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
+
+  // Get total balances for multiple members in a single batch query
+  async getMemberTotalBalancesBatch(
+    organizationId: string,
+    memberIds: string[]
+  ): Promise<Record<string, number>> {
+    try {
+      // Use groupBy to get all balances in a single query
+      const results = await prisma.memberAdvance.groupBy({
+        by: ['memberId'],
+        where: {
+          organizationId,
+          memberId: { in: memberIds },
+        },
+        _sum: { amount: true },
+      });
+
+      // Build a map of memberId -> balance
+      const balanceMap: Record<string, number> = {};
+
+      // Initialize all memberIds with 0
+      for (const memberId of memberIds) {
+        balanceMap[memberId] = 0;
+      }
+
+      // Fill in actual balances from query results
+      for (const result of results) {
+        balanceMap[result.memberId] = result._sum.amount?.toNumber() || 0;
+      }
+
+      return balanceMap;
     } catch (error) {
       throw handlePrismaError(error);
     }

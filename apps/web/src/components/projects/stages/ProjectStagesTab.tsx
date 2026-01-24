@@ -43,12 +43,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  useStagesByProject,
-  useDeleteStage,
-  useStage,
-  useStageStats,
-} from '@/lib/hooks/useStages';
+import { useStagesByProject, useDeleteStage, useStage, useStageStats } from '@/lib/hooks/useStages';
 import { useTasksByStage, useDeleteTask, useUpdateTaskStatus } from '@/lib/hooks/useTasks';
 import type { Stage, StageStatus } from '@/lib/api/stages';
 import type { Task, TaskStatus } from '@/lib/api/tasks';
@@ -350,8 +345,15 @@ function StageDetailView({ stageId, onBack }: StageDetailViewProps) {
   const { label, variant } = stageStatusConfig[stage.status];
   const startDate = new Date(stage.startDate);
   const endDate = new Date(stage.endDate);
-  const duration = differenceInDays(endDate, startDate);
-  const daysRemaining = differenceInCalendarDays(endDate, new Date());
+  const isValidStart = !isNaN(startDate.getTime());
+  const isValidEnd = !isNaN(endDate.getTime());
+
+  // Validate dates and clamp duration to prevent negative values
+  const duration =
+    isValidStart && isValidEnd ? Math.max(0, differenceInDays(endDate, startDate)) : 0;
+  const daysRemaining = isValidEnd
+    ? Math.max(0, differenceInCalendarDays(endDate, new Date()))
+    : null;
   const progressValue = stats?.taskProgress || 0;
 
   return (
@@ -399,7 +401,7 @@ function StageDetailView({ stageId, onBack }: StageDetailViewProps) {
           <div>
             <div className="flex items-center justify-between text-sm mb-2">
               <span className="text-muted-foreground">Progress: {progressValue}%</span>
-              {daysRemaining > 0 && (
+              {daysRemaining !== null && daysRemaining > 0 && (
                 <span className="text-muted-foreground">
                   {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} remaining
                 </span>
@@ -432,6 +434,12 @@ function StageDetailView({ stageId, onBack }: StageDetailViewProps) {
                     </SelectItem>
                     <SelectItem value="COMPLETED" className="cursor-pointer">
                       Completed
+                    </SelectItem>
+                    <SelectItem value="ON_HOLD" className="cursor-pointer">
+                      On Hold
+                    </SelectItem>
+                    <SelectItem value="BLOCKED" className="cursor-pointer">
+                      Blocked
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -608,14 +616,10 @@ function StagesListView({
 
     switch (sortBy) {
       case 'latest':
-        result.sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
       case 'oldest':
-        result.sort(
-          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
+        result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         break;
       case 'name':
         result.sort((a, b) => a.name.localeCompare(b.name));
@@ -697,9 +701,7 @@ function StagesListView({
           <CardContent className="px-6 py-0">
             {filteredStages.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                <p className="text-muted-foreground">
-                  No stages found matching "{searchQuery}"
-                </p>
+                <p className="text-muted-foreground">No stages found matching "{searchQuery}"</p>
               </div>
             ) : (
               filteredStages.map((stage, index) => (
@@ -857,8 +859,8 @@ export function ProjectStagesTab({ projectId }: ProjectStagesTabProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Stage</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deletingStage?.name}"? This action cannot be
-              undone and will also delete all associated tasks.
+              Are you sure you want to delete "{deletingStage?.name}"? This action cannot be undone
+              and will also delete all associated tasks.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

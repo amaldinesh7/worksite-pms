@@ -316,19 +316,6 @@ export class PaymentRepository {
     partyId: string
   ): Promise<number> {
     try {
-      // Get total expenses for this party in this project
-      const expenseResult = await prisma.expense.aggregate({
-        where: {
-          organizationId,
-          projectId,
-          partyId,
-        },
-        _sum: {
-          rate: true,
-          quantity: true,
-        },
-      });
-
       // Calculate total expense amount (sum of rate * quantity)
       const expenses = await prisma.expense.findMany({
         where: {
@@ -371,14 +358,16 @@ export class PaymentRepository {
     organizationId: string,
     projectId: string,
     partyId: string
-  ): Promise<Array<{
-    id: string;
-    description: string | null;
-    totalAmount: number;
-    paidAmount: number;
-    outstanding: number;
-    expenseDate: Date;
-  }>> {
+  ): Promise<
+    Array<{
+      id: string;
+      description: string | null;
+      totalAmount: number;
+      paidAmount: number;
+      outstanding: number;
+      expenseDate: Date;
+    }>
+  > {
     try {
       const expenses = await prisma.expense.findMany({
         where: {
@@ -399,10 +388,7 @@ export class PaymentRepository {
       return expenses
         .map((expense) => {
           const totalAmount = expense.rate.toNumber() * expense.quantity.toNumber();
-          const paidAmount = expense.payments.reduce(
-            (sum, p) => sum + p.amount.toNumber(),
-            0
-          );
+          const paidAmount = expense.payments.reduce((sum, p) => sum + p.amount.toNumber(), 0);
           const outstanding = totalAmount - paidAmount;
 
           return {

@@ -10,6 +10,7 @@ import {
   projectMemberAdvanceParamsSchema,
   memberSummaryParamsSchema,
   memberBalancesParamsSchema,
+  batchMemberBalancesBodySchema,
 } from './member-advance.schema';
 
 export default async function memberAdvanceRoutes(fastify: FastifyInstance) {
@@ -52,6 +53,12 @@ export default async function memberAdvanceRoutes(fastify: FastifyInstance) {
   app.get('/member/:memberId/total-balance', {
     schema: { params: memberBalancesParamsSchema },
     handler: controller.getMemberTotalBalance,
+  });
+
+  // POST /api/member-advances/batch-balances - Get member total balances in batch
+  app.post('/batch-balances', {
+    schema: { body: batchMemberBalancesBodySchema },
+    handler: controller.getMemberTotalBalancesBatch,
   });
 
   // GET /api/member-advances/:id - Get member advance by ID

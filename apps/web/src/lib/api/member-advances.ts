@@ -223,3 +223,14 @@ export async function getMemberTotalBalance(memberId: string): Promise<number> {
   );
   return response.data.data.totalBalance;
 }
+
+/**
+ * Get member total balances in batch (for multiple members at once)
+ */
+export async function getMemberTotalBalancesBatch(
+  memberIds: string[]
+): Promise<Record<string, number>> {
+  const response: AxiosResponse<ApiSuccessResponse<{ balances: Record<string, number> }>> =
+    await api.post('/member-advances/batch-balances', { memberIds });
+  return response.data.data.balances;
+}

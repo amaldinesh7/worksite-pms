@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
+import { toast } from 'sonner';
 import { useTeamMembers } from '@/lib/hooks/useTeam';
 import { useParties } from '@/lib/hooks/useParties';
 import { useCreateTask, useUpdateTask } from '@/lib/hooks/useTasks';
@@ -114,9 +115,7 @@ export function TaskFormDialog({ isOpen, onClose, stageId, task }: TaskFormDialo
   React.useEffect(() => {
     if (task) {
       // Separate party assignments by type
-      const labourAssignments = task.partyAssignments.filter(
-        (a) => a.party.type === 'LABOUR'
-      );
+      const labourAssignments = task.partyAssignments.filter((a) => a.party.type === 'LABOUR');
       const subcontractorAssignments = task.partyAssignments.filter(
         (a) => a.party.type === 'SUBCONTRACTOR'
       );
@@ -221,6 +220,10 @@ export function TaskFormDialog({ isOpen, onClose, stageId, task }: TaskFormDialo
       onClose();
     } catch (error) {
       console.error('Failed to save task:', error);
+      toast.error(
+        `Failed to save task: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+      // Do NOT call onClose() - keep dialog open for retry
     }
   };
 
@@ -367,9 +370,7 @@ export function TaskFormDialog({ isOpen, onClose, stageId, task }: TaskFormDialo
                 <Label htmlFor="assignSubcontractor" className="font-medium">
                   Assign Subcontractor
                 </Label>
-                <p className="text-sm text-muted-foreground">
-                  Assign subcontractors to this task
-                </p>
+                <p className="text-sm text-muted-foreground">Assign subcontractors to this task</p>
               </div>
               <Switch
                 id="assignSubcontractor"

@@ -15,6 +15,7 @@ import type {
   MemberAdvanceParams,
   ProjectMemberAdvanceParams,
   MemberSummaryParams,
+  BatchMemberBalancesBody,
 } from './member-advance.schema';
 import type { PaymentMode } from '@prisma/client';
 
@@ -26,7 +27,8 @@ const handle = createErrorHandler('member-advance');
 export const listMemberAdvances = handle(
   'fetch',
   async (request: FastifyRequest<{ Querystring: MemberAdvanceQuery }>, reply: FastifyReply) => {
-    const { page, limit, projectId, memberId, startDate, endDate, sortBy, sortOrder } = request.query;
+    const { page, limit, projectId, memberId, startDate, endDate, sortBy, sortOrder } =
+      request.query;
     const skip = (page - 1) * limit;
 
     const { advances, total } = await memberAdvanceRepository.findAll(request.organizationId, {
@@ -50,7 +52,10 @@ export const listMemberAdvances = handle(
 export const getMemberAdvance = handle(
   'fetch',
   async (request: FastifyRequest<{ Params: MemberAdvanceParams }>, reply: FastifyReply) => {
-    const advance = await memberAdvanceRepository.findById(request.organizationId, request.params.id);
+    const advance = await memberAdvanceRepository.findById(
+      request.organizationId,
+      request.params.id
+    );
 
     if (!advance) {
       return sendNotFound(reply, 'Member advance');
@@ -95,8 +100,8 @@ export const updateMemberAdvance = handle(
       expectedSettlementDate: request.body.expectedSettlementDate
         ? new Date(request.body.expectedSettlementDate)
         : request.body.expectedSettlementDate === null
-        ? null
-        : undefined,
+          ? null
+          : undefined,
     };
 
     const advance = await memberAdvanceRepository.update(
@@ -202,5 +207,21 @@ export const getMemberTotalBalance = handle(
     );
 
     return sendSuccess(reply, { totalBalance });
+  }
+);
+
+// ============================================
+// Get Member Total Balances in Batch
+// ============================================
+export const getMemberTotalBalancesBatch = handle(
+  'fetch',
+  async (request: FastifyRequest<{ Body: BatchMemberBalancesBody }>, reply: FastifyReply) => {
+    const { memberIds } = request.body;
+    const balances = await memberAdvanceRepository.getMemberTotalBalancesBatch(
+      request.organizationId,
+      memberIds
+    );
+
+    return sendSuccess(reply, { balances });
   }
 );
