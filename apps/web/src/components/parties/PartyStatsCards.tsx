@@ -14,31 +14,10 @@ interface StatCardProps {
   count: number;
   balance: number;
   icon: React.ReactNode;
-  color: 'blue' | 'orange' | 'purple';
   isLoading?: boolean;
 }
 
-function StatCard({ title, count, balance, icon, color, isLoading }: StatCardProps) {
-  const colorClasses = {
-    blue: {
-      bg: 'bg-blue-50',
-      icon: 'bg-blue-100 text-blue-600',
-      progress: 'bg-blue-500',
-    },
-    orange: {
-      bg: 'bg-orange-50',
-      icon: 'bg-orange-100 text-orange-600',
-      progress: 'bg-orange-500',
-    },
-    purple: {
-      bg: 'bg-purple-50',
-      icon: 'bg-purple-100 text-purple-600',
-      progress: 'bg-purple-500',
-    },
-  };
-
-  const classes = colorClasses[color];
-
+function StatCard({ title, count, balance, icon, isLoading }: StatCardProps) {
   // Calculate progress percentage (capped at 100%)
   const maxBalance = 100000; // Arbitrary max for visualization
   const progressPercent = Math.min((Math.abs(balance) / maxBalance) * 100, 100);
@@ -54,18 +33,18 @@ function StatCard({ title, count, balance, icon, color, isLoading }: StatCardPro
 
   if (isLoading) {
     return (
-      <Card className={`${classes.bg} border-0`}>
+      <Card className="border bg-card">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <div className={`h-10 w-10 rounded-lg ${classes.icon} animate-pulse`} />
+            <div className="h-10 w-10 rounded-lg bg-muted animate-pulse" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-              <div className="h-6 w-16 bg-gray-200 rounded animate-pulse" />
+              <div className="h-4 w-20 bg-muted rounded animate-pulse" />
+              <div className="h-6 w-16 bg-muted rounded animate-pulse" />
             </div>
           </div>
           <div className="mt-3 space-y-1">
-            <div className="h-3 w-full bg-gray-200 rounded animate-pulse" />
-            <div className="h-2 w-full bg-gray-200 rounded-full animate-pulse" />
+            <div className="h-3 w-full bg-muted rounded animate-pulse" />
+            <div className="h-2 w-full bg-muted rounded-full animate-pulse" />
           </div>
         </CardContent>
       </Card>
@@ -73,10 +52,10 @@ function StatCard({ title, count, balance, icon, color, isLoading }: StatCardPro
   }
 
   return (
-    <Card className={`${classes.bg} border-0`}>
+    <Card className="border bg-card">
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
-          <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${classes.icon}`}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
             {icon}
           </div>
           <div className="flex-1">
@@ -91,8 +70,7 @@ function StatCard({ title, count, balance, icon, color, isLoading }: StatCardPro
           </div>
           <Progress
             value={progressPercent}
-            className="h-2 bg-gray-200"
-          // indicatorClassName={classes.progress}
+            className="h-2 bg-muted"
           />
         </div>
       </CardContent>
@@ -108,7 +86,6 @@ export function PartyStatsCards({ summary, isLoading }: PartyStatsCardsProps) {
         count={summary?.totalVendors ?? 0}
         balance={summary?.vendorsBalance ?? 0}
         icon={<Users className="h-5 w-5" />}
-        color="blue"
         isLoading={isLoading}
       />
       <StatCard
@@ -116,7 +93,6 @@ export function PartyStatsCards({ summary, isLoading }: PartyStatsCardsProps) {
         count={summary?.totalLabours ?? 0}
         balance={summary?.laboursBalance ?? 0}
         icon={<HardHat className="h-5 w-5" />}
-        color="orange"
         isLoading={isLoading}
       />
       <StatCard
@@ -124,7 +100,6 @@ export function PartyStatsCards({ summary, isLoading }: PartyStatsCardsProps) {
         count={summary?.totalSubcontractors ?? 0}
         balance={summary?.subcontractorsBalance ?? 0}
         icon={<Building2 className="h-5 w-5" />}
-        color="purple"
         isLoading={isLoading}
       />
     </div>

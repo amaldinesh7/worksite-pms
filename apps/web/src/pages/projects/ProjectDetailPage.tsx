@@ -4,14 +4,14 @@
  * Shows detailed view of a project with multiple tabs:
  * - Overview: Project financials, timeline, stages, details, quick links
  * - Expenses: Expenses table with search, filters, and add expense modal
- * - Payments: (future)
- * - Stages: (future)
+ * - Payments: Client/Party/Team payments with URL-based filter persistence
+ * - Stages: Project stages and tasks
  * - Documents: (future)
  * - Reports: (future)
  * - Analytics: (future)
  */
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   House,
@@ -34,13 +34,8 @@ import {
 import { useProject, useProjectStats } from '@/lib/hooks/useProjects';
 import { ProjectOverviewTab } from '@/components/projects/overview/ProjectOverviewTab';
 import { ProjectExpensesTab } from '@/components/projects/expenses/ProjectExpensesTab';
+import { ProjectPaymentsTab } from '@/components/projects/payments';
 import { ProjectStagesTab } from '@/components/projects/stages';
-
-// ============================================
-// Helpers
-// ============================================
-
-
 
 // ============================================
 // Component
@@ -50,12 +45,58 @@ export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  
-  // URL-based tab state for persistence
+
+  // URL-based state for persistence
   const activeTab = searchParams.get('tab') || 'overview';
-  const setActiveTab = (tab: string) => {
-    setSearchParams({ tab }, { replace: true });
-  };
+  const paymentTab = searchParams.get('paymentTab') || 'client';
+  const memberId = searchParams.get('memberId') || undefined;
+
+  // Update URL params while preserving existing ones
+  const updateSearchParams = useCallback(
+    (updates: Record<string, string | undefined>) => {
+      const newParams = new URLSearchParams(searchParams);
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === undefined || value === '') {
+          newParams.delete(key);
+        } else {
+          newParams.set(key, value);
+        }
+      });
+      setSearchParams(newParams, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
+
+  const setActiveTab = useCallback(
+    (tab: string) => {
+      // When changing main tabs, clear payment-specific params if leaving payments
+      if (tab !== 'payments') {
+        updateSearchParams({ tab, paymentTab: undefined, memberId: undefined });
+      } else {
+        updateSearchParams({ tab });
+      }
+    },
+    [updateSearchParams]
+  );
+
+  const handlePaymentTabChange = useCallback(
+    (tab: string) => {
+      // Clear memberId when switching away from team tab
+      if (tab !== 'team') {
+        updateSearchParams({ paymentTab: tab, memberId: undefined });
+      } else {
+        updateSearchParams({ paymentTab: tab });
+      }
+    },
+    [updateSearchParams]
+  );
+
+  const handleMemberIdChange = useCallback(
+    (newMemberId: string | undefined) => {
+      updateSearchParams({ memberId: newMemberId });
+    },
+    [updateSearchParams]
+  );
 
   // Data fetching
   const { data: project, isLoading: isProjectLoading } = useProject(id || '');
@@ -113,7 +154,6 @@ export default function ProjectDetailPage() {
         {/* Breadcrumb */}
         {/* <Breadcrumb items={breadcrumbItems} className="mb-2" /> */}
 
-
         {/* Tabs */}
         <SecondaryTabs value={activeTab} onValueChange={setActiveTab} className="h-full">
           <SecondaryTabsList>
@@ -153,9 +193,13 @@ export default function ProjectDetailPage() {
           </SecondaryTabsContent>
 
           <SecondaryTabsContent value="payments" className="mt-6">
-            <div className="flex items-center justify-center h-64 text-muted-foreground">
-              Payments tab coming soon
-            </div>
+            <ProjectPaymentsTab
+              projectId={project.id}
+              initialPaymentTab={paymentTab}
+              initialMemberId={memberId}
+              onPaymentTabChange={handlePaymentTabChange}
+              onMemberIdChange={handleMemberIdChange}
+            />
           </SecondaryTabsContent>
 
           <SecondaryTabsContent value="stages" className="mt-6">

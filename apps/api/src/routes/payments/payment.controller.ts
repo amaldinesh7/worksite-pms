@@ -13,9 +13,12 @@ import type {
   UpdatePaymentInput,
   PaymentQuery,
   PaymentParams,
+  ProjectPaymentParams,
+  PartyOutstandingParams,
   SummaryQuery,
+  ProjectPaymentQuery,
 } from './payment.schema';
-import type { PaymentType, PaymentMode } from '@prisma/client';
+import type { PaymentType, PaymentMode, PartyType } from '@prisma/client';
 
 const handle = createErrorHandler('payment');
 
@@ -25,7 +28,7 @@ const handle = createErrorHandler('payment');
 export const listPayments = handle(
   'fetch',
   async (request: FastifyRequest<{ Querystring: PaymentQuery }>, reply: FastifyReply) => {
-    const { page, limit, projectId, partyId, expenseId, type, startDate, endDate } = request.query;
+    const { page, limit, projectId, partyId, expenseId, type, partyType, startDate, endDate, sortBy, sortOrder } = request.query;
     const skip = (page - 1) * limit;
 
     const { payments, total } = await paymentRepository.findAll(request.organizationId, {
@@ -35,8 +38,11 @@ export const listPayments = handle(
       partyId,
       expenseId,
       type: type as PaymentType | undefined,
+      partyType: partyType as PartyType | undefined,
       startDate: startDate ? new Date(startDate) : undefined,
       endDate: endDate ? new Date(endDate) : undefined,
+      sortBy,
+      sortOrder,
     });
 
     return sendPaginated(reply, payments, buildPagination(page, limit, total));
@@ -127,5 +133,117 @@ export const getPaymentsSummary = handle(
     );
 
     return sendSuccess(reply, summary);
+  }
+);
+
+// ============================================
+// Get Project Payment Summary (for client payments tab)
+// ============================================
+export const getProjectPaymentSummary = handle(
+  'fetch',
+  async (request: FastifyRequest<{ Params: ProjectPaymentParams }>, reply: FastifyReply) => {
+    const { projectId } = request.params;
+    const summary = await paymentRepository.getProjectPaymentSummary(
+      request.organizationId,
+      projectId
+    );
+
+    return sendSuccess(reply, summary);
+  }
+);
+
+// ============================================
+// Get Client Payments (type = IN)
+// ============================================
+export const getClientPayments = handle(
+  'fetch',
+  async (
+    request: FastifyRequest<{ Params: ProjectPaymentParams; Querystring: ProjectPaymentQuery }>,
+    reply: FastifyReply
+  ) => {
+    const { projectId } = request.params;
+    const { page, limit, startDate, endDate, sortBy, sortOrder } = request.query;
+    const skip = (page - 1) * limit;
+
+    const { payments, total } = await paymentRepository.getClientPayments(
+      request.organizationId,
+      projectId,
+      {
+        skip,
+        take: limit,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        sortBy,
+        sortOrder,
+      }
+    );
+
+    return sendPaginated(reply, payments, buildPagination(page, limit, total));
+  }
+);
+
+// ============================================
+// Get Party Payments (type = OUT)
+// ============================================
+export const getPartyPayments = handle(
+  'fetch',
+  async (
+    request: FastifyRequest<{ Params: ProjectPaymentParams; Querystring: ProjectPaymentQuery }>,
+    reply: FastifyReply
+  ) => {
+    const { projectId } = request.params;
+    const { page, limit, partyId, partyType, startDate, endDate, sortBy, sortOrder } = request.query;
+    const skip = (page - 1) * limit;
+
+    const { payments, total } = await paymentRepository.getPartyPayments(
+      request.organizationId,
+      projectId,
+      {
+        skip,
+        take: limit,
+        partyId,
+        partyType: partyType as PartyType | undefined,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+        sortBy,
+        sortOrder,
+      }
+    );
+
+    return sendPaginated(reply, payments, buildPagination(page, limit, total));
+  }
+);
+
+// ============================================
+// Get Party Outstanding Amount
+// ============================================
+export const getPartyOutstanding = handle(
+  'fetch',
+  async (request: FastifyRequest<{ Params: PartyOutstandingParams }>, reply: FastifyReply) => {
+    const { projectId, partyId } = request.params;
+    const outstanding = await paymentRepository.getPartyOutstanding(
+      request.organizationId,
+      projectId,
+      partyId
+    );
+
+    return sendSuccess(reply, { outstanding });
+  }
+);
+
+// ============================================
+// Get Party Unpaid Expenses (for "pay against" dropdown)
+// ============================================
+export const getPartyUnpaidExpenses = handle(
+  'fetch',
+  async (request: FastifyRequest<{ Params: PartyOutstandingParams }>, reply: FastifyReply) => {
+    const { projectId, partyId } = request.params;
+    const expenses = await paymentRepository.getPartyUnpaidExpenses(
+      request.organizationId,
+      projectId,
+      partyId
+    );
+
+    return sendSuccess(reply, expenses);
   }
 );

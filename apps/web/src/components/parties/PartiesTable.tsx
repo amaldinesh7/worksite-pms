@@ -125,10 +125,12 @@ export function PartiesTable({
     {
       accessorKey: 'credit',
       header: 'Credit',
-      cell: () => {
-        // Credit calculation will be 0 for now as per plan
+      cell: ({ row }) => {
+        const credit = row.original.credit ?? 0;
         return (
-          formatCurrency(0)
+          <span className={credit > 0 ? 'text-orange-600 font-medium' : ''}>
+            {formatCurrency(credit)}
+          </span>
         );
       },
     },

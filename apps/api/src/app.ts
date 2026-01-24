@@ -11,6 +11,7 @@ import categoryRoutes from './routes/categories/index';
 import partyRoutes from './routes/parties/index';
 import expenseRoutes from './routes/expenses/index';
 import paymentRoutes from './routes/payments/index';
+import memberAdvanceRoutes from './routes/member-advances/index';
 import stageRoutes from './routes/stages/index';
 import taskRoutes from './routes/tasks/index';
 import documentRoutes from './routes/documents/index';
@@ -72,6 +73,7 @@ export async function buildApp(options: AppOptions = {}) {
       '/api/parties',
       '/api/expenses',
       '/api/payments',
+      '/api/member-advances',
       '/api/stages',
       '/api/tasks',
       '/api/documents',
@@ -90,6 +92,7 @@ export async function buildApp(options: AppOptions = {}) {
   await fastify.register(partyRoutes, { prefix: '/api/parties' });
   await fastify.register(expenseRoutes, { prefix: '/api/expenses' });
   await fastify.register(paymentRoutes, { prefix: '/api/payments' });
+  await fastify.register(memberAdvanceRoutes, { prefix: '/api/member-advances' });
   await fastify.register(stageRoutes, { prefix: '/api/stages' });
   await fastify.register(taskRoutes, { prefix: '/api/tasks' });
   await fastify.register(documentRoutes, { prefix: '/api/documents' });

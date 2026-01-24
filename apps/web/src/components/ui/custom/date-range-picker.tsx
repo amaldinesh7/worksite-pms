@@ -13,7 +13,16 @@
  */
 
 import * as React from 'react';
-import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths } from 'date-fns';
+import {
+  format,
+  subDays,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  subWeeks,
+  subMonths,
+} from 'date-fns';
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon, X } from 'lucide-react';
 import type { DateRange } from 'react-day-picker';
 
@@ -21,11 +30,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Label } from '@/components/ui/label';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 
 // ============================================
@@ -250,13 +255,19 @@ export function DateRangePicker({
     !!(initialCompareFrom || initialCompareTo)
   );
 
+  // Sync internal state with props when they change externally (e.g., after clear)
+  React.useEffect(() => {
+    setRange({
+      from: parseDate(initialDateFrom),
+      to: parseDate(initialDateTo),
+    });
+  }, [initialDateFrom, initialDateTo]);
+
   // Selected preset for highlighting
   const [selectedPreset, setSelectedPreset] = React.useState<string | null>(null);
 
   // Calendar navigation state
-  const [calendarMonth, setCalendarMonth] = React.useState<Date>(
-    range.from || new Date()
-  );
+  const [calendarMonth, setCalendarMonth] = React.useState<Date>(range.from || new Date());
 
   // Check if current range matches a preset
   React.useEffect(() => {
@@ -417,18 +428,14 @@ export function DateRangePicker({
                 <div className="flex-1">
                   <DateInput
                     value={compareRange.from}
-                    onChange={(date) =>
-                      setCompareRange((prev) => ({ ...prev, from: date }))
-                    }
+                    onChange={(date) => setCompareRange((prev) => ({ ...prev, from: date }))}
                   />
                 </div>
                 <span className="text-muted-foreground">-</span>
                 <div className="flex-1">
                   <DateInput
                     value={compareRange.to}
-                    onChange={(date) =>
-                      setCompareRange((prev) => ({ ...prev, to: date }))
-                    }
+                    onChange={(date) => setCompareRange((prev) => ({ ...prev, to: date }))}
                   />
                 </div>
               </div>
@@ -447,9 +454,7 @@ export function DateRangePicker({
                   >
                     <ChevronLeftIcon className="h-4 w-4" />
                   </Button>
-                  <span className="text-sm font-medium">
-                    {format(prevMonth, 'MMMM yyyy')}
-                  </span>
+                  <span className="text-sm font-medium">{format(prevMonth, 'MMMM yyyy')}</span>
                   <div className="w-7" /> {/* Spacer for alignment */}
                 </div>
                 <Calendar
@@ -457,7 +462,7 @@ export function DateRangePicker({
                   selected={range}
                   onSelect={handleCalendarSelect}
                   month={prevMonth}
-                  onMonthChange={() => { }}
+                  onMonthChange={() => {}}
                   showOutsideDays={false}
                   className="p-0"
                 />
@@ -467,9 +472,7 @@ export function DateRangePicker({
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <div className="w-7" /> {/* Spacer for alignment */}
-                  <span className="text-sm font-medium">
-                    {format(calendarMonth, 'MMMM yyyy')}
-                  </span>
+                  <span className="text-sm font-medium">{format(calendarMonth, 'MMMM yyyy')}</span>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -484,7 +487,7 @@ export function DateRangePicker({
                   selected={range}
                   onSelect={handleCalendarSelect}
                   month={calendarMonth}
-                  onMonthChange={() => { }}
+                  onMonthChange={() => {}}
                   showOutsideDays={false}
                   className="p-0"
                 />
@@ -493,11 +496,7 @@ export function DateRangePicker({
 
             {/* Action buttons */}
             <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                className="cursor-pointer"
-              >
+              <Button variant="outline" onClick={handleCancel} className="cursor-pointer">
                 Cancel
               </Button>
               <Button onClick={handleUpdate} className="cursor-pointer">

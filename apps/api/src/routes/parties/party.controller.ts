@@ -25,7 +25,7 @@ const handle = createErrorHandler('party');
 export const listParties = handle(
   'fetch',
   async (request: FastifyRequest<{ Querystring: PartyQuery }>, reply: FastifyReply) => {
-    const { page, limit, search, type } = request.query;
+    const { page, limit, search, type, hasCredit } = request.query;
     const skip = (page - 1) * limit;
 
     const { parties, total } = await partyRepository.findAll(request.organizationId, {
@@ -33,6 +33,7 @@ export const listParties = handle(
       take: limit,
       search,
       type,
+      hasCredit,
     });
 
     return sendPaginated(reply, parties, buildPagination(page, limit, total));

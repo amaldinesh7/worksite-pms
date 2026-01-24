@@ -43,17 +43,22 @@ import type { Stage, StageStatus, CreateStageInput, UpdateStageInput } from '@/l
 // Form Schema
 // ============================================
 
-const stageFormSchema = z.object({
-  name: z.string().min(1, 'Stage name is required'),
-  description: z.string().optional(),
-  startDate: z.date({ required_error: 'Start date is required' }),
-  endDate: z.date({ required_error: 'End date is required' }),
-  budgetAmount: z.coerce.number().min(0, 'Budget must be non-negative'),
-  weight: z.coerce.number().min(0).max(100, 'Weight must be between 0 and 100'),
-  status: z.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD']),
-  memberIds: z.array(z.string()).default([]),
-  partyIds: z.array(z.string()).default([]),
-});
+const stageFormSchema = z
+  .object({
+    name: z.string().min(1, 'Stage name is required'),
+    description: z.string().optional(),
+    startDate: z.date({ required_error: 'Start date is required' }),
+    endDate: z.date({ required_error: 'End date is required' }),
+    budgetAmount: z.coerce.number().min(0, 'Budget must be non-negative'),
+    weight: z.coerce.number().min(0).max(100, 'Weight must be between 0 and 100'),
+    status: z.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD']),
+    memberIds: z.array(z.string()).default([]),
+    partyIds: z.array(z.string()).default([]),
+  })
+  .refine((data) => data.startDate <= data.endDate, {
+    message: 'End date must be after or equal to start date',
+    path: ['endDate'],
+  });
 
 type StageFormValues = z.infer<typeof stageFormSchema>;
 
