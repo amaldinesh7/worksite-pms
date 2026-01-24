@@ -427,6 +427,7 @@ export function ProjectFormDialog({
                   <div className="flex flex-wrap gap-2">
                     {assignableMembers.map((member) => {
                       const isSelected = selectedMembers.includes(member.id);
+                      const memberName = member.user?.name || 'Unknown';
                       return (
                         <button
                           key={member.id}
@@ -440,9 +441,9 @@ export function ProjectFormDialog({
                           )}
                         >
                           <div className="h-5 w-5 rounded-full bg-background/20 flex items-center justify-center text-xs">
-                            {member.user.name.charAt(0).toUpperCase()}
+                            {memberName.charAt(0).toUpperCase()}
                           </div>
-                          <span>{member.user.name}</span>
+                          <span>{memberName}</span>
                           {isSelected && <Check className="h-3 w-3" />}
                         </button>
                       );

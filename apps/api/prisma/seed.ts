@@ -279,6 +279,9 @@ async function main() {
   await prisma.attachment.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.expense.deleteMany();
+  await prisma.taskMemberAssignment.deleteMany();
+  await prisma.taskPartyAssignment.deleteMany();
+  await prisma.task.deleteMany();
   await prisma.stage.deleteMany();
   await prisma.document.deleteMany();
   await prisma.project.deleteMany();
@@ -854,29 +857,179 @@ async function main() {
   // Create Stages for Projects
   // ============================================
 
-  const stageNames = [
-    'Foundation',
-    'Framing',
-    'Plumbing & Electrical',
-    'Finishing',
-    'Final Inspection',
+  const stageConfigs = [
+    { name: 'Foundation', budgetPercent: 0.25, weightPercent: 20, durationDays: 30 },
+    { name: 'Framing', budgetPercent: 0.2, weightPercent: 25, durationDays: 45 },
+    { name: 'Plumbing & Electrical', budgetPercent: 0.25, weightPercent: 20, durationDays: 30 },
+    { name: 'Finishing', budgetPercent: 0.2, weightPercent: 25, durationDays: 40 },
+    { name: 'Final Inspection', budgetPercent: 0.1, weightPercent: 10, durationDays: 14 },
   ];
-  const stageBudgets = [0.25, 0.2, 0.25, 0.2, 0.1]; // Percentage of project amount
+
+  const stageStatuses: Array<'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'ON_HOLD'> = [
+    'COMPLETED',
+    'COMPLETED',
+    'IN_PROGRESS',
+    'SCHEDULED',
+    'SCHEDULED',
+  ];
 
   for (const project of projects) {
     const projectAmount = Number(project.amount || 0);
-    for (let i = 0; i < stageNames.length; i++) {
+    let currentStartDate = new Date(project.startDate);
+
+    for (let i = 0; i < stageConfigs.length; i++) {
+      const config = stageConfigs[i];
+      const startDate = new Date(currentStartDate);
+      const endDate = new Date(currentStartDate);
+      endDate.setDate(endDate.getDate() + config.durationDays);
+
       await prisma.stage.create({
         data: {
           organizationId: org1.id,
           projectId: project.id,
-          name: stageNames[i],
-          budgetAmount: projectAmount * stageBudgets[i],
+          name: config.name,
+          description: `${config.name} phase for ${project.name}`,
+          startDate,
+          endDate,
+          budgetAmount: projectAmount * config.budgetPercent,
+          weight: config.weightPercent,
+          status: stageStatuses[i],
         },
       });
+
+      // Next stage starts after this one ends
+      currentStartDate = new Date(endDate);
+      currentStartDate.setDate(currentStartDate.getDate() + 1);
     }
   }
   console.log(`✅ Created stages for all projects`);
+
+  // ============================================
+  // Create Tasks for Stages
+  // ============================================
+
+  const taskConfigs: Record<
+    string,
+    Array<{ name: string; description: string; daysAllocated: number }>
+  > = {
+    Foundation: [
+      { name: 'Site Survey', description: 'Initial site survey and marking', daysAllocated: 3 },
+      { name: 'Excavation', description: 'Dig foundation trenches', daysAllocated: 5 },
+      {
+        name: 'Concrete Pouring',
+        description: 'Pour foundation concrete',
+        daysAllocated: 4,
+      },
+      { name: 'Curing', description: 'Allow concrete to cure properly', daysAllocated: 7 },
+    ],
+    Framing: [
+      { name: 'Column Erection', description: 'Erect structural columns', daysAllocated: 8 },
+      { name: 'Beam Installation', description: 'Install horizontal beams', daysAllocated: 6 },
+      { name: 'Slab Work', description: 'Complete floor slabs', daysAllocated: 10 },
+      { name: 'Wall Framing', description: 'Frame exterior and interior walls', daysAllocated: 12 },
+    ],
+    'Plumbing & Electrical': [
+      { name: 'Rough Plumbing', description: 'Install main water and drain lines', daysAllocated: 6 },
+      { name: 'Electrical Wiring', description: 'Run electrical wires and circuits', daysAllocated: 8 },
+      { name: 'HVAC Ducting', description: 'Install HVAC ductwork', daysAllocated: 5 },
+      { name: 'Fixture Rough-In', description: 'Prepare for fixture installation', daysAllocated: 4 },
+    ],
+    Finishing: [
+      { name: 'Plastering', description: 'Apply plaster to walls and ceilings', daysAllocated: 10 },
+      { name: 'Painting', description: 'Interior and exterior painting', daysAllocated: 8 },
+      { name: 'Flooring', description: 'Install floor tiles and finishes', daysAllocated: 7 },
+      { name: 'Fixture Installation', description: 'Install plumbing and electrical fixtures', daysAllocated: 5 },
+    ],
+    'Final Inspection': [
+      { name: 'Quality Check', description: 'Comprehensive quality inspection', daysAllocated: 2 },
+      { name: 'Punch List', description: 'Address any deficiencies', daysAllocated: 4 },
+      { name: 'Final Walkthrough', description: 'Client walkthrough and approval', daysAllocated: 1 },
+      { name: 'Documentation', description: 'Prepare handover documents', daysAllocated: 2 },
+    ],
+  };
+
+  const taskStatuses: Array<'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'ON_HOLD' | 'BLOCKED'> = [
+    'COMPLETED',
+    'COMPLETED',
+    'IN_PROGRESS',
+    'NOT_STARTED',
+  ];
+
+  // Get all stages for task creation
+  const allStages = await prisma.stage.findMany({
+    where: { organizationId: org1.id },
+  });
+
+  let tasksCreated = 0;
+
+  for (const stage of allStages) {
+    const stageTasks = taskConfigs[stage.name];
+    if (!stageTasks) continue;
+
+    for (let i = 0; i < stageTasks.length; i++) {
+      const taskDef = stageTasks[i];
+      // Determine task status based on stage status
+      let taskStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'ON_HOLD' | 'BLOCKED';
+
+      if (stage.status === 'COMPLETED') {
+        taskStatus = 'COMPLETED';
+      } else if (stage.status === 'IN_PROGRESS') {
+        // For in-progress stages, vary task statuses
+        taskStatus = taskStatuses[Math.min(i, taskStatuses.length - 1)];
+      } else if (stage.status === 'ON_HOLD') {
+        taskStatus = i < 2 ? 'COMPLETED' : 'ON_HOLD';
+      } else {
+        // SCHEDULED stages have all tasks NOT_STARTED
+        taskStatus = 'NOT_STARTED';
+      }
+
+      const task = await prisma.task.create({
+        data: {
+          organizationId: org1.id,
+          stageId: stage.id,
+          name: taskDef.name,
+          description: taskDef.description,
+          daysAllocated: taskDef.daysAllocated,
+          status: taskStatus,
+        },
+      });
+
+      // Assign 1-3 random team members to each task
+      const numAssignments = 1 + Math.floor(Math.random() * 3);
+      const selectedMembers = [...teamMemberMemberships]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, numAssignments);
+
+      for (const member of selectedMembers) {
+        await prisma.taskMemberAssignment.create({
+          data: {
+            taskId: task.id,
+            memberId: member.id,
+          },
+        });
+      }
+
+      // Optionally assign 0-2 labour parties to some tasks
+      if (Math.random() > 0.5) {
+        const numPartyAssignments = 1 + Math.floor(Math.random() * 2);
+        const selectedParties = [...laborParties]
+          .sort(() => Math.random() - 0.5)
+          .slice(0, numPartyAssignments);
+
+        for (const party of selectedParties) {
+          await prisma.taskPartyAssignment.create({
+            data: {
+              taskId: task.id,
+              partyId: party.id,
+            },
+          });
+        }
+      }
+
+      tasksCreated++;
+    }
+  }
+  console.log(`✅ Created ${tasksCreated} tasks with member and party assignments`);
 
   // ============================================
   // Create Expenses for Projects (Multi-project association)
@@ -1143,6 +1296,7 @@ async function main() {
   console.log(`   - Team Members: ${teamMemberUsers.length}`);
   console.log(`   - Projects: ${projects.length}`);
   console.log(`   - Clients: ${clients.length}`);
+  console.log(`   - Tasks: ${tasksCreated}`);
   console.log(`   - Expenses: ${createdExpenses.length}`);
   console.log(
     `   - Payments: ${await prisma.payment.count({ where: { organizationId: org1.id } })}`

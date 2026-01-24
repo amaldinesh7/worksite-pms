@@ -1,7 +1,7 @@
 # Database Schema
 
 > Auto-generated from `apps/api/prisma/schema.prisma`
-> Last generated: 2026-01-21T15:32:34.249Z
+> Last generated: 2026-01-22T08:21:55.884Z
 
 ---
 
@@ -20,6 +20,7 @@
 | `payments` | `Payment[]` | - |
 | `documents` | `Document[]` | - |
 | `stages` | `Stage[]` | - |
+| `tasks` | `Task[]` | - |
 | `attachments` | `Attachment[]` | - |
 | `roles` | `Role[]` | - |
 
@@ -109,6 +110,8 @@
 | `user` | `User` | @relation(fields: [userId], references: [id], onDelete: Cascade) |
 | `role` | `Role` | @relation(fields: [roleId], references: [id]) |
 | `projectAccess` | `ProjectAccess[]` | - |
+| `stageAssignments` | `StageMemberAssignment[]` | - |
+| `taskAssignments` | `TaskMemberAssignment[]` | - |
 
 ### ProjectAccess
 
@@ -188,11 +191,82 @@
 | `organizationId` | `String` | - |
 | `projectId` | `String` | - |
 | `name` | `String` | - |
+| `description` | `String?` | - |
+| `startDate` | `DateTime` | - |
+| `endDate` | `DateTime` | - |
 | `budgetAmount` | `Decimal` | @db.Decimal(15, 2) |
+| `weight` | `Decimal` | @db.Decimal(5, 2) // Contribution to overall project progress (%) |
+| `status` | `StageStatus` | @default(SCHEDULED) |
 | `createdAt` | `DateTime` | @default(now()) |
+| `updatedAt` | `DateTime` | @updatedAt |
 | `organization` | `Organization` | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
 | `project` | `Project` | @relation(fields: [projectId], references: [id], onDelete: Cascade) |
 | `expenses` | `Expense[]` | - |
+| `tasks` | `Task[]` | - |
+| `memberAssignments` | `StageMemberAssignment[]` | - |
+| `partyAssignments` | `StagePartyAssignment[]` | - |
+
+### StageMemberAssignment
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `stageId` | `String` | - |
+| `memberId` | `String` | - |
+| `createdAt` | `DateTime` | @default(now()) |
+| `stage` | `Stage` | @relation(fields: [stageId], references: [id], onDelete: Cascade) |
+| `member` | `OrganizationMember` | @relation(fields: [memberId], references: [id], onDelete: Cascade) |
+
+### StagePartyAssignment
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `stageId` | `String` | - |
+| `partyId` | `String` | - |
+| `createdAt` | `DateTime` | @default(now()) |
+| `stage` | `Stage` | @relation(fields: [stageId], references: [id], onDelete: Cascade) |
+| `party` | `Party` | @relation(fields: [partyId], references: [id], onDelete: Cascade) |
+
+### Task
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `organizationId` | `String` | - |
+| `stageId` | `String` | - |
+| `name` | `String` | - |
+| `description` | `String?` | - |
+| `daysAllocated` | `Int` | - |
+| `status` | `TaskStatus` | @default(NOT_STARTED) |
+| `createdAt` | `DateTime` | @default(now()) |
+| `updatedAt` | `DateTime` | @updatedAt |
+| `organization` | `Organization` | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
+| `stage` | `Stage` | @relation(fields: [stageId], references: [id], onDelete: Cascade) |
+| `memberAssignments` | `TaskMemberAssignment[]` | - |
+| `partyAssignments` | `TaskPartyAssignment[]` | - |
+
+### TaskMemberAssignment
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `taskId` | `String` | - |
+| `memberId` | `String` | - |
+| `createdAt` | `DateTime` | @default(now()) |
+| `task` | `Task` | @relation(fields: [taskId], references: [id], onDelete: Cascade) |
+| `member` | `OrganizationMember` | @relation(fields: [memberId], references: [id], onDelete: Cascade) |
+
+### TaskPartyAssignment
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `taskId` | `String` | - |
+| `partyId` | `String` | - |
+| `createdAt` | `DateTime` | @default(now()) |
+| `task` | `Task` | @relation(fields: [taskId], references: [id], onDelete: Cascade) |
+| `party` | `Party` | @relation(fields: [partyId], references: [id], onDelete: Cascade) |
 
 ### Party
 
@@ -210,6 +284,8 @@
 | `expenses` | `Expense[]` | - |
 | `payments` | `Payment[]` | - |
 | `projectsAsClient` | `Project[]` | @relation("ProjectClient") |
+| `stageAssignments` | `StagePartyAssignment[]` | - |
+| `taskAssignments` | `TaskPartyAssignment[]` | - |
 
 ### Expense
 

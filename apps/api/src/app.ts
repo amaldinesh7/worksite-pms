@@ -12,6 +12,7 @@ import partyRoutes from './routes/parties/index';
 import expenseRoutes from './routes/expenses/index';
 import paymentRoutes from './routes/payments/index';
 import stageRoutes from './routes/stages/index';
+import taskRoutes from './routes/tasks/index';
 import documentRoutes from './routes/documents/index';
 import authRoutes from './routes/auth/index';
 import permissionRoutes from './routes/permissions/index';
@@ -72,6 +73,7 @@ export async function buildApp(options: AppOptions = {}) {
       '/api/expenses',
       '/api/payments',
       '/api/stages',
+      '/api/tasks',
       '/api/documents',
       '/api/permissions',
       '/api/roles',
@@ -89,6 +91,7 @@ export async function buildApp(options: AppOptions = {}) {
   await fastify.register(expenseRoutes, { prefix: '/api/expenses' });
   await fastify.register(paymentRoutes, { prefix: '/api/payments' });
   await fastify.register(stageRoutes, { prefix: '/api/stages' });
+  await fastify.register(taskRoutes, { prefix: '/api/tasks' });
   await fastify.register(documentRoutes, { prefix: '/api/documents' });
   await fastify.register(permissionRoutes, { prefix: '/api/permissions' });
   await fastify.register(roleRoutes, { prefix: '/api/roles' });

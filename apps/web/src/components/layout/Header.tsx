@@ -30,9 +30,9 @@ interface HeaderProps {
 export function Header({
   title = 'Dashboard Overview',
   subtitle,
-  searchPlaceholder = 'Search projects...',
-  showSearch = true,
-  primaryActionLabel = 'New Project',
+  searchPlaceholder = '',
+  showSearch = false,
+  primaryActionLabel = '',
   primaryActionIcon: PrimaryIcon = Plus,
   onPrimaryAction,
   actions,
