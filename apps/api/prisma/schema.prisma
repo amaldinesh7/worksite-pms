@@ -46,6 +46,21 @@ enum ExpenseStatus {
   APPROVED
 }
 
+enum StageStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+}
+
+enum TaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  ON_HOLD
+  BLOCKED
+}
+
 // ============================================
 // Organizations & Users (Multi-tenant Foundation)
 // ============================================
@@ -64,6 +79,7 @@ model Organization {
   payments      Payment[]
   documents     Document[]
   stages        Stage[]
+  tasks         Task[]
   attachments   Attachment[]
   roles         Role[]
 
@@ -175,10 +191,12 @@ model OrganizationMember {
   createdAt      DateTime @default(now())
 
   // Relations
-  organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role          Role            @relation(fields: [roleId], references: [id])
-  projectAccess ProjectAccess[]
+  organization         Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                 User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role                 Role                      @relation(fields: [roleId], references: [id])
+  projectAccess        ProjectAccess[]
+  stageAssignments     StageMemberAssignment[]
+  taskAssignments      TaskMemberAssignment[]
 
   @@unique([organizationId, userId])
   @@index([organizationId])
@@ -296,22 +314,131 @@ model Project {
 // ============================================
 
 model Stage {
-  id             String   @id @default(cuid())
+  id             String      @id @default(cuid())
   organizationId String
   projectId      String
   name           String
-  budgetAmount   Decimal  @db.Decimal(15, 2)
-  createdAt      DateTime @default(now())
+  description    String?
+  startDate      DateTime
+  endDate        DateTime
+  budgetAmount   Decimal     @db.Decimal(15, 2)
+  weight         Decimal     @db.Decimal(5, 2) // Contribution to overall project progress (%)
+  status         StageStatus @default(SCHEDULED)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
   // Relations
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  expenses     Expense[]
+  organization    Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project         Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  expenses        Expense[]
+  tasks           Task[]
+  memberAssignments StageMemberAssignment[]
+  partyAssignments  StagePartyAssignment[]
 
   @@unique([projectId, name])
   @@index([organizationId])
   @@index([projectId])
+  @@index([status])
   @@map("stages")
+}
+
+// ============================================
+// Stage Assignments (Junction Tables)
+// ============================================
+
+model StageMemberAssignment {
+  id        String   @id @default(cuid())
+  stageId   String
+  memberId  String
+  createdAt DateTime @default(now())
+
+  // Relations
+  stage  Stage              @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  member OrganizationMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([stageId, memberId])
+  @@index([stageId])
+  @@index([memberId])
+  @@map("stage_member_assignments")
+}
+
+model StagePartyAssignment {
+  id        String   @id @default(cuid())
+  stageId   String
+  partyId   String
+  createdAt DateTime @default(now())
+
+  // Relations
+  stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  party Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
+
+  @@unique([stageId, partyId])
+  @@index([stageId])
+  @@index([partyId])
+  @@map("stage_party_assignments")
+}
+
+// ============================================
+// Tasks
+// ============================================
+
+model Task {
+  id             String     @id @default(cuid())
+  organizationId String
+  stageId        String
+  name           String
+  description    String?
+  daysAllocated  Int
+  status         TaskStatus @default(NOT_STARTED)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  // Relations
+  organization      Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stage             Stage                  @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  memberAssignments TaskMemberAssignment[]
+  partyAssignments  TaskPartyAssignment[]
+
+  @@index([organizationId])
+  @@index([stageId])
+  @@index([status])
+  @@map("tasks")
+}
+
+// ============================================
+// Task Assignments (Junction Tables)
+// ============================================
+
+model TaskMemberAssignment {
+  id        String   @id @default(cuid())
+  taskId    String
+  memberId  String
+  createdAt DateTime @default(now())
+
+  // Relations
+  task   Task               @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  member OrganizationMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, memberId])
+  @@index([taskId])
+  @@index([memberId])
+  @@map("task_member_assignments")
+}
+
+model TaskPartyAssignment {
+  id        String   @id @default(cuid())
+  taskId    String
+  partyId   String
+  createdAt DateTime @default(now())
+
+  // Relations
+  task  Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  party Party @relation(fields: [partyId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, partyId])
+  @@index([taskId])
+  @@index([partyId])
+  @@map("task_party_assignments")
 }
 
 // ============================================
@@ -329,10 +456,12 @@ model Party {
   createdAt      DateTime  @default(now())
 
   // Relations
-  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization     Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   expenses         Expense[]
   payments         Payment[]
-  projectsAsClient Project[]    @relation("ProjectClient")
+  projectsAsClient Project[]              @relation("ProjectClient")
+  stageAssignments StagePartyAssignment[]
+  taskAssignments  TaskPartyAssignment[]
 
   @@index([organizationId])
   @@index([type])

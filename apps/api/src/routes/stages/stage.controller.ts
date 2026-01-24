@@ -24,13 +24,14 @@ const handle = createErrorHandler('stage');
 export const listStages = handle(
   'fetch',
   async (request: FastifyRequest<{ Querystring: StageQuery }>, reply: FastifyReply) => {
-    const { page, limit, projectId } = request.query;
+    const { page, limit, projectId, status } = request.query;
     const skip = (page - 1) * limit;
 
     const { stages, total } = await stageRepository.findAll(request.organizationId, {
       skip,
       take: limit,
       projectId,
+      status,
     });
 
     return sendPaginated(reply, stages, buildPagination(page, limit, total));

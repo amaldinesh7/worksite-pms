@@ -19,6 +19,12 @@ CREATE TYPE "ProjectStatus" AS ENUM ('ACTIVE', 'ON_HOLD', 'COMPLETED');
 -- CreateEnum
 CREATE TYPE "ExpenseStatus" AS ENUM ('PENDING', 'APPROVED');
 
+-- CreateEnum
+CREATE TYPE "StageStatus" AS ENUM ('SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD');
+
+-- CreateEnum
+CREATE TYPE "TaskStatus" AS ENUM ('NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD', 'BLOCKED');
+
 -- CreateTable
 CREATE TABLE "organizations" (
     "id" TEXT NOT NULL,
@@ -171,10 +177,71 @@ CREATE TABLE "stages" (
     "organizationId" TEXT NOT NULL,
     "projectId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "description" TEXT,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
     "budgetAmount" DECIMAL(15,2) NOT NULL,
+    "weight" DECIMAL(5,2) NOT NULL,
+    "status" "StageStatus" NOT NULL DEFAULT 'SCHEDULED',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "stages_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "stage_member_assignments" (
+    "id" TEXT NOT NULL,
+    "stageId" TEXT NOT NULL,
+    "memberId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "stage_member_assignments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "stage_party_assignments" (
+    "id" TEXT NOT NULL,
+    "stageId" TEXT NOT NULL,
+    "partyId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "stage_party_assignments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "tasks" (
+    "id" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "stageId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "daysAllocated" INTEGER NOT NULL,
+    "status" "TaskStatus" NOT NULL DEFAULT 'NOT_STARTED',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "tasks_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "task_member_assignments" (
+    "id" TEXT NOT NULL,
+    "taskId" TEXT NOT NULL,
+    "memberId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "task_member_assignments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "task_party_assignments" (
+    "id" TEXT NOT NULL,
+    "taskId" TEXT NOT NULL,
+    "partyId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "task_party_assignments_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -354,7 +421,55 @@ CREATE INDEX "stages_organizationId_idx" ON "stages"("organizationId");
 CREATE INDEX "stages_projectId_idx" ON "stages"("projectId");
 
 -- CreateIndex
+CREATE INDEX "stages_status_idx" ON "stages"("status");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "stages_projectId_name_key" ON "stages"("projectId", "name");
+
+-- CreateIndex
+CREATE INDEX "stage_member_assignments_stageId_idx" ON "stage_member_assignments"("stageId");
+
+-- CreateIndex
+CREATE INDEX "stage_member_assignments_memberId_idx" ON "stage_member_assignments"("memberId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "stage_member_assignments_stageId_memberId_key" ON "stage_member_assignments"("stageId", "memberId");
+
+-- CreateIndex
+CREATE INDEX "stage_party_assignments_stageId_idx" ON "stage_party_assignments"("stageId");
+
+-- CreateIndex
+CREATE INDEX "stage_party_assignments_partyId_idx" ON "stage_party_assignments"("partyId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "stage_party_assignments_stageId_partyId_key" ON "stage_party_assignments"("stageId", "partyId");
+
+-- CreateIndex
+CREATE INDEX "tasks_organizationId_idx" ON "tasks"("organizationId");
+
+-- CreateIndex
+CREATE INDEX "tasks_stageId_idx" ON "tasks"("stageId");
+
+-- CreateIndex
+CREATE INDEX "tasks_status_idx" ON "tasks"("status");
+
+-- CreateIndex
+CREATE INDEX "task_member_assignments_taskId_idx" ON "task_member_assignments"("taskId");
+
+-- CreateIndex
+CREATE INDEX "task_member_assignments_memberId_idx" ON "task_member_assignments"("memberId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "task_member_assignments_taskId_memberId_key" ON "task_member_assignments"("taskId", "memberId");
+
+-- CreateIndex
+CREATE INDEX "task_party_assignments_taskId_idx" ON "task_party_assignments"("taskId");
+
+-- CreateIndex
+CREATE INDEX "task_party_assignments_partyId_idx" ON "task_party_assignments"("partyId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "task_party_assignments_taskId_partyId_key" ON "task_party_assignments"("taskId", "partyId");
 
 -- CreateIndex
 CREATE INDEX "parties_organizationId_idx" ON "parties"("organizationId");
@@ -457,6 +572,36 @@ ALTER TABLE "stages" ADD CONSTRAINT "stages_organizationId_fkey" FOREIGN KEY ("o
 
 -- AddForeignKey
 ALTER TABLE "stages" ADD CONSTRAINT "stages_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stage_member_assignments" ADD CONSTRAINT "stage_member_assignments_stageId_fkey" FOREIGN KEY ("stageId") REFERENCES "stages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stage_member_assignments" ADD CONSTRAINT "stage_member_assignments_memberId_fkey" FOREIGN KEY ("memberId") REFERENCES "organization_members"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stage_party_assignments" ADD CONSTRAINT "stage_party_assignments_stageId_fkey" FOREIGN KEY ("stageId") REFERENCES "stages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "stage_party_assignments" ADD CONSTRAINT "stage_party_assignments_partyId_fkey" FOREIGN KEY ("partyId") REFERENCES "parties"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "tasks" ADD CONSTRAINT "tasks_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "tasks" ADD CONSTRAINT "tasks_stageId_fkey" FOREIGN KEY ("stageId") REFERENCES "stages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "task_member_assignments" ADD CONSTRAINT "task_member_assignments_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "tasks"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "task_member_assignments" ADD CONSTRAINT "task_member_assignments_memberId_fkey" FOREIGN KEY ("memberId") REFERENCES "organization_members"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "task_party_assignments" ADD CONSTRAINT "task_party_assignments_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "tasks"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "task_party_assignments" ADD CONSTRAINT "task_party_assignments_partyId_fkey" FOREIGN KEY ("partyId") REFERENCES "parties"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "parties" ADD CONSTRAINT "parties_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "organizations"("id") ON DELETE CASCADE ON UPDATE CASCADE;

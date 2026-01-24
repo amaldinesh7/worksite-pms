@@ -34,6 +34,7 @@ import {
 import { useProject, useProjectStats } from '@/lib/hooks/useProjects';
 import { ProjectOverviewTab } from '@/components/projects/overview/ProjectOverviewTab';
 import { ProjectExpensesTab } from '@/components/projects/expenses/ProjectExpensesTab';
+import { ProjectStagesTab } from '@/components/projects/stages';
 
 // ============================================
 // Helpers
@@ -108,9 +109,9 @@ export default function ProjectDetailPage() {
   return (
     <>
       <Header title={project.name} />
-      <PageContent className="overflow-hidden min-h-0 pt-4">
+      <PageContent className="overflow-hidden min-h-0 pt-2">
         {/* Breadcrumb */}
-        <Breadcrumb items={breadcrumbItems} className="mb-2" />
+        {/* <Breadcrumb items={breadcrumbItems} className="mb-2" /> */}
 
 
         {/* Tabs */}
@@ -158,9 +159,7 @@ export default function ProjectDetailPage() {
           </SecondaryTabsContent>
 
           <SecondaryTabsContent value="stages" className="mt-6">
-            <div className="flex items-center justify-center h-64 text-muted-foreground">
-              Stages tab coming soon
-            </div>
+            <ProjectStagesTab projectId={project.id} />
           </SecondaryTabsContent>
 
           <SecondaryTabsContent value="documents" className="mt-6">

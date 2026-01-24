@@ -73,9 +73,10 @@ export function TeamMembersTable({
       header: 'ROLE',
       cell: ({ row }) => {
         const member = row.original;
+        const roleName = member.membership?.role?.name || 'Unknown';
         return (
           <Badge variant="secondary" className="rounded-md font-normal">
-            {member.membership.role.name}
+            {roleName}
           </Badge>
         );
       },
