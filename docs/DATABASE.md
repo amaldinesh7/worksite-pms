@@ -1,7 +1,7 @@
 # Database Schema
 
 > Auto-generated from `apps/api/prisma/schema.prisma`
-> Last generated: 2026-01-22T08:21:55.884Z
+> Last generated: 2026-01-24T17:18:58.132Z
 
 ---
 
@@ -23,6 +23,9 @@
 | `tasks` | `Task[]` | - |
 | `attachments` | `Attachment[]` | - |
 | `roles` | `Role[]` | - |
+| `memberAdvances` | `MemberAdvance[]` | - |
+| `boqSections` | `BOQSection[]` | - |
+| `boqItems` | `BOQItem[]` | - |
 
 ### User
 
@@ -112,6 +115,8 @@
 | `projectAccess` | `ProjectAccess[]` | - |
 | `stageAssignments` | `StageMemberAssignment[]` | - |
 | `taskAssignments` | `TaskMemberAssignment[]` | - |
+| `recordedPayments` | `Payment[]` | @relation("PaymentRecordedBy") |
+| `memberAdvances` | `MemberAdvance[]` | - |
 
 ### ProjectAccess
 
@@ -182,6 +187,9 @@
 | `payments` | `Payment[]` | - |
 | `documents` | `Document[]` | - |
 | `projectAccess` | `ProjectAccess[]` | - |
+| `memberAdvances` | `MemberAdvance[]` | - |
+| `boqSections` | `BOQSection[]` | - |
+| `boqItems` | `BOQItem[]` | - |
 
 ### Stage
 
@@ -205,6 +213,7 @@
 | `tasks` | `Task[]` | - |
 | `memberAssignments` | `StageMemberAssignment[]` | - |
 | `partyAssignments` | `StagePartyAssignment[]` | - |
+| `boqItems` | `BOQItem[]` | - |
 
 ### StageMemberAssignment
 
@@ -316,6 +325,7 @@
 | `labourType` | `CategoryItem?` | @relation("LabourType", fields: [labourTypeItemId], references: [id]) |
 | `subWorkType` | `CategoryItem?` | @relation("SubWorkType", fields: [subWorkTypeItemId], references: [id]) |
 | `payments` | `Payment[]` | - |
+| `boqLinks` | `BOQExpenseLink[]` | - |
 
 ### Payment
 
@@ -326,16 +336,19 @@
 | `projectId` | `String` | - |
 | `partyId` | `String?` | - |
 | `expenseId` | `String?` | - |
+| `recordedById` | `String?` | - |
 | `type` | `PaymentType` | - |
 | `paymentMode` | `PaymentMode` | - |
 | `amount` | `Decimal` | @db.Decimal(15, 2) |
 | `paymentDate` | `DateTime` | - |
+| `referenceNumber` | `String?` | // Invoice/Receipt number |
 | `notes` | `String?` | @db.Text |
 | `createdAt` | `DateTime` | @default(now()) |
 | `organization` | `Organization` | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
 | `project` | `Project` | @relation(fields: [projectId], references: [id], onDelete: Cascade) |
 | `party` | `Party?` | @relation(fields: [partyId], references: [id]) |
 | `expense` | `Expense?` | @relation(fields: [expenseId], references: [id]) |
+| `recordedBy` | `OrganizationMember?` | @relation("PaymentRecordedBy", fields: [recordedById], references: [id]) |
 
 ### Document
 
@@ -377,4 +390,75 @@
 | `entityId` | `String` | - |
 | `createdAt` | `DateTime` | @default(now()) |
 | `attachment` | `Attachment` | @relation(fields: [attachmentId], references: [id], onDelete: Cascade) |
+
+### MemberAdvance
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `organizationId` | `String` | - |
+| `projectId` | `String` | - |
+| `memberId` | `String` | - |
+| `amount` | `Decimal` | @db.Decimal(15, 2) |
+| `purpose` | `String` | - |
+| `paymentMode` | `PaymentMode` | - |
+| `advanceDate` | `DateTime` | - |
+| `expectedSettlementDate` | `DateTime?` | - |
+| `notes` | `String?` | @db.Text |
+| `createdAt` | `DateTime` | @default(now()) |
+| `organization` | `Organization` | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
+| `project` | `Project` | @relation(fields: [projectId], references: [id], onDelete: Cascade) |
+| `member` | `OrganizationMember` | @relation(fields: [memberId], references: [id], onDelete: Cascade) |
+
+### BOQSection
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `organizationId` | `String` | - |
+| `projectId` | `String` | - |
+| `name` | `String` | - |
+| `sortOrder` | `Int` | @default(0) |
+| `createdAt` | `DateTime` | @default(now()) |
+| `updatedAt` | `DateTime` | @updatedAt |
+| `organization` | `Organization` | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
+| `project` | `Project` | @relation(fields: [projectId], references: [id], onDelete: Cascade) |
+| `items` | `BOQItem[]` | - |
+
+### BOQItem
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `organizationId` | `String` | - |
+| `projectId` | `String` | - |
+| `sectionId` | `String?` | - |
+| `stageId` | `String?` | - |
+| `code` | `String?` | // e.g., "R2-CS-EW-1" |
+| `category` | `BOQCategory` | - |
+| `description` | `String` | - |
+| `unit` | `String` | - |
+| `quantity` | `Decimal` | @db.Decimal(15, 4) |
+| `rate` | `Decimal` | @db.Decimal(15, 2) |
+| `notes` | `String?` | @db.Text |
+| `isReviewFlagged` | `Boolean` | @default(false) |
+| `flagReason` | `String?` | - |
+| `createdAt` | `DateTime` | @default(now()) |
+| `updatedAt` | `DateTime` | @updatedAt |
+| `organization` | `Organization` | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
+| `project` | `Project` | @relation(fields: [projectId], references: [id], onDelete: Cascade) |
+| `section` | `BOQSection?` | @relation(fields: [sectionId], references: [id], onDelete: SetNull) |
+| `stage` | `Stage?` | @relation(fields: [stageId], references: [id], onDelete: SetNull) |
+| `expenseLinks` | `BOQExpenseLink[]` | - |
+
+### BOQExpenseLink
+
+| Field | Type | Attributes |
+|-------|------|------------|
+| `id` | `String` | @id @default(cuid()) |
+| `boqItemId` | `String` | - |
+| `expenseId` | `String` | - |
+| `createdAt` | `DateTime` | @default(now()) |
+| `boqItem` | `BOQItem` | @relation(fields: [boqItemId], references: [id], onDelete: Cascade) |
+| `expense` | `Expense` | @relation(fields: [expenseId], references: [id], onDelete: Cascade) |
 

@@ -313,7 +313,6 @@ Add Tasks → Assign Members/Parties → Track Progress
 - **Payables**: Amount owed to vendors/labours/subcontractors
 - **Receivables**: Amount owed by clients
 - Filter by: Project, Party, Date range
-- Aging analysis (0-30, 30-60, 60-90, 90+ days)
 - Export to Excel
 
 **Value Impact**: HIGH - *"Pending is always linked to the receivable from the customer"*
@@ -527,7 +526,6 @@ model Payment {
 | Payment Milestones | 1.5 weeks | P1 |
 | Client Payment Tracking | 1 week | P1 |
 | Payment Narration | 0.5 weeks | P1 |
-| Aging Reports | 1 week | P1 |
 
 **Dependencies**: Phase 1 (Credits Hub)
 
