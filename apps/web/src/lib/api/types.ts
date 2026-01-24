@@ -49,3 +49,15 @@ export type ApiResponse<T> = {
   data?: T;
   error?: { message: string; code: string };
 };
+
+// ============================================
+// Aliases for convenience
+// ============================================
+
+export type SuccessResponse<T> = ApiSuccessResponse<T>;
+
+export interface PaginatedResponse<T> {
+  success: true;
+  data: T[];
+  pagination: PaginationMeta;
+}

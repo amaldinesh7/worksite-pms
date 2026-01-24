@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { SendOtpSchema, VerifyOtpSchema } from './auth.schema';
-import { sendOtp, verifyOtp, logout, getCurrentUser } from './auth.controller';
+import { SendOtpSchema, VerifyOtpSchema, OnboardingSchema } from './auth.schema';
+import { sendOtp, verifyOtp, logout, getCurrentUser, completeOnboarding } from './auth.controller';
 
 export default async function authRoutes(fastify: FastifyInstance) {
   // POST /auth/send-otp - Send OTP to phone
@@ -53,5 +53,20 @@ export default async function authRoutes(fastify: FastifyInstance) {
       },
     },
     getCurrentUser
+  );
+
+  // POST /auth/onboarding - Complete onboarding for new users
+  fastify.post(
+    '/onboarding',
+    {
+      onRequest: [fastify.authenticate],
+      schema: {
+        body: OnboardingSchema,
+        tags: ['Auth'],
+        description: 'Complete onboarding for new users without organization. Creates organization and adds user as admin.',
+        security: [{ bearerAuth: [] }],
+      },
+    },
+    completeOnboarding
   );
 }

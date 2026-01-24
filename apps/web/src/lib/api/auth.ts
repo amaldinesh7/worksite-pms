@@ -4,6 +4,19 @@
 
 import { request } from './client';
 
+export interface OnboardingInput {
+  userName: string;
+  organizationName: string;
+  organizationType?: 'CONSTRUCTION' | 'INTERIOR' | 'CONTRACTOR' | 'OTHER';
+}
+
+export interface OnboardingResponse {
+  message: string;
+  user: { id: string; name: string; phone: string };
+  organization: { id: string; name: string };
+  role: string | null;
+}
+
 export const authApi = {
   /**
    * Send OTP to phone number
@@ -42,4 +55,17 @@ export const authApi = {
    */
   me: () =>
     request<{ id: string; name: string; phone: string; createdAt: string }>('get', '/auth/me'),
+
+  /**
+   * Complete onboarding for new users without organization
+   */
+  onboarding: (data: OnboardingInput) =>
+    request<OnboardingResponse>('post', '/auth/onboarding', data),
 };
+
+/**
+ * Complete onboarding for new users
+ */
+export async function completeOnboarding(data: OnboardingInput) {
+  return authApi.onboarding(data);
+}

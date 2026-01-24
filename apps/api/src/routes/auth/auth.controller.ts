@@ -2,9 +2,10 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { otpService } from '../../services/otp.service';
 import { jwtService } from '../../services/jwt.service';
 import { authRepository } from '../../repositories/auth.repository';
+import { organizationRepository } from '../../repositories/organization.repository';
 import { createErrorHandler } from '../../lib/error-handler';
 import { sendSuccess, sendCreated } from '../../lib/response.utils';
-import type { SendOtpInput, VerifyOtpInput } from './auth.schema';
+import type { SendOtpInput, VerifyOtpInput, OnboardingInput } from './auth.schema';
 
 const withError = createErrorHandler('auth');
 
@@ -150,6 +151,54 @@ export const getCurrentUser = withError(
             name: primaryMembership.organization.name,
           }
         : null,
+      role: primaryMembership?.role ?? null,
+    });
+  }
+);
+
+/**
+ * POST /auth/onboarding
+ * Complete onboarding for new users without organization
+ * Creates organization and adds user as admin
+ */
+export const completeOnboarding = withError(
+  'complete onboarding',
+  async (request: FastifyRequest<{ Body: OnboardingInput }>, reply: FastifyReply) => {
+    const userId = request.user?.userId;
+
+    if (!userId) {
+      return reply.code(401).send({
+        success: false,
+        error: { message: 'Unauthorized', code: 'UNAUTHORIZED' },
+      });
+    }
+
+    const { userName, organizationName } = request.body;
+
+    // Update user name
+    await authRepository.updateUser(userId, { name: userName });
+
+    // Create organization with user as admin
+    const organization = await organizationRepository.create({
+      name: organizationName,
+      ownerId: userId,
+    });
+
+    // Get updated user with membership
+    const user = await authRepository.findById(userId);
+    const primaryMembership = user?.memberships[0] ?? null;
+
+    return sendCreated(reply, {
+      message: 'Onboarding completed successfully',
+      user: {
+        id: user?.id,
+        name: user?.name,
+        phone: user?.phone,
+      },
+      organization: {
+        id: organization.id,
+        name: organization.name,
+      },
       role: primaryMembership?.role ?? null,
     });
   }
