@@ -21,6 +21,7 @@ export interface PartyListOptions {
   take?: number;
   search?: string;
   type?: PartyType;
+  hasCredit?: boolean;
 }
 
 export class PartyRepository {
@@ -56,7 +57,7 @@ export class PartyRepository {
   async findAll(
     organizationId: string,
     options?: PartyListOptions
-  ): Promise<{ parties: Party[]; total: number }> {
+  ): Promise<{ parties: (Party & { credit: number })[]; total: number }> {
     try {
       const where: Prisma.PartyWhereInput = {
         organizationId,
@@ -65,6 +66,32 @@ export class PartyRepository {
         }),
         ...(options?.type && { type: options.type }),
       };
+
+      // If hasCredit filter is enabled, we need to calculate credit for each party
+      if (options?.hasCredit) {
+        // Get all matching parties first
+        const allParties = await prisma.party.findMany({
+          where,
+          orderBy: { name: 'asc' },
+        });
+
+        // Calculate credit for each party and filter
+        const partiesWithCredit: (Party & { credit: number })[] = [];
+        for (const party of allParties) {
+          const credit = await this.getPartyCredit(organizationId, party.id);
+          if (credit > 0) {
+            partiesWithCredit.push({ ...party, credit });
+          }
+        }
+
+        // Apply pagination manually
+        const total = partiesWithCredit.length;
+        const skip = options?.skip ?? 0;
+        const take = options?.take ?? total;
+        const paginatedParties = partiesWithCredit.slice(skip, skip + take);
+
+        return { parties: paginatedParties, total };
+      }
 
       const [parties, total] = await Promise.all([
         prisma.party.findMany({
@@ -76,10 +103,38 @@ export class PartyRepository {
         prisma.party.count({ where }),
       ]);
 
-      return { parties, total };
+      // Calculate credit for each party
+      const partiesWithCredit = await Promise.all(
+        parties.map(async (party) => {
+          const credit = await this.getPartyCredit(organizationId, party.id);
+          return { ...party, credit };
+        })
+      );
+
+      return { parties: partiesWithCredit, total };
     } catch (error) {
       throw handlePrismaError(error);
     }
+  }
+
+  // Helper to calculate credit (expenses - payments) for a party
+  private async getPartyCredit(organizationId: string, partyId: string): Promise<number> {
+    const expenses = await prisma.expense.findMany({
+      where: { organizationId, partyId },
+      select: { rate: true, quantity: true },
+    });
+    const totalExpenses = expenses.reduce(
+      (sum, exp) => sum + exp.rate.toNumber() * exp.quantity.toNumber(),
+      0
+    );
+
+    const paymentsSum = await prisma.payment.aggregate({
+      where: { organizationId, partyId },
+      _sum: { amount: true },
+    });
+    const totalPayments = paymentsSum._sum.amount?.toNumber() || 0;
+
+    return totalExpenses - totalPayments;
   }
 
   async update(organizationId: string, id: string, data: UpdatePartyData): Promise<Party> {

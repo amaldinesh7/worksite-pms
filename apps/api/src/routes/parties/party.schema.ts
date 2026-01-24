@@ -42,6 +42,7 @@ export const partyQuerySchema = z.object({
   type: partyTypeEnum.optional(),
   isInternal: z.coerce.boolean().optional(),
   hasLogin: z.coerce.boolean().optional(),
+  hasCredit: z.coerce.boolean().optional(),
 });
 
 export const partyParamsSchema = z.object({
