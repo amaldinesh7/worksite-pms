@@ -157,17 +157,19 @@ export function useCreatePayment() {
   return useMutation({
     mutationFn: (data: CreatePaymentInput) => createPayment(data),
     onSuccess: (_, variables) => {
-      // Invalidate all payment-related queries
-      queryClient.invalidateQueries({ queryKey: paymentKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: paymentKeys.summary(variables.projectId) });
+      // Invalidate all payment-related queries with broader matching
+      // Using exact: false to match all queries that start with these keys
+      queryClient.invalidateQueries({ queryKey: paymentKeys.all });
+      queryClient.invalidateQueries({ 
+        queryKey: ['payments', 'client', variables.projectId],
+        exact: false,
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ['payments', 'party', variables.projectId],
+        exact: false,
+      });
       queryClient.invalidateQueries({
         queryKey: paymentKeys.projectSummary(variables.projectId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: paymentKeys.clientPayments(variables.projectId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: paymentKeys.partyPayments(variables.projectId),
       });
       if (variables.partyId) {
         queryClient.invalidateQueries({
@@ -189,11 +191,9 @@ export function useUpdatePayment() {
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdatePaymentInput }) => updatePayment(id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: paymentKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: paymentKeys.detail(id) });
-      // Invalidate all project-related queries as we don't know which project this belongs to
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
+    onSuccess: () => {
+      // Invalidate all payment-related queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: paymentKeys.all });
     },
   });
 }
@@ -208,7 +208,7 @@ export function useDeletePayment() {
     mutationFn: (id: string) => deletePayment(id),
     onSuccess: () => {
       // Invalidate all payment-related queries
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: paymentKeys.all });
     },
   });
 }

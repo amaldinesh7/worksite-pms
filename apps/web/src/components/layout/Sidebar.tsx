@@ -165,6 +165,8 @@ interface SidebarHeaderProps {
 }
 
 function SidebarHeader({ isCollapsed, onCloseMobile }: SidebarHeaderProps) {
+  const { organization } = useAuthStore();
+  
   return (
     <div
       className={cn(
@@ -178,7 +180,7 @@ function SidebarHeader({ isCollapsed, onCloseMobile }: SidebarHeaderProps) {
           isCollapsed ? 'justify-center' : 'justify-between w-full'
         )}
       >
-        <div className="flex items-center">
+        <div className="flex items-center min-w-0">
           <div
             className={cn(
               'w-10 h-10 rounded-lg shrink-0',
@@ -190,11 +192,10 @@ function SidebarHeader({ isCollapsed, onCloseMobile }: SidebarHeaderProps) {
             <Buildings className="h-5 w-5" weight="fill" />
           </div>
           {!isCollapsed && (
-            <div>
-              <TypographyLarge className="font-heading font-semibold text-neutral-800 leading-tight text-base">
-                Acme Construction
+            <div className="min-w-0 flex-1">
+              <TypographyLarge className="font-heading font-semibold text-neutral-800 leading-tight text-base truncate max-w-[140px]">
+                {organization?.name || 'My Organization'}
               </TypographyLarge>
-              <TypographyMuted className="text-xs">Company Portal</TypographyMuted>
             </div>
           )}
         </div>

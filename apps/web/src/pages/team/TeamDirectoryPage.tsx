@@ -48,7 +48,7 @@ import type { TeamMember, CreateTeamMemberInput, UpdateTeamMemberInput } from '@
 // Constants
 // ============================================
 
-const PAGINATION_LIMIT = 20;
+const PAGINATION_LIMIT = 10;
 
 // ============================================
 // Component

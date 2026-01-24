@@ -21,7 +21,7 @@ import type { Party, PartyType, CreatePartyInput, UpdatePartyInput } from '@/lib
 
 const partyFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  phone: z.string().optional(),
+  phone: z.string().min(10, 'Phone number is required (min 10 digits)'),
   location: z.string().min(1, 'Location is required'),
 });
 
@@ -150,12 +150,39 @@ export function PartyFormDialog({
 
             {/* Phone Field */}
             <div className="grid gap-2">
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone">
+                Phone <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="phone"
                 placeholder="Enter phone number"
                 {...register('phone')}
+                aria-invalid={!!errors.phone}
+                onKeyDown={(e) => {
+                  // Allow: backspace, delete, tab, escape, enter, arrows
+                  if (
+                    ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) ||
+                    // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                    (e.ctrlKey && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase())) ||
+                    (e.metaKey && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase()))
+                  ) {
+                    return;
+                  }
+                  // Block non-numeric keys
+                  if (!/^\d$/.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                onPaste={(e) => {
+                  const pastedText = e.clipboardData.getData('text');
+                  if (!/^\d+$/.test(pastedText)) {
+                    e.preventDefault();
+                  }
+                }}
               />
+              {errors.phone && (
+                <p className="text-sm text-destructive">{errors.phone.message}</p>
+              )}
             </div>
 
             {/* Location Field */}

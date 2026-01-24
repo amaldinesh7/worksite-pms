@@ -1,6 +1,5 @@
 import type { FastifyInstance } from 'fastify';
 import type { ZodTypeProvider } from 'fastify-type-provider-zod';
-import multipart from '@fastify/multipart';
 import { organizationMiddleware } from '../../middleware/organization.middleware';
 import * as controller from './document.controller';
 import { documentQuerySchema, documentParamsSchema } from './document.schema';
@@ -9,12 +8,7 @@ import { z } from 'zod';
 export default async function documentRoutes(fastify: FastifyInstance) {
   const app = fastify.withTypeProvider<ZodTypeProvider>();
 
-  // Register multipart plugin for file uploads
-  await app.register(multipart, {
-    limits: {
-      fileSize: 50 * 1024 * 1024, // 50MB max
-    },
-  });
+  // Note: multipart plugin is registered globally in app.ts
 
   // Apply organization middleware to all routes
   app.addHook('preHandler', organizationMiddleware);

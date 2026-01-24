@@ -24,7 +24,7 @@ export interface NavSection {
 
 export const mainNavItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: HouseIcon, href: '/' },
-  { id: 'projects', label: 'Projects', icon: FolderIcon, href: '/projects', badge: 12 },
+  { id: 'projects', label: 'Projects', icon: FolderIcon, href: '/projects' },
   { id: 'parties', label: 'Parties', icon: HandshakeIcon, href: '/parties' },
   { id: 'team', label: 'Team Directory', icon: UsersIcon, href: '/team' },
 ];

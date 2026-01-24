@@ -654,7 +654,7 @@ function StagesListView({
               className="pl-9"
             />
           </div>
-          <Button variant="outline" className="cursor-pointer">
+          <Button variant="outline" className="cursor-pointer" disabled title="Filters coming soon">
             <SlidersHorizontal className="mr-2 h-4 w-4" />
             Filters
           </Button>

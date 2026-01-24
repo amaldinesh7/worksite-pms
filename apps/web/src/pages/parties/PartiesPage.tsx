@@ -219,23 +219,20 @@ export default function PartiesPage() {
       />
 
       <PageContent>
-        <div className="space-y-3">
-          {/* Stats Cards */}
-          <PartyStatsCards summary={summary} isLoading={isSummaryLoading} />
-
+        <div className="space-y-4">
           {/* Tabs and Table */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <SecondaryTabs value={activeTab} onValueChange={handleTabChange}>
                 <SecondaryTabsList>
                   <SecondaryTabsTrigger value="VENDOR" icon={Storefront} className="cursor-pointer">
-                    Vendors
+                    Vendors{(summary?.totalVendors ?? 0) > 0 && ` (${summary?.totalVendors})`}
                   </SecondaryTabsTrigger>
                   <SecondaryTabsTrigger value="LABOUR" icon={HardHat} className="cursor-pointer">
-                    Labours
+                    Labours{(summary?.totalLabours ?? 0) > 0 && ` (${summary?.totalLabours})`}
                   </SecondaryTabsTrigger>
                   <SecondaryTabsTrigger value="SUBCONTRACTOR" icon={Briefcase} className="cursor-pointer">
-                    Sub Contractors
+                    Sub Contractors{(summary?.totalSubcontractors ?? 0) > 0 && ` (${summary?.totalSubcontractors})`}
                   </SecondaryTabsTrigger>
                 </SecondaryTabsList>
               </SecondaryTabs>

@@ -76,6 +76,8 @@ export const createPayment = handle(
       type: request.body.type as PaymentType,
       paymentMode: request.body.paymentMode as PaymentMode,
       paymentDate: new Date(request.body.paymentDate),
+      // Use recordedById from body if provided, otherwise use the authenticated user's member ID
+      recordedById: request.body.recordedById || request.memberId,
     });
 
     return sendSuccess(reply, payment, 201);

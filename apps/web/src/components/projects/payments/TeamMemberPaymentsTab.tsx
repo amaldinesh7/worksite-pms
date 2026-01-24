@@ -331,7 +331,7 @@ export function TeamMemberPaymentsTab({
                     <TableCell className="text-sm">
                       {format(new Date(advance.advanceDate), 'MMM d, yyyy')}
                     </TableCell>
-                    <TableCell className="text-right font-medium">
+                    <TableCell className="text-right font-medium text-red-600">
                       {formatCurrency(Number(advance.amount))}
                     </TableCell>
                     <TableCell className="text-sm font-medium">
@@ -410,7 +410,7 @@ export function TeamMemberPaymentsTab({
                 {isSummaryLoading ? (
                   <div className="h-5 w-16 bg-muted animate-pulse rounded" />
                 ) : (
-                  <span className="font-medium">
+                  <span className="font-medium text-red-600">
                     {formatCurrency(memberSummary?.totalAdvanceGiven ?? 0)}
                   </span>
                 )}
@@ -422,7 +422,7 @@ export function TeamMemberPaymentsTab({
                 {isSummaryLoading ? (
                   <div className="h-5 w-16 bg-muted animate-pulse rounded" />
                 ) : (
-                  <span className="font-medium">
+                  <span className="font-medium text-red-600">
                     {formatCurrency(memberSummary?.expensesLogged ?? 0)}
                   </span>
                 )}

@@ -5,6 +5,7 @@ import { Layout, PageContent, Header } from '@/components/layout';
 import { TypographyH2, TypographyMuted } from '@/components/ui/typography';
 import PhoneInput from './pages/auth/PhoneInput';
 import VerifyOtp from './pages/auth/VerifyOtp';
+import Onboarding from './pages/auth/Onboarding';
 import CategoriesPage from './pages/settings/CategoriesPage';
 import PartiesPage from './pages/parties/PartiesPage';
 import PartyDetailPage from './pages/parties/PartyDetailPage';
@@ -28,10 +29,15 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 // Protected Layout - wraps all authenticated routes with shared Layout
 // The Layout (including Sidebar) is mounted once and shared across all child routes
 function ProtectedLayout() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, organization } = useAuthStore();
 
   if (!isAuthenticated) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect to onboarding if user has no organization
+  if (!organization) {
+    return <Navigate to="/auth/onboarding" replace />;
   }
 
   return (
@@ -95,6 +101,8 @@ export default function App() {
             </AuthRoute>
           }
         />
+        {/* Onboarding Route - for authenticated users without organization */}
+        <Route path="/auth/onboarding" element={<Onboarding />} />
 
         {/* Protected Routes - all share the same Layout via ProtectedLayout */}
         <Route element={<ProtectedLayout />}>

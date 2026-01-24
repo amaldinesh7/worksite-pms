@@ -267,7 +267,7 @@ export default function ProjectsPage() {
             {/* View Toggle */}
             <div className="flex items-center border rounded-md bg-card">
               <Button
-                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
                 size="icon"
                 className="h-9 w-9 rounded-r-none cursor-pointer"
                 onClick={() => setViewMode('grid')}
@@ -275,7 +275,7 @@ export default function ProjectsPage() {
                 <LayoutGrid className="h-4 w-4" />
               </Button>
               <Button
-                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
                 size="icon"
                 className="h-9 w-9 rounded-l-none cursor-pointer"
                 onClick={() => setViewMode('list')}
