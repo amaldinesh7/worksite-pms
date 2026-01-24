@@ -61,6 +61,14 @@ enum TaskStatus {
   BLOCKED
 }
 
+enum BOQCategory {
+  MATERIAL
+  LABOUR
+  SUB_WORK
+  EQUIPMENT
+  OTHER
+}
+
 // ============================================
 // Organizations & Users (Multi-tenant Foundation)
 // ============================================
@@ -83,6 +91,8 @@ model Organization {
   attachments    Attachment[]
   roles          Role[]
   memberAdvances MemberAdvance[]
+  boqSections    BOQSection[]
+  boqItems       BOQItem[]
 
   @@map("organizations")
 }
@@ -305,6 +315,8 @@ model Project {
   documents      Document[]
   projectAccess  ProjectAccess[]
   memberAdvances MemberAdvance[]
+  boqSections    BOQSection[]
+  boqItems       BOQItem[]
 
   @@index([organizationId])
   @@index([clientId])
@@ -332,12 +344,13 @@ model Stage {
   updatedAt      DateTime    @updatedAt
 
   // Relations
-  organization    Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project         Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  expenses        Expense[]
-  tasks           Task[]
+  organization      Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project           Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  expenses          Expense[]
+  tasks             Task[]
   memberAssignments StageMemberAssignment[]
   partyAssignments  StagePartyAssignment[]
+  boqItems          BOQItem[]
 
   @@unique([projectId, name])
   @@index([organizationId])
@@ -504,6 +517,7 @@ model Expense {
   labourType   CategoryItem? @relation("LabourType", fields: [labourTypeItemId], references: [id])
   subWorkType  CategoryItem? @relation("SubWorkType", fields: [subWorkTypeItemId], references: [id])
   payments     Payment[]
+  boqLinks     BOQExpenseLink[]
 
   @@index([organizationId])
   @@index([projectId])
@@ -640,4 +654,77 @@ model MemberAdvance {
   @@index([memberId])
   @@index([advanceDate])
   @@map("member_advances")
+}
+
+// ============================================
+// BOQ (Bill of Quantities)
+// ============================================
+
+model BOQSection {
+  id             String   @id @default(cuid())
+  organizationId String
+  projectId      String
+  name           String
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  items        BOQItem[]
+
+  @@unique([projectId, name])
+  @@index([organizationId])
+  @@index([projectId])
+  @@map("boq_sections")
+}
+
+model BOQItem {
+  id              String      @id @default(cuid())
+  organizationId  String
+  projectId       String
+  sectionId       String?
+  stageId         String?
+  code            String?     // e.g., "R2-CS-EW-1"
+  category        BOQCategory
+  description     String
+  unit            String
+  quantity        Decimal     @db.Decimal(15, 4)
+  rate            Decimal     @db.Decimal(15, 2)
+  notes           String?     @db.Text
+  isReviewFlagged Boolean     @default(false)
+  flagReason      String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project      Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  section      BOQSection?      @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  stage        Stage?           @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  expenseLinks BOQExpenseLink[]
+
+  @@index([organizationId])
+  @@index([projectId])
+  @@index([sectionId])
+  @@index([stageId])
+  @@index([category])
+  @@map("boq_items")
+}
+
+model BOQExpenseLink {
+  id        String   @id @default(cuid())
+  boqItemId String
+  expenseId String
+  createdAt DateTime @default(now())
+
+  // Relations
+  boqItem BOQItem @relation(fields: [boqItemId], references: [id], onDelete: Cascade)
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@unique([boqItemId, expenseId])
+  @@index([boqItemId])
+  @@index([expenseId])
+  @@map("boq_expense_links")
 }
