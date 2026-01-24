@@ -1,3 +1,14 @@
+/**
+ * Team Members Table
+ *
+ * Displays team members in a table with:
+ * - Name and email
+ * - Phone number
+ * - Role
+ * - Balance with project split-up popover
+ * - Actions (edit/delete)
+ */
+
 import {
   useReactTable,
   getCoreRowModel,
@@ -21,9 +32,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { TypographySmall, TypographyMuted } from '@/components/ui/typography';
-import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, Phone } from 'lucide-react';
+import { useMemberTotalBalance } from '@/lib/hooks/useMemberAdvances';
+import { MemberBalancePopover } from './MemberBalancePopover';
 import type { TeamMember } from '@/lib/api/team';
 import type { Role } from '@/lib/api/roles';
+
+// ============================================
+// Types
+// ============================================
 
 interface TeamMembersTableProps {
   members: TeamMember[];
@@ -32,25 +49,56 @@ interface TeamMembersTableProps {
   onDeleteMember: (member: TeamMember) => void;
 }
 
+// ============================================
+// Helper Components
+// ============================================
+
+/**
+ * Cell component that fetches and displays member balance
+ */
+function BalanceCell({ memberId }: { memberId: string }) {
+  const { data: totalBalance, isLoading } = useMemberTotalBalance(memberId);
+
+  if (isLoading) {
+    return <div className="h-4 w-16 bg-muted animate-pulse rounded" />;
+  }
+
+  return <MemberBalancePopover memberId={memberId} totalBalance={totalBalance ?? 0} />;
+}
+
+// ============================================
+// Helper Functions
+// ============================================
+
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function formatPhoneNumber(phone: string | null): string {
+  if (!phone) return '—';
+  // Simple formatting - you can enhance this based on your needs
+  return phone;
+}
+
+// ============================================
+// Component
+// ============================================
+
 export function TeamMembersTable({
   members,
   roles,
   onEditMember,
   onDeleteMember,
 }: TeamMembersTableProps) {
-  const getInitials = (name: string): string => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
   const columns: ColumnDef<TeamMember>[] = [
     {
       accessorKey: 'name',
-      header: 'PROJECT',
+      header: 'MEMBER',
       cell: ({ row }) => {
         const member = row.original;
         return (
@@ -60,10 +108,27 @@ export function TeamMembersTable({
             </div>
             <div>
               <TypographySmall className="font-medium">{member.name}</TypographySmall>
-              <TypographyMuted className="text-xs">
-                {member.email || '—'}
-              </TypographyMuted>
+              <TypographyMuted className="text-xs">{member.email || '—'}</TypographyMuted>
             </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'phone',
+      header: 'PHONE',
+      cell: ({ row }) => {
+        const member = row.original;
+        return (
+          <div className="flex items-center gap-2">
+            {member.phone ? (
+              <>
+                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-sm">{formatPhoneNumber(member.phone)}</span>
+              </>
+            ) : (
+              <span className="text-sm text-muted-foreground">—</span>
+            )}
           </div>
         );
       },
@@ -82,6 +147,14 @@ export function TeamMembersTable({
       },
     },
     {
+      id: 'balance',
+      header: 'BALANCE',
+      cell: ({ row }) => {
+        const member = row.original;
+        return <BalanceCell memberId={member.membership.id} />;
+      },
+    },
+    {
       id: 'actions',
       header: 'ACTIONS',
       cell: ({ row }) => {
@@ -95,10 +168,7 @@ export function TeamMembersTable({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => onEditMember(member)}
-                className="cursor-pointer"
-              >
+              <DropdownMenuItem onClick={() => onEditMember(member)} className="cursor-pointer">
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
