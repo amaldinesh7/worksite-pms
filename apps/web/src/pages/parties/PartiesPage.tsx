@@ -25,6 +25,8 @@ import {
   SecondaryTabsList,
   SecondaryTabsTrigger,
 } from '@/components/ui/custom/secondary-tabs';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   PartyStatsCards,
   PartiesTable,
@@ -67,6 +69,7 @@ export default function PartiesPage() {
   // Pagination state
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [showOnlyWithCredit, setShowOnlyWithCredit] = useState(false);
   const limit = PAGINATION_LIMIT;
 
   // Sync URL when tab changes
@@ -93,6 +96,7 @@ export default function PartiesPage() {
     limit,
     search: search || undefined,
     type: activeTab,
+    hasCredit: showOnlyWithCredit || undefined,
   });
 
   // ============================================
@@ -111,6 +115,11 @@ export default function PartiesPage() {
     setActiveTab(value as TabValue);
     setPage(1); // Reset to first page when changing tabs
     setSearch(''); // Clear search when changing tabs
+  }, []);
+
+  const handleCreditFilterChange = useCallback((checked: boolean) => {
+    setShowOnlyWithCredit(checked);
+    setPage(1); // Reset to first page when changing filter
   }, []);
 
   const handleSearchChange = useCallback((newSearch: string) => {
@@ -216,19 +225,43 @@ export default function PartiesPage() {
 
           {/* Tabs and Table */}
           <div className="space-y-4">
-            <SecondaryTabs value={activeTab} onValueChange={handleTabChange}>
-              <SecondaryTabsList>
-                <SecondaryTabsTrigger value="VENDOR" icon={Storefront} className="cursor-pointer">
-                  Vendors
-                </SecondaryTabsTrigger>
-                <SecondaryTabsTrigger value="LABOUR" icon={HardHat} className="cursor-pointer">
-                  Labours
-                </SecondaryTabsTrigger>
-                <SecondaryTabsTrigger value="SUBCONTRACTOR" icon={Briefcase} className="cursor-pointer">
-                  Sub Contractors
-                </SecondaryTabsTrigger>
-              </SecondaryTabsList>
-            </SecondaryTabs>
+            <div className="flex items-center justify-between">
+              <SecondaryTabs value={activeTab} onValueChange={handleTabChange}>
+                <SecondaryTabsList>
+                  <SecondaryTabsTrigger value="VENDOR" icon={Storefront} className="cursor-pointer">
+                    Vendors
+                  </SecondaryTabsTrigger>
+                  <SecondaryTabsTrigger value="LABOUR" icon={HardHat} className="cursor-pointer">
+                    Labours
+                  </SecondaryTabsTrigger>
+                  <SecondaryTabsTrigger value="SUBCONTRACTOR" icon={Briefcase} className="cursor-pointer">
+                    Sub Contractors
+                  </SecondaryTabsTrigger>
+                </SecondaryTabsList>
+              </SecondaryTabs>
+
+              {/* Credit Filter Toggle */}
+              <div className="flex items-center gap-2">
+                <Label
+                  htmlFor="credit-filter"
+                  className={`text-sm cursor-pointer ${!showOnlyWithCredit ? 'text-foreground font-medium' : 'text-muted-foreground'}`}
+                >
+                  All
+                </Label>
+                <Switch
+                  id="credit-filter"
+                  checked={showOnlyWithCredit}
+                  onCheckedChange={handleCreditFilterChange}
+                  className="cursor-pointer"
+                />
+                <Label
+                  htmlFor="credit-filter"
+                  className={`text-sm cursor-pointer ${showOnlyWithCredit ? 'text-foreground font-medium' : 'text-muted-foreground'}`}
+                >
+                  With Credit
+                </Label>
+              </div>
+            </div>
 
             <PartiesTable
               parties={parties}

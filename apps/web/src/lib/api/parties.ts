@@ -27,6 +27,7 @@ export interface Party {
   phone: string | null;
   location: string;
   type: PartyType;
+  credit: number;
   createdAt: string;
   updatedAt?: string;
 }
@@ -98,6 +99,7 @@ export interface PartyQueryParams {
   limit?: number;
   search?: string;
   type?: PartyType;
+  hasCredit?: boolean;
 }
 
 // Re-export pagination types for backward compatibility
