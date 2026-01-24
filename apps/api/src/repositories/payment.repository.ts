@@ -1,26 +1,30 @@
 import { prisma } from '../lib/prisma';
 import { handlePrismaError } from '../lib/database-errors';
-import type { Payment, Prisma, PaymentType, PaymentMode } from '@prisma/client';
+import type { Payment, Prisma, PaymentType, PaymentMode, PartyType } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
 export interface CreatePaymentData {
   projectId: string;
   partyId?: string;
   expenseId?: string;
+  recordedById?: string;
   type: PaymentType;
   paymentMode: PaymentMode;
   amount: number;
   paymentDate: Date;
+  referenceNumber?: string;
   notes?: string;
 }
 
 export interface UpdatePaymentData {
   partyId?: string | null;
   expenseId?: string | null;
+  recordedById?: string | null;
   type?: PaymentType;
   paymentMode?: PaymentMode;
   amount?: number;
   paymentDate?: Date;
+  referenceNumber?: string | null;
   notes?: string | null;
 }
 
@@ -31,8 +35,18 @@ export interface PaymentListOptions {
   partyId?: string;
   expenseId?: string;
   type?: PaymentType;
+  partyType?: PartyType;
   startDate?: Date;
   endDate?: Date;
+  sortBy?: 'paymentDate' | 'amount' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface ProjectPaymentSummary {
+  projectBudget: number;
+  totalReceived: number;
+  totalPending: number;
+  receivedPercentage: number;
 }
 
 // Include object for payment queries
@@ -40,6 +54,12 @@ const paymentInclude = {
   project: true,
   party: true,
   expense: true,
+  recordedBy: {
+    include: {
+      user: true,
+      role: true,
+    },
+  },
 } as const;
 
 export class PaymentRepository {
@@ -51,10 +71,12 @@ export class PaymentRepository {
           projectId: data.projectId,
           partyId: data.partyId,
           expenseId: data.expenseId,
+          recordedById: data.recordedById,
           type: data.type,
           paymentMode: data.paymentMode,
           amount: new Decimal(data.amount),
           paymentDate: data.paymentDate,
+          referenceNumber: data.referenceNumber,
           notes: data.notes,
         },
         include: paymentInclude,
@@ -89,6 +111,7 @@ export class PaymentRepository {
         ...(options?.partyId && { partyId: options.partyId }),
         ...(options?.expenseId && { expenseId: options.expenseId }),
         ...(options?.type && { type: options.type }),
+        ...(options?.partyType && { party: { type: options.partyType } }),
         ...(options?.startDate || options?.endDate
           ? {
               paymentDate: {
@@ -99,13 +122,16 @@ export class PaymentRepository {
           : {}),
       };
 
+      const sortBy = options?.sortBy || 'paymentDate';
+      const sortOrder = options?.sortOrder || 'desc';
+
       const [payments, total] = await Promise.all([
         prisma.payment.findMany({
           where,
           skip: options?.skip,
           take: options?.take,
           include: paymentInclude,
-          orderBy: { paymentDate: 'desc' },
+          orderBy: { [sortBy]: sortOrder },
         }),
         prisma.payment.count({ where }),
       ]);
@@ -122,8 +148,15 @@ export class PaymentRepository {
       const result = await prisma.payment.updateMany({
         where: { id, organizationId },
         data: {
-          ...data,
+          partyId: data.partyId,
+          expenseId: data.expenseId,
+          recordedById: data.recordedById,
+          type: data.type,
+          paymentMode: data.paymentMode,
           amount: data.amount !== undefined ? new Decimal(data.amount) : undefined,
+          paymentDate: data.paymentDate,
+          referenceNumber: data.referenceNumber,
+          notes: data.notes,
         },
       });
 
@@ -206,6 +239,182 @@ export class PaymentRepository {
         totalIn,
         totalOut,
       };
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
+
+  // Get project payment summary (for client payments tab)
+  async getProjectPaymentSummary(
+    organizationId: string,
+    projectId: string
+  ): Promise<ProjectPaymentSummary> {
+    try {
+      // Get project budget
+      const project = await prisma.project.findFirst({
+        where: { id: projectId, organizationId },
+        select: { amount: true },
+      });
+
+      const projectBudget = project?.amount?.toNumber() || 0;
+
+      // Get total received (type = IN)
+      const receivedResult = await prisma.payment.aggregate({
+        where: {
+          organizationId,
+          projectId,
+          type: 'IN',
+        },
+        _sum: { amount: true },
+      });
+
+      const totalReceived = receivedResult._sum.amount?.toNumber() || 0;
+      const totalPending = Math.max(0, projectBudget - totalReceived);
+      const receivedPercentage = projectBudget > 0 ? (totalReceived / projectBudget) * 100 : 0;
+
+      return {
+        projectBudget,
+        totalReceived,
+        totalPending,
+        receivedPercentage: Math.min(100, receivedPercentage),
+      };
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
+
+  // Get client payments for a project (type = IN)
+  async getClientPayments(
+    organizationId: string,
+    projectId: string,
+    options?: Omit<PaymentListOptions, 'projectId' | 'type'>
+  ): Promise<{ payments: Payment[]; total: number }> {
+    return this.findAll(organizationId, {
+      ...options,
+      projectId,
+      type: 'IN',
+    });
+  }
+
+  // Get party payments for a project (type = OUT)
+  async getPartyPayments(
+    organizationId: string,
+    projectId: string,
+    options?: Omit<PaymentListOptions, 'projectId' | 'type'>
+  ): Promise<{ payments: Payment[]; total: number }> {
+    return this.findAll(organizationId, {
+      ...options,
+      projectId,
+      type: 'OUT',
+    });
+  }
+
+  // Get outstanding amount for a party in a project
+  async getPartyOutstanding(
+    organizationId: string,
+    projectId: string,
+    partyId: string
+  ): Promise<number> {
+    try {
+      // Get total expenses for this party in this project
+      const expenseResult = await prisma.expense.aggregate({
+        where: {
+          organizationId,
+          projectId,
+          partyId,
+        },
+        _sum: {
+          rate: true,
+          quantity: true,
+        },
+      });
+
+      // Calculate total expense amount (sum of rate * quantity)
+      const expenses = await prisma.expense.findMany({
+        where: {
+          organizationId,
+          projectId,
+          partyId,
+        },
+        select: {
+          rate: true,
+          quantity: true,
+        },
+      });
+
+      const totalExpenses = expenses.reduce(
+        (sum, exp) => sum + exp.rate.toNumber() * exp.quantity.toNumber(),
+        0
+      );
+
+      // Get total payments to this party for this project
+      const paymentResult = await prisma.payment.aggregate({
+        where: {
+          organizationId,
+          projectId,
+          partyId,
+          type: 'OUT',
+        },
+        _sum: { amount: true },
+      });
+
+      const totalPayments = paymentResult._sum.amount?.toNumber() || 0;
+
+      return Math.max(0, totalExpenses - totalPayments);
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
+
+  // Get unpaid expenses for a party in a project (for "pay against" dropdown)
+  async getPartyUnpaidExpenses(
+    organizationId: string,
+    projectId: string,
+    partyId: string
+  ): Promise<Array<{
+    id: string;
+    description: string | null;
+    totalAmount: number;
+    paidAmount: number;
+    outstanding: number;
+    expenseDate: Date;
+  }>> {
+    try {
+      const expenses = await prisma.expense.findMany({
+        where: {
+          organizationId,
+          projectId,
+          partyId,
+        },
+        include: {
+          payments: {
+            where: { type: 'OUT' },
+            select: { amount: true },
+          },
+          expenseType: true,
+        },
+        orderBy: { expenseDate: 'desc' },
+      });
+
+      return expenses
+        .map((expense) => {
+          const totalAmount = expense.rate.toNumber() * expense.quantity.toNumber();
+          const paidAmount = expense.payments.reduce(
+            (sum, p) => sum + p.amount.toNumber(),
+            0
+          );
+          const outstanding = totalAmount - paidAmount;
+
+          return {
+            id: expense.id,
+            description: expense.description || expense.expenseType.name,
+            totalAmount,
+            paidAmount,
+            outstanding,
+            expenseDate: expense.expenseDate,
+          };
+        })
+        .filter((exp) => exp.outstanding > 0);
     } catch (error) {
       throw handlePrismaError(error);
     }

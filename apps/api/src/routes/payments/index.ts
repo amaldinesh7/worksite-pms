@@ -7,7 +7,10 @@ import {
   updatePaymentSchema,
   paymentQuerySchema,
   paymentParamsSchema,
+  projectPaymentParamsSchema,
+  partyOutstandingParamsSchema,
   summaryQuerySchema,
+  projectPaymentQuerySchema,
 } from './payment.schema';
 
 export default async function paymentRoutes(fastify: FastifyInstance) {
@@ -27,6 +30,42 @@ export default async function paymentRoutes(fastify: FastifyInstance) {
   app.get('/summary', {
     schema: { querystring: summaryQuerySchema },
     handler: controller.getPaymentsSummary,
+  });
+
+  // GET /api/payments/project/:projectId/summary - Get project payment summary
+  app.get('/project/:projectId/summary', {
+    schema: { params: projectPaymentParamsSchema },
+    handler: controller.getProjectPaymentSummary,
+  });
+
+  // GET /api/payments/project/:projectId/client - Get client payments
+  app.get('/project/:projectId/client', {
+    schema: {
+      params: projectPaymentParamsSchema,
+      querystring: projectPaymentQuerySchema,
+    },
+    handler: controller.getClientPayments,
+  });
+
+  // GET /api/payments/project/:projectId/party - Get party payments
+  app.get('/project/:projectId/party', {
+    schema: {
+      params: projectPaymentParamsSchema,
+      querystring: projectPaymentQuerySchema,
+    },
+    handler: controller.getPartyPayments,
+  });
+
+  // GET /api/payments/project/:projectId/party/:partyId/outstanding - Get party outstanding
+  app.get('/project/:projectId/party/:partyId/outstanding', {
+    schema: { params: partyOutstandingParamsSchema },
+    handler: controller.getPartyOutstanding,
+  });
+
+  // GET /api/payments/project/:projectId/party/:partyId/unpaid-expenses - Get unpaid expenses
+  app.get('/project/:projectId/party/:partyId/unpaid-expenses', {
+    schema: { params: partyOutstandingParamsSchema },
+    handler: controller.getPartyUnpaidExpenses,
   });
 
   // GET /api/payments/:id - Get payment by ID
