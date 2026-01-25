@@ -15,7 +15,7 @@ services:
     buildCommand: |
       corepack enable && 
       corepack prepare pnpm@9.15.0 --activate && 
-      HUSKY=0 pnpm install --ignore-scripts && 
+      HUSKY=0 pnpm install --ignore-scripts --prod=false && 
       pnpm db:generate && 
       pnpm db:migrate:prod &&
       pnpm build
