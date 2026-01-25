@@ -19,13 +19,16 @@ import {
   CheckCircle,
   Clock,
   PencilSimple,
+  CircleNotch,
 } from '@phosphor-icons/react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { useStagesByProject } from '@/lib/hooks/useStages';
 import type { Project, ProjectStats } from '@/lib/api/projects';
+import type { Stage, StageStatus } from '@/lib/api/stages';
 
 // ============================================
 // Types
@@ -35,6 +38,7 @@ interface ProjectOverviewTabProps {
   project: Project;
   stats: ProjectStats | undefined;
   isStatsLoading: boolean;
+  onNavigateToStages?: () => void;
 }
 
 // ============================================
@@ -95,7 +99,7 @@ function ProjectFinancialsCard({
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">Project Financials</CardTitle>
         <div className="text-right">
-          <span className="text-2xl font-bold">{formatCurrency(balance)}</span>
+          <span className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(balance)}</span>
           <span className="text-sm text-muted-foreground ml-2">Balance in Hand</span>
         </div>
       </CardHeader>
@@ -109,9 +113,9 @@ function ProjectFinancialsCard({
           <Progress value={budgetProgress} className="h-2" />
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium">
-              {formatCurrency(totalPaymentsIn)} Received / {formatCurrency(projectAmount)} Total
+              <span className="text-green-600">{formatCurrency(totalPaymentsIn)}</span> Received / {formatCurrency(projectAmount)} Total
             </span>
-            <span className="text-muted-foreground">
+            <span className="text-red-600">
               Pending: {formatCurrency(pendingAmount > 0 ? pendingAmount : 0)}
             </span>
           </div>
@@ -126,9 +130,9 @@ function ProjectFinancialsCard({
           <Progress value={expensesProgress} className="h-2 [&>div]:bg-orange-500" />
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium">
-              {formatCurrency(totalExpenses)} Paid / {formatCurrency(projectAmount)} Total
+              <span className="text-red-600">{formatCurrency(totalExpenses)}</span> Paid / {formatCurrency(projectAmount)} Total
             </span>
-            <span className="text-muted-foreground">
+            <span className={creditAmount >= 0 ? 'text-green-600' : 'text-red-600'}>
               Credit: {formatCurrency(creditAmount)}
             </span>
           </div>
@@ -186,72 +190,87 @@ function TimelineCard({ project }: { project: Project }) {
   );
 }
 
-function ProjectStagesSection() {
-  // Mock stages data - in real implementation, fetch from API
-  const stages = [
-    { id: '1', name: 'Foundation & Excavation', startDate: 'Jan 15', endDate: 'Feb 28, 2025', budget: 185000, status: 'completed' },
-    { id: '2', name: 'Structural Framework', startDate: 'Mar 1', endDate: 'Apr 15, 2025', budget: 320000, status: 'completed' },
-    { id: '3', name: 'Electrical & Plumbing', startDate: 'Apr 16', endDate: 'May 10, 2025', budget: 215000, status: 'in_progress' },
-    { id: '4', name: 'Interior Finishing', startDate: 'May 11', endDate: 'Jun 5, 2025', budget: 280000, status: 'pending' },
-    { id: '5', name: 'HVAC Installation', startDate: 'Jun 6', endDate: 'Jun 20, 2025', budget: 165000, status: 'pending' },
-  ];
+function ProjectStagesSection({ projectId, onViewAll }: { projectId: string; onViewAll: () => void }) {
+  const { data: stages = [], isLoading } = useStagesByProject(projectId);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: StageStatus) => {
     switch (status) {
-      case 'completed':
+      case 'COMPLETED':
         return <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>;
-      case 'in_progress':
+      case 'IN_PROGRESS':
         return <Badge variant="default" className="bg-blue-100 text-blue-800 hover:bg-blue-100">In Progress</Badge>;
+      case 'ON_HOLD':
+        return <Badge variant="default" className="bg-orange-100 text-orange-800 hover:bg-orange-100">On Hold</Badge>;
       default:
-        return <Badge variant="secondary">Pending</Badge>;
+        return <Badge variant="secondary">Scheduled</Badge>;
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: StageStatus) => {
     switch (status) {
-      case 'completed':
+      case 'COMPLETED':
         return <CheckCircle className="h-5 w-5 text-green-600" weight="fill" />;
-      case 'in_progress':
+      case 'IN_PROGRESS':
         return <Clock className="h-5 w-5 text-blue-600" weight="fill" />;
+      case 'ON_HOLD':
+        return <Clock className="h-5 w-5 text-orange-600" weight="fill" />;
       default:
         return <div className="h-5 w-5 rounded-full border-2 border-neutral-300" />;
     }
   };
 
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg font-semibold">Project Stages</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <CircleNotch className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">Project Stages</CardTitle>
-        <div className="flex items-center gap-2">
-          <Button variant="link" className="text-sm cursor-pointer">View all</Button>
-          <Button variant="outline" size="sm" className="cursor-pointer">
-            <Plus className="h-4 w-4 mr-1" />
-            Add stage
-          </Button>
-        </div>
+        <Button variant="link" className="text-sm cursor-pointer" onClick={onViewAll}>
+          View all
+        </Button>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          {stages.map((stage) => (
-            <div
-              key={stage.id}
-              className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-            >
-              {getStatusIcon(stage.status)}
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm">{stage.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {stage.startDate} - {stage.endDate}
+        {stages.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p>No stages created yet</p>
+            <p className="text-sm">Add stages to track project progress</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {stages.slice(0, 5).map((stage: Stage) => (
+              <div
+                key={stage.id}
+                className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+              >
+                {getStatusIcon(stage.status)}
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm">{stage.name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {format(new Date(stage.startDate), 'MMM d')} - {format(new Date(stage.endDate), 'MMM d, yyyy')}
+                  </div>
                 </div>
+                <div className="text-right">
+                  <div className="font-medium text-sm">{formatCurrency(stage.budgetAmount)}</div>
+                  <div className="text-xs text-muted-foreground">Budget</div>
+                </div>
+                {getStatusBadge(stage.status)}
               </div>
-              <div className="text-right">
-                <div className="font-medium text-sm">{formatCurrency(stage.budget)}</div>
-                <div className="text-xs text-muted-foreground">Budget</div>
-              </div>
-              {getStatusBadge(stage.status)}
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -349,7 +368,13 @@ function QuickLinksCard() {
 // Main Component
 // ============================================
 
-export function ProjectOverviewTab({ project, stats, isStatsLoading }: ProjectOverviewTabProps) {
+export function ProjectOverviewTab({ project, stats, isStatsLoading, onNavigateToStages }: ProjectOverviewTabProps) {
+  const handleViewAllStages = () => {
+    if (onNavigateToStages) {
+      onNavigateToStages();
+    }
+  };
+
   return (
     <div className="grid grid-cols-12 gap-6">
       {/* Left Column - Main Content */}
@@ -358,7 +383,7 @@ export function ProjectOverviewTab({ project, stats, isStatsLoading }: ProjectOv
         <ProjectFinancialsCard project={project} stats={stats} isLoading={isStatsLoading} />
 
         {/* Project Stages */}
-        <ProjectStagesSection />
+        <ProjectStagesSection projectId={project.id} onViewAll={handleViewAllStages} />
       </div>
 
       {/* Right Column - Sidebar */}

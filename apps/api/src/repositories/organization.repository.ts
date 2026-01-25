@@ -5,6 +5,7 @@ import type { Organization, OrganizationMember, Prisma } from '@prisma/client';
 
 export interface CreateOrganizationData {
   name: string;
+  ownerId?: string; // If provided, creates an OrganizationMember with ADMIN role
 }
 
 export interface UpdateOrganizationData {
@@ -103,6 +104,17 @@ export class OrganizationRepository {
 
         if (categoryItemData.length > 0) {
           await tx.categoryItem.createMany({ data: categoryItemData });
+        }
+
+        // 4. If ownerId is provided, add user as ADMIN member
+        if (data.ownerId) {
+          await tx.organizationMember.create({
+            data: {
+              organizationId: organization.id,
+              userId: data.ownerId,
+              role: 'ADMIN',
+            },
+          });
         }
 
         return organization;

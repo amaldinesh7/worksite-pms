@@ -94,6 +94,27 @@ export class AuthRepository {
       throw handlePrismaError(error);
     }
   }
+
+  /**
+   * Update user information
+   */
+  async updateUser(id: string, data: { name?: string; email?: string }): Promise<UserWithMembership> {
+    try {
+      return await prisma.user.update({
+        where: { id },
+        data,
+        include: {
+          memberships: {
+            include: {
+              organization: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
 }
 
 export const authRepository = new AuthRepository();

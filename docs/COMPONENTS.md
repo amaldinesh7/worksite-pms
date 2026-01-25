@@ -1,7 +1,7 @@
 # UI Architecture
 
 > Auto-generated
-> Last generated: 2026-01-22T08:21:55.889Z
+> Last generated: 2026-01-25T12:17:14.201Z
 
 ---
 

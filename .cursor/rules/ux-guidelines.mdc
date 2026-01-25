@@ -1,0 +1,179 @@
+# UX Guidelines for Worksite
+
+This document defines UX patterns and guidelines that should be followed across the product.
+
+---
+
+## 1. Search Input Behavior
+
+### Debounced Search (REQUIRED)
+
+All search inputs across the product MUST use debounced search with a 300ms delay.
+
+**Why:**
+- Prevents excessive API calls on every keystroke
+- Provides smoother user experience
+- Reduces server load
+
+**Implementation:**
+
+```tsx
+import { useDebounce } from '@/lib/hooks/useDebounce';
+
+function SearchableList() {
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearch = useDebounce(searchInput, 300);
+
+  // Use debouncedSearch for API calls
+  useEffect(() => {
+    fetchData(debouncedSearch);
+  }, [debouncedSearch]);
+
+  return (
+    <Input
+      value={searchInput}
+      onChange={(e) => setSearchInput(e.target.value)}
+      placeholder="Search..."
+    />
+  );
+}
+```
+
+**DO NOT:**
+- ❌ Trigger search on Enter key only
+- ❌ Trigger search on every keystroke without debounce
+- ❌ Use less than 300ms debounce delay
+
+---
+
+## 2. Financial Number Colors
+
+### Semantic Color Coding (REQUIRED)
+
+Financial numbers should use semantic colors to indicate positive/negative values:
+
+- **Green (`text-green-600`)**: Money coming IN (payments received, income, positive balance)
+- **Red (`text-red-600`)**: Money going OUT (expenses, payments made, pending amounts)
+- **Orange (`text-orange-600`)**: Balance amounts that need attention
+
+**Examples:**
+- Client payment received → Green
+- Party payment made → Red
+- Expenses → Red
+- Pending amount → Red
+- Balance in hand (positive) → Green
+- Balance in hand (negative) → Red
+
+---
+
+## 3. Form Validation
+
+### Required Fields
+
+- Always mark required fields with a red asterisk: `<span className="text-destructive">*</span>`
+- Phone numbers should have minimum 10 digits validation
+- Show error messages immediately below the field
+
+### Phone Number Validation
+
+Phone numbers are MANDATORY for:
+- Team members
+- Vendors
+- Labourers
+- Subcontractors
+
+---
+
+## 4. Interactive Elements
+
+### Cursor Styles
+
+- All clickable elements MUST have `cursor-pointer` class
+- Disabled buttons should NOT have `cursor-pointer`
+
+### Hover States
+
+- All interactive elements should have visible hover states
+- Use `hover:bg-accent/50` or similar for list items
+
+---
+
+## 5. Loading States
+
+### Table Loading
+
+- Show skeleton loaders during initial load
+- Show overlay spinner during refetch (to indicate data is updating)
+
+### Button Loading
+
+- Show loading spinner in button
+- Disable button during loading
+- Change button text to indicate action (e.g., "Saving..." instead of "Save")
+
+---
+
+## 6. Empty States
+
+### Required Elements
+
+- Icon or illustration
+- Title explaining the empty state
+- Description with guidance
+- Primary action button (when applicable)
+
+---
+
+## 7. Pagination
+
+### Default Limits
+
+- Tables: 10-15 items per page
+- Team directory: 10 items per page
+- Payments: 10 items per page
+
+### Pagination Position
+
+- Always show pagination at the bottom of the table
+- Pagination should be sticky when table scrolls
+
+---
+
+## 8. Dialog/Modal Guidelines
+
+### Use Cases
+
+- **Dialog**: For forms, confirmations, and focused tasks
+- **Sheet**: For side panels with additional content
+
+### DO NOT:
+
+- ❌ Use `window.prompt()` or `window.confirm()`
+- ❌ Use `alert()` for notifications (use toast instead)
+
+---
+
+## 9. Date Handling
+
+### Date Pickers
+
+- All date range pickers must have a clear button
+- Clear button should reset the date filter AND trigger a data refresh
+
+### Date Formatting
+
+- Display: `MMM d, yyyy` (e.g., "Jan 25, 2026")
+- API: ISO 8601 format
+
+---
+
+## 10. Navigation
+
+### After Login
+
+- Redirect to `/projects` page (not root `/`)
+
+### Sidebar
+
+- Organization name should be fetched from user's organization
+- Should update when organization changes

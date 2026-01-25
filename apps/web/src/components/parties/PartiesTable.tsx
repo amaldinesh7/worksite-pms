@@ -23,8 +23,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { TypographySmall, TypographyMuted } from '@/components/ui/typography';
-import { MoreHorizontal, Search, Plus, Eye, Pencil, Trash2, Users } from 'lucide-react';
+import { MoreHorizontal, Search, Plus, Eye, Pencil, Trash2, Users, MapPin } from 'lucide-react';
 import type { Party, PartyType } from '@/lib/api/parties';
+import { useDebounce } from '@/lib/hooks/useDebounce';
 
 interface PartiesTableProps {
   parties: Party[];
@@ -59,16 +60,19 @@ export function PartiesTable({
   activeTab,
 }: PartiesTableProps) {
   const [searchInput, setSearchInput] = useState(search);
+  const debouncedSearch = useDebounce(searchInput, 300);
 
   // Sync searchInput with search prop when it changes externally
   useEffect(() => {
     setSearchInput(search);
   }, [search]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearchChange(searchInput);
-  };
+  // Trigger search on debounced value change
+  useEffect(() => {
+    if (debouncedSearch !== search) {
+      onSearchChange(debouncedSearch);
+    }
+  }, [debouncedSearch, search, onSearchChange]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -146,18 +150,21 @@ export function PartiesTable({
         );
       },
     },
-    // {
-    //   accessorKey: 'projects',
-    //   header: 'Projects',
-    //   cell: () => {
-    //     // Projects count not in current schema, showing 0 for now
-    //     return (
-    //       <Badge variant="secondary" className="rounded-md">
-    //         0 Projects
-    //       </Badge>
-    //     );
-    //   },
-    // },
+    {
+      accessorKey: 'location',
+      header: 'Location',
+      cell: ({ row }) => {
+        const location = row.original.location;
+        return (
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5" />
+            <TypographySmall className="font-normal">
+              {location || '—'}
+            </TypographySmall>
+          </div>
+        );
+      },
+    },
     {
       id: 'actions',
       header: 'Actions',
@@ -212,7 +219,7 @@ export function PartiesTable({
     <div className="rounded-lg border overflow-hidden">
       {/* Search and Add Button */}
       <div className="flex items-center justify-between gap-4 bg-card  p-3">
-        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder={getSearchPlaceholder()}
@@ -220,7 +227,7 @@ export function PartiesTable({
             onChange={(e) => setSearchInput(e.target.value)}
             className="pl-9"
           />
-        </form>
+        </div>
         <Button onClick={onAddParty} className="cursor-pointer" size="sm">
           <Plus className="mr-2 h-4 w-4" />
           {getAddButtonLabel()}
@@ -264,7 +271,7 @@ export function PartiesTable({
                     <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
                   </TableCell>
                   <TableCell>
-                    <div className="h-5 w-20 bg-gray-200 rounded animate-pulse" />
+                    <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
                   </TableCell>
                   <TableCell>
                     <div className="h-8 w-8 bg-gray-200 rounded animate-pulse" />

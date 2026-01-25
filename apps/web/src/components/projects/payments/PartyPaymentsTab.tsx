@@ -355,7 +355,7 @@ export function PartyPaymentsTab({ projectId }: PartyPaymentsTabProps) {
                   <TableCell className="text-sm">
                     {format(new Date(payment.paymentDate), 'MMM d, yyyy')}
                   </TableCell>
-                  <TableCell className="text-right font-medium">
+                  <TableCell className="text-right font-medium text-red-600">
                     {formatCurrency(Number(payment.amount))}
                   </TableCell>
                   <TableCell className="text-sm font-medium">

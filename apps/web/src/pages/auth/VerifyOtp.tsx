@@ -12,10 +12,12 @@ import { OtpInput, OTP_LENGTH } from '@/components/auth/OtpInput';
 import { useAuthStore } from '@/stores/auth.store';
 
 const RESEND_COOLDOWN = 30;
+// India country code - hardcoded for now
+const COUNTRY_CODE = '+91';
 
 export default function VerifyOtp() {
   const navigate = useNavigate();
-  const { phoneNumber, countryCode, loginSuccess, setStep } = useAuthStore();
+  const { phoneNumber, loginSuccess, setStep } = useAuthStore();
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [error, setError] = useState<string | null>(null);
   const [resendTimer, setResendTimer] = useState(RESEND_COOLDOWN);
@@ -48,7 +50,7 @@ export default function VerifyOtp() {
 
     setError(null);
 
-    const result = await verifyOtpMutation.mutateAsync({ phone: phoneNumber, code, countryCode });
+    const result = await verifyOtpMutation.mutateAsync({ phone: phoneNumber, code, countryCode: COUNTRY_CODE });
 
     if (result.success && result.data) {
       // Store user, organization, role, and token
@@ -58,7 +60,14 @@ export default function VerifyOtp() {
         role: result.data.role,
         accessToken: result.data.accessToken,
       });
-      navigate('/');
+      // Redirect based on organization status
+      if (result.data.organization) {
+        // User has organization - go to projects
+        navigate('/projects');
+      } else {
+        // New user without organization - go to onboarding
+        navigate('/auth/onboarding');
+      }
     } else {
       setError(result.error?.message || 'Invalid OTP');
       setOtp(Array(OTP_LENGTH).fill(''));
@@ -68,7 +77,7 @@ export default function VerifyOtp() {
   const handleResendOtp = async () => {
     if (resendTimer > 0) return;
 
-    const result = await sendOtpMutation.mutateAsync({ phone: phoneNumber, countryCode });
+    const result = await sendOtpMutation.mutateAsync({ phone: phoneNumber, countryCode: COUNTRY_CODE });
 
     if (result.success) {
       setResendTimer(RESEND_COOLDOWN);
@@ -95,7 +104,7 @@ export default function VerifyOtp() {
   };
 
   const isLoading = verifyOtpMutation.isPending || sendOtpMutation.isPending;
-  const displayPhone = `${countryCode} ${phoneNumber}`;
+  const displayPhone = `${COUNTRY_CODE} ${phoneNumber}`;
 
   return (
     <AuthCard

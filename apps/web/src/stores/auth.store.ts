@@ -46,6 +46,8 @@ interface AuthState {
     role: UserRole | null;
     accessToken: string;
   }) => void;
+  setOrganization: (organization: Organization) => void;
+  updateUser: (userData: Partial<User>) => void;
   logoutUser: () => void;
 }
 
@@ -82,6 +84,22 @@ export const useAuthStore = create<AuthState>()(
         }),
 
       /**
+       * Set organization after onboarding
+       */
+      setOrganization: (organization) =>
+        set({
+          organization,
+        }),
+
+      /**
+       * Update user info (e.g., after onboarding)
+       */
+      updateUser: (userData) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...userData } : null,
+        })),
+
+      /**
        * Clear all auth state and redirect to login.
        */
       logoutUser: () =>
@@ -96,7 +114,7 @@ export const useAuthStore = create<AuthState>()(
         }),
     }),
     {
-      name: 'auth-storage',
+      name: 'worksite-auth-storage',
       // Persist everything needed for auth
       partialize: (state) => ({
         user: state.user,

@@ -20,7 +20,8 @@ import {
   Stack,
   FileText,
   ChartBar,
-  ChartLine,
+  Receipt,
+  Scales,
 } from '@phosphor-icons/react';
 
 import { PageContent, Header } from '@/components/layout';
@@ -36,6 +37,8 @@ import { ProjectOverviewTab } from '@/components/projects/overview/ProjectOvervi
 import { ProjectExpensesTab } from '@/components/projects/expenses/ProjectExpensesTab';
 import { ProjectPaymentsTab } from '@/components/projects/payments';
 import { ProjectStagesTab } from '@/components/projects/stages';
+import { ProjectBOQTab } from '@/components/projects/boq';
+import { ProjectPLTab } from '@/components/projects/pl';
 
 // ============================================
 // Component
@@ -114,7 +117,7 @@ export default function ProjectDetailPage() {
   // Loading state
   if (isProjectLoading) {
     return (
-      <PageContent className="overflow-hidden min-h-0">
+      <PageContent>
         <div className="h-6 w-48 bg-neutral-100 rounded animate-pulse mb-4" />
         <div className="h-8 w-64 bg-neutral-100 rounded animate-pulse mb-6" />
         <div className="h-12 w-full bg-neutral-100 rounded animate-pulse mb-6" />
@@ -150,12 +153,12 @@ export default function ProjectDetailPage() {
   return (
     <>
       <Header title={project.name} />
-      <PageContent className="overflow-hidden min-h-0 pt-2">
+      <PageContent className="pt-2">
         {/* Breadcrumb */}
         {/* <Breadcrumb items={breadcrumbItems} className="mb-2" /> */}
 
         {/* Tabs */}
-        <SecondaryTabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+        <SecondaryTabs value={activeTab} onValueChange={setActiveTab}>
           <SecondaryTabsList>
             <SecondaryTabsTrigger value="overview" icon={House}>
               Overview
@@ -169,14 +172,17 @@ export default function ProjectDetailPage() {
             <SecondaryTabsTrigger value="stages" icon={Stack}>
               Stages
             </SecondaryTabsTrigger>
+            <SecondaryTabsTrigger value="boq" icon={Receipt}>
+              Budget & BOQ
+            </SecondaryTabsTrigger>
+            <SecondaryTabsTrigger value="pl" icon={Scales}>
+              P&L
+            </SecondaryTabsTrigger>
             <SecondaryTabsTrigger value="documents" icon={FileText}>
               Documents
             </SecondaryTabsTrigger>
             <SecondaryTabsTrigger value="reports" icon={ChartBar}>
               Reports
-            </SecondaryTabsTrigger>
-            <SecondaryTabsTrigger value="analytics" icon={ChartLine}>
-              Analytics
             </SecondaryTabsTrigger>
           </SecondaryTabsList>
 
@@ -185,6 +191,7 @@ export default function ProjectDetailPage() {
               project={project}
               stats={stats}
               isStatsLoading={isStatsLoading}
+              onNavigateToStages={() => setActiveTab('stages')}
             />
           </SecondaryTabsContent>
 
@@ -206,6 +213,14 @@ export default function ProjectDetailPage() {
             <ProjectStagesTab projectId={project.id} />
           </SecondaryTabsContent>
 
+          <SecondaryTabsContent value="boq" className="mt-6">
+            <ProjectBOQTab projectId={project.id} />
+          </SecondaryTabsContent>
+
+          <SecondaryTabsContent value="pl" className="mt-6">
+            <ProjectPLTab projectId={project.id} />
+          </SecondaryTabsContent>
+
           <SecondaryTabsContent value="documents" className="mt-6">
             <div className="flex items-center justify-center h-64 text-muted-foreground">
               Documents tab coming soon
@@ -215,12 +230,6 @@ export default function ProjectDetailPage() {
           <SecondaryTabsContent value="reports" className="mt-6">
             <div className="flex items-center justify-center h-64 text-muted-foreground">
               Reports tab coming soon
-            </div>
-          </SecondaryTabsContent>
-
-          <SecondaryTabsContent value="analytics" className="mt-6">
-            <div className="flex items-center justify-center h-64 text-muted-foreground">
-              Analytics tab coming soon
             </div>
           </SecondaryTabsContent>
         </SecondaryTabs>

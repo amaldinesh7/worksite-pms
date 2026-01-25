@@ -9,15 +9,24 @@ import { useSendOtp } from '@worksite/data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AuthCard } from '@/components/auth/AuthCard';
-import { CountryCodeSelect } from '@/components/auth/CountryCodeSelect';
 import { useAuthStore } from '@/stores/auth.store';
+
+// India country code - hardcoded for now, will expand later
+const COUNTRY_CODE = '+91';
 
 export default function PhoneInput() {
   const navigate = useNavigate();
-  const { phoneNumber, countryCode, setPhoneNumber, setCountryCode, setStep } = useAuthStore();
+  const { phoneNumber, setPhoneNumber, setStep } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
 
   const sendOtpMutation = useSendOtp();
+
+  const validatePhoneNumber = (phone: string): boolean => {
+    // Remove spaces and non-digits for validation
+    const digits = phone.replace(/\D/g, '');
+    // Indian phone numbers should be exactly 10 digits
+    return digits.length === 10;
+  };
 
   const handleSendOtp = async () => {
     if (!phoneNumber.trim()) {
@@ -25,9 +34,20 @@ export default function PhoneInput() {
       return;
     }
 
+    if (!validatePhoneNumber(phoneNumber)) {
+      setError('Please enter a valid 10-digit phone number');
+      return;
+    }
+
     setError(null);
 
-    const result = await sendOtpMutation.mutateAsync({ phone: phoneNumber, countryCode });
+    // Normalize phone number by stripping all non-digit characters before sending
+    const normalizedPhone = phoneNumber.replace(/\D/g, '');
+
+    const result = await sendOtpMutation.mutateAsync({
+      phone: normalizedPhone,
+      countryCode: COUNTRY_CODE,
+    });
 
     if (result.success) {
       setStep('otp');
@@ -42,6 +62,38 @@ export default function PhoneInput() {
     if (digits.length <= 3) return digits;
     if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
     return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 10)}`;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPhoneNumber(formatPhoneNumber(e.target.value));
+    // Clear error when user starts typing
+    if (error) setError(null);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow: backspace, delete, tab, escape, enter, arrows
+    if (
+      [
+        'Backspace',
+        'Delete',
+        'Tab',
+        'Escape',
+        'Enter',
+        'ArrowLeft',
+        'ArrowRight',
+        'ArrowUp',
+        'ArrowDown',
+      ].includes(e.key) ||
+      // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+      (e.ctrlKey && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase())) ||
+      (e.metaKey && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase()))
+    ) {
+      return;
+    }
+    // Block non-numeric keys
+    if (!/^\d$/.test(e.key)) {
+      e.preventDefault();
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -70,17 +122,17 @@ export default function PhoneInput() {
             Phone Number
           </label>
           <div className="flex mt-2">
-            <CountryCodeSelect
-              value={countryCode}
-              onValueChange={setCountryCode}
-              disabled={sendOtpMutation.isPending}
-            />
+            {/* Fixed Country Code Display */}
+            <div className="flex items-center justify-center px-3 border border-r-0 rounded-l-md bg-muted text-muted-foreground text-sm min-w-[60px]">
+              {COUNTRY_CODE}
+            </div>
             <Input
               id="phone"
               type="tel"
               placeholder="701 229 0437"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+              onChange={handlePhoneChange}
+              onKeyDown={handleKeyDown}
               maxLength={12}
               disabled={sendOtpMutation.isPending}
               className="flex-1 rounded-l-none"

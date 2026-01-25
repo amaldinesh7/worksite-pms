@@ -244,13 +244,13 @@ export function ClientPaymentsTab({ projectId }: ClientPaymentsTabProps) {
               {/* Payment Received */}
               <div className="flex-1 rounded-md border bg-muted/30 p-3">
                 <p className="text-xs text-muted-foreground mb-1">Payment received</p>
-                <p className="text-lg font-semibold">{formatCurrency(summary?.totalReceived ?? 0)}</p>
+                <p className="text-lg font-semibold text-green-600">{formatCurrency(summary?.totalReceived ?? 0)}</p>
               </div>
 
               {/* Pending */}
               <div className="flex-1 rounded-md border bg-muted/30 p-3">
                 <p className="text-xs text-muted-foreground mb-1">Pending</p>
-                <p className="text-lg font-semibold">{formatCurrency(summary?.totalPending ?? 0)}</p>
+                <p className={`text-lg font-semibold ${(summary?.totalPending ?? 0) > 0 ? 'text-amber-600' : ''}`}>{formatCurrency(summary?.totalPending ?? 0)}</p>
               </div>
             </div>
           </>
@@ -367,7 +367,7 @@ export function ClientPaymentsTab({ projectId }: ClientPaymentsTabProps) {
                   <TableCell className="text-sm">
                     {format(new Date(payment.paymentDate), 'MMM d, yyyy')}
                   </TableCell>
-                  <TableCell className="text-right font-medium">
+                  <TableCell className="text-right font-medium text-green-600">
                     {formatCurrency(Number(payment.amount))}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
