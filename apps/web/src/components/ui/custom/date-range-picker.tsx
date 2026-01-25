@@ -230,7 +230,7 @@ export function DateRangePicker({
   initialCompareFrom,
   initialCompareTo,
   align = 'end',
-  locale = 'en-US',
+  locale: _locale = 'en-US',
   showCompare = false,
   className,
   isClearable = false,

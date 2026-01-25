@@ -45,11 +45,11 @@ const taskFormSchema = z.object({
   description: z.string().optional(),
   daysAllocated: z.coerce.number().int().min(1, 'Days allocated must be at least 1'),
   status: z.enum(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD', 'BLOCKED']),
-  memberIds: z.array(z.string()).default([]),
-  assignLabour: z.boolean().default(false),
-  assignSubcontractor: z.boolean().default(false),
-  labourIds: z.array(z.string()).default([]),
-  subcontractorIds: z.array(z.string()).default([]),
+  memberIds: z.array(z.string()),
+  assignLabour: z.boolean(),
+  assignSubcontractor: z.boolean(),
+  labourIds: z.array(z.string()),
+  subcontractorIds: z.array(z.string()),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;

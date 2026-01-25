@@ -29,11 +29,12 @@ export interface MultiSelectOption {
   label: string;
 }
 
-interface MultiSelectProps {
+export interface MultiSelectProps {
   options: MultiSelectOption[];
   selected: string[];
   onChange: (selected: string[]) => void;
   placeholder?: string;
+  searchPlaceholder?: string;
   emptyMessage?: string;
   className?: string;
   disabled?: boolean;
@@ -48,6 +49,7 @@ export function MultiSelect({
   selected,
   onChange,
   placeholder = 'Select items...',
+  searchPlaceholder = 'Search...',
   emptyMessage = 'No items found.',
   className,
   disabled = false,
@@ -66,10 +68,6 @@ export function MultiSelect({
     e.stopPropagation();
     onChange(selected.filter((item) => item !== value));
   };
-
-  const selectedLabels = selected
-    .map((value) => options.find((opt) => opt.value === value)?.label)
-    .filter(Boolean);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -122,7 +120,7 @@ export function MultiSelect({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
         <Command>
-          <CommandInput placeholder="Search..." />
+          <CommandInput placeholder={searchPlaceholder} />
           <CommandList>
             <CommandEmpty>{emptyMessage}</CommandEmpty>
             <CommandGroup>

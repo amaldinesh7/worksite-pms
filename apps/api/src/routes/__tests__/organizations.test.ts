@@ -11,9 +11,34 @@ describe('Organizations API', () => {
 
   const getUniquePhone = () => `+1${Date.now()}${++testCounter}`;
 
+  /**
+   * Helper to create or get a role ID for an organization
+   */
+  const getOrCreateRoleId = async (organizationId: string, roleName: string): Promise<string> => {
+    let role = await prisma.role.findUnique({
+      where: {
+        organizationId_name: { organizationId, name: roleName },
+      },
+    });
+
+    if (!role) {
+      role = await prisma.role.create({
+        data: {
+          organizationId,
+          name: roleName,
+          description: `${roleName} role`,
+          isSystemRole: true,
+        },
+      });
+    }
+
+    return role.id;
+  };
+
   // Helper to clean up test data
   const cleanupTestData = async () => {
     await prisma.organizationMember.deleteMany();
+    await prisma.role.deleteMany();
     await prisma.user.deleteMany();
     await prisma.organization.deleteMany();
   };
@@ -226,7 +251,8 @@ describe('Organizations API', () => {
       expect(res.statusCode).toBe(201);
       const body = res.json();
       expect(body.data.userId).toBe(testUserId);
-      expect(body.data.role).toBe('ADMIN');
+      // Role is now a relation, so we check role.name
+      expect(body.data.role?.name || body.data.role).toBe('ADMIN');
     });
 
     it('should reject duplicate membership', async () => {
@@ -262,11 +288,13 @@ describe('Organizations API', () => {
       });
       testOrgId = org.id;
 
+      // Create role and member
+      const roleId = await getOrCreateRoleId(testOrgId, 'ADMIN');
       await prisma.organizationMember.create({
         data: {
           organizationId: testOrgId,
           userId: testUserId,
-          role: 'ADMIN',
+          roleId,
         },
       });
     });
@@ -298,11 +326,13 @@ describe('Organizations API', () => {
       });
       testOrgId = org.id;
 
+      // Create role and member
+      const roleId = await getOrCreateRoleId(testOrgId, 'ADMIN');
       await prisma.organizationMember.create({
         data: {
           organizationId: testOrgId,
           userId: testUserId,
-          role: 'ADMIN',
+          roleId,
         },
       });
     });
@@ -316,7 +346,8 @@ describe('Organizations API', () => {
 
       expect(res.statusCode).toBe(200);
       const body = res.json();
-      expect(body.data.role).toBe('ACCOUNTANT');
+      // Role is now a relation, so we check role.name
+      expect(body.data.role?.name || body.data.role).toBe('ACCOUNTANT');
     });
   });
 
@@ -334,11 +365,13 @@ describe('Organizations API', () => {
       });
       testOrgId = org.id;
 
+      // Create role and member
+      const roleId = await getOrCreateRoleId(testOrgId, 'ADMIN');
       await prisma.organizationMember.create({
         data: {
           organizationId: testOrgId,
           userId: testUserId,
-          role: 'ADMIN',
+          roleId,
         },
       });
     });

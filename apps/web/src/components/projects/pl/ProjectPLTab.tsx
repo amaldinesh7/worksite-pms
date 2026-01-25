@@ -153,7 +153,7 @@ export function ProjectPLTab({ projectId }: ProjectPLTabProps) {
             <Receipt className="h-4 w-4" />
             <span>Total Revenue</span>
           </div>
-          <div className="text-2xl font-semibold">{formatCurrency(plData.totalRevenue)}</div>
+          <div className="text-2xl font-semibold numeric">{formatCurrency(plData.totalRevenue)}</div>
           <div className="text-xs text-muted-foreground">Based on quoted BOQ</div>
         </div>
 
@@ -163,8 +163,8 @@ export function ProjectPLTab({ projectId }: ProjectPLTabProps) {
             <CurrencyDollar className="h-4 w-4" />
             <span>Total Costs</span>
           </div>
-          <div className="text-2xl font-semibold">{formatCurrency(plData.totalCosts)}</div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-2xl font-semibold numeric">{formatCurrency(plData.totalCosts)}</div>
+          <div className="text-xs text-muted-foreground numeric">
             {formatPercent(plData.budgetUsage)} of budget used
           </div>
         </div>
@@ -180,7 +180,7 @@ export function ProjectPLTab({ projectId }: ProjectPLTabProps) {
             <span>Gross Profit</span>
           </div>
           <div className={cn(
-            'text-2xl font-semibold',
+            'text-2xl font-semibold numeric',
             isProfitable ? 'text-green-600' : 'text-red-600'
           )}>
             {isProfitable ? '+' : ''}{formatCurrency(plData.grossProfit)}
@@ -196,10 +196,10 @@ export function ProjectPLTab({ projectId }: ProjectPLTabProps) {
             <Wallet className="h-4 w-4" />
             <span>Gross Margin</span>
           </div>
-          <div className="text-2xl font-semibold">{formatPercent(plData.grossMargin)}</div>
+          <div className="text-2xl font-semibold numeric">{formatPercent(plData.grossMargin)}</div>
           <div className="flex items-center gap-2">
             <span className={cn(
-              'text-xs px-2 py-0.5 rounded-full',
+              'text-xs px-2 py-0.5 rounded-full numeric',
               isHealthy ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
             )}>
               {isHealthy ? 'Healthy' : 'At Risk'}
@@ -242,9 +242,9 @@ export function ProjectPLTab({ projectId }: ProjectPLTabProps) {
                       </span>
                     </div>
                     <div className="text-right">
-                      <div className="font-medium">{formatCurrency(data.actual)}</div>
+                      <div className="font-medium amount">{formatCurrency(data.actual)}</div>
                       <div className={cn(
-                        'text-xs',
+                        'text-xs amount',
                         isOverBudget ? 'text-red-600' : 'text-green-600'
                       )}>
                         {isOverBudget ? '' : '+'}{formatCurrency(variance)} vs quoted
@@ -259,7 +259,7 @@ export function ProjectPLTab({ projectId }: ProjectPLTabProps) {
                       style={{ width: `${Math.min(percentOfTotal, 100)}%` }}
                     />
                   </div>
-                  <div className="text-xs text-muted-foreground text-right">
+                  <div className="text-xs text-muted-foreground text-right numeric">
                     {formatPercent(percentOfTotal)} of total costs
                   </div>
                 </div>
@@ -286,18 +286,18 @@ export function ProjectPLTab({ projectId }: ProjectPLTabProps) {
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2 border-b">
                 <span className="text-muted-foreground">Quoted Revenue</span>
-                <span className="font-semibold">{formatCurrency(plData.totalRevenue)}</span>
+                <span className="font-semibold amount">{formatCurrency(plData.totalRevenue)}</span>
               </div>
               <div className="flex items-center justify-between py-2 border-b">
                 <span className="text-muted-foreground">Client Payments Received</span>
-                <span className="font-semibold text-green-600">
+                <span className="font-semibold text-green-600 amount">
                   {formatCurrency(plData.clientPaymentsIn)}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2 border-b">
                 <span className="text-muted-foreground">Outstanding from Client</span>
                 <span className={cn(
-                  'font-semibold',
+                  'font-semibold amount',
                   plData.outstandingFromClient > 0 ? 'text-amber-600' : 'text-green-600'
                 )}>
                   {formatCurrency(plData.outstandingFromClient)}
@@ -309,7 +309,7 @@ export function ProjectPLTab({ projectId }: ProjectPLTabProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Collection Progress</span>
-                <span className="font-medium">
+                <span className="font-medium numeric">
                   {plData.totalRevenue > 0
                     ? formatPercent((plData.clientPaymentsIn / plData.totalRevenue) * 100)
                     : '0%'}
@@ -337,13 +337,13 @@ export function ProjectPLTab({ projectId }: ProjectPLTabProps) {
             )}>
               <div className="text-sm text-muted-foreground mb-1">Net Position</div>
               <div className={cn(
-                'text-xl font-semibold',
+                'text-xl font-semibold amount',
                 isProfitable ? 'text-green-700' : 'text-red-700'
               )}>
                 {isProfitable ? 'Profit: ' : 'Loss: '}
                 {formatCurrency(Math.abs(plData.grossProfit))}
               </div>
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="text-xs text-muted-foreground mt-1 numeric">
                 {isProfitable
                   ? `${formatPercent(plData.grossMargin)} margin on quoted revenue`
                   : 'Costs exceed quoted revenue'}
@@ -385,17 +385,17 @@ export function ProjectPLTab({ projectId }: ProjectPLTabProps) {
                         <span className="font-medium">{config.label}</span>
                       </div>
                     </td>
-                    <td className="text-right py-3 px-4">{formatCurrency(data.quoted)}</td>
-                    <td className="text-right py-3 px-4">{formatCurrency(data.actual)}</td>
+                    <td className="text-right py-3 px-4 amount">{formatCurrency(data.quoted)}</td>
+                    <td className="text-right py-3 px-4 amount">{formatCurrency(data.actual)}</td>
                     <td className={cn(
-                      'text-right py-3 px-4 font-medium',
+                      'text-right py-3 px-4 font-medium amount',
                       isOverBudget ? 'text-red-600' : 'text-green-600'
                     )}>
                       {isOverBudget ? '' : '+'}{formatCurrency(variance)}
                     </td>
                     <td className="text-right py-3 px-4">
                       <span className={cn(
-                        'px-2 py-0.5 rounded-full text-xs',
+                        'px-2 py-0.5 rounded-full text-xs numeric',
                         percentUsed > 100 ? 'bg-red-100 text-red-700' :
                         percentUsed > 80 ? 'bg-amber-100 text-amber-700' :
                         'bg-green-100 text-green-700'
@@ -410,17 +410,17 @@ export function ProjectPLTab({ projectId }: ProjectPLTabProps) {
               {/* Total Row */}
               <tr className="bg-muted/50 font-semibold">
                 <td className="py-3 px-4">Total</td>
-                <td className="text-right py-3 px-4">{formatCurrency(plData.totalRevenue)}</td>
-                <td className="text-right py-3 px-4">{formatCurrency(plData.totalCosts)}</td>
+                <td className="text-right py-3 px-4 amount">{formatCurrency(plData.totalRevenue)}</td>
+                <td className="text-right py-3 px-4 amount">{formatCurrency(plData.totalCosts)}</td>
                 <td className={cn(
-                  'text-right py-3 px-4',
+                  'text-right py-3 px-4 amount',
                   isProfitable ? 'text-green-600' : 'text-red-600'
                 )}>
                   {isProfitable ? '+' : ''}{formatCurrency(plData.grossProfit)}
                 </td>
                 <td className="text-right py-3 px-4">
                   <span className={cn(
-                    'px-2 py-0.5 rounded-full text-xs',
+                    'px-2 py-0.5 rounded-full text-xs numeric',
                     plData.budgetUsage > 100 ? 'bg-red-100 text-red-700' :
                     plData.budgetUsage > 80 ? 'bg-amber-100 text-amber-700' :
                     'bg-green-100 text-green-700'

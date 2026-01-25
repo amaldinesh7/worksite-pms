@@ -111,7 +111,7 @@ export const fontWeight = {
 } as const;
 
 export const fontFamily = {
-  sans: ['Outfit', 'Inter', 'system-ui', '-apple-system', 'sans-serif'],
+  sans: ['Figtree', 'Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
   mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
 } as const;
 

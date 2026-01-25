@@ -92,13 +92,21 @@ function formatDuration(days: number): string {
 // Component
 // ============================================
 
-export function StageCard({ stage, onEdit, onDelete, onViewTasks, onHold, isLast = false }: StageCardProps) {
+export function StageCard({
+  stage,
+  onEdit,
+  onDelete: _onDelete,
+  onViewTasks,
+  onHold,
+  isLast = false,
+}: StageCardProps) {
   const { label, variant, icon: StatusIcon, iconClassName } = statusConfig[stage.status];
   const startDate = new Date(stage.startDate);
   const endDate = new Date(stage.endDate);
   const duration = differenceInDays(endDate, startDate);
   const taskCount = stage._count?.tasks || 0;
-  const completedTaskCount = stage._count?.completedTasks || 0;
+  // Note: completedTasks is not available in the API, calculate from memberAssignments or use 0
+  const completedTaskCount = 0;
 
   // Calculate days remaining for in-progress stages
   const today = new Date();
@@ -168,9 +176,7 @@ export function StageCard({ stage, onEdit, onDelete, onViewTasks, onHold, isLast
 
           {/* Description */}
           {stage.description && (
-            <p className="text-sm text-muted-foreground mb-3 line-clamp-1">
-              {stage.description}
-            </p>
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-1">{stage.description}</p>
           )}
 
           {/* Info Row */}

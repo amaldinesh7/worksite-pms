@@ -52,8 +52,8 @@ const stageFormSchema = z
     budgetAmount: z.coerce.number().min(0, 'Budget must be non-negative'),
     weight: z.coerce.number().min(0).max(100, 'Weight must be between 0 and 100'),
     status: z.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD']),
-    memberIds: z.array(z.string()).default([]),
-    partyIds: z.array(z.string()).default([]),
+    memberIds: z.array(z.string()),
+    partyIds: z.array(z.string()),
   })
   .refine((data) => data.startDate <= data.endDate, {
     message: 'End date must be after or equal to start date',

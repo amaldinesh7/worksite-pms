@@ -2,12 +2,13 @@
 
 import { prisma } from '../lib/prisma';
 import { handlePrismaError } from '../lib/database-errors';
-import type { User, Organization, OrganizationMember } from '@prisma/client';
+import type { User, Organization, OrganizationMember, Role } from '@prisma/client';
 
-// Type for user with organization membership
+// Type for user with organization membership including role
 export type UserWithMembership = User & {
   memberships: (OrganizationMember & {
     organization: Organization;
+    role: Role;
   })[];
 };
 
@@ -23,6 +24,7 @@ export class AuthRepository {
           memberships: {
             include: {
               organization: true,
+              role: true,
             },
           },
         },
@@ -43,6 +45,7 @@ export class AuthRepository {
           memberships: {
             include: {
               organization: true,
+              role: true,
             },
           },
         },
@@ -66,6 +69,7 @@ export class AuthRepository {
           memberships: {
             include: {
               organization: true,
+              role: true,
             },
           },
         },
@@ -98,7 +102,10 @@ export class AuthRepository {
   /**
    * Update user information
    */
-  async updateUser(id: string, data: { name?: string; email?: string }): Promise<UserWithMembership> {
+  async updateUser(
+    id: string,
+    data: { name?: string; email?: string }
+  ): Promise<UserWithMembership> {
     try {
       return await prisma.user.update({
         where: { id },
@@ -107,6 +114,7 @@ export class AuthRepository {
           memberships: {
             include: {
               organization: true,
+              role: true,
             },
           },
         },

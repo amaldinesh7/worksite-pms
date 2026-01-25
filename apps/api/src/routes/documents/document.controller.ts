@@ -65,14 +65,13 @@ export const listDocuments = handle(
       prisma.document.count({ where }),
     ]);
 
-    // Add compression ratio to response
-    const documentsWithRatio = documents.map((doc) => ({
+    // Format response
+    const documentsFormatted = documents.map((doc) => ({
       ...doc,
-      compressionRatio: doc.originalSize > 0 ? doc.originalSize / doc.compressedSize : 1,
       uploadedAt: doc.uploadedAt.toISOString(),
     }));
 
-    return sendPaginated(reply, documentsWithRatio, buildPagination(page, limit, total));
+    return sendPaginated(reply, documentsFormatted, buildPagination(page, limit, total));
   }
 );
 
@@ -100,8 +99,6 @@ export const getDocument = handle(
 
     return sendSuccess(reply, {
       ...document,
-      compressionRatio:
-        document.originalSize > 0 ? document.originalSize / document.compressedSize : 1,
       uploadedAt: document.uploadedAt.toISOString(),
     });
   }
@@ -209,8 +206,6 @@ export const uploadDocument = handle(
         fileUrl: uploadResult.publicUrl,
         storagePath: uploadResult.path,
         mimeType: compressionResult.mimeType,
-        originalSize: compressionResult.originalSize,
-        compressedSize: compressionResult.compressedSize,
       },
     });
 
@@ -218,7 +213,6 @@ export const uploadDocument = handle(
       reply,
       {
         ...document,
-        compressionRatio: compressionResult.compressionRatio,
         uploadedAt: document.uploadedAt.toISOString(),
         compression: {
           originalSize: compressionResult.originalSize,

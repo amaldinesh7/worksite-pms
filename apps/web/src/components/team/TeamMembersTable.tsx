@@ -97,7 +97,7 @@ function formatPhoneNumber(phone: string | null): string {
 
 export function TeamMembersTable({
   members,
-  roles,
+  roles: _roles,
   onEditMember,
   onDeleteMember,
 }: TeamMembersTableProps) {

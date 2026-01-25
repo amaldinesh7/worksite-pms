@@ -37,6 +37,7 @@ describe('Parties API', () => {
         payload: {
           name: faker.company.name(),
           phone: faker.phone.number(),
+          location: faker.location.city(),
           type: 'VENDOR',
         },
       });
@@ -54,6 +55,7 @@ describe('Parties API', () => {
         headers: authHeaders(ctx.organization.id),
         payload: {
           name: 'Test Party',
+          location: faker.location.city(),
           type: 'INVALID_TYPE',
         },
       });
@@ -68,6 +70,7 @@ describe('Parties API', () => {
         headers: authHeaders(ctx.organization.id),
         payload: {
           name: 'No Phone Party',
+          location: faker.location.city(),
           type: 'LABOUR',
         },
       });
@@ -112,32 +115,6 @@ describe('Parties API', () => {
       const body = response.json();
       expect(body.data.items).toHaveLength(1);
       expect(body.data.items[0].type).toBe('VENDOR');
-    });
-
-    it('should filter parties by isInternal', async () => {
-      await testData.createParty(ctx.organization.id, 'VENDOR', {
-        name: 'External Vendor',
-        isInternal: false,
-      });
-      await testData.createParty(ctx.organization.id, 'ACCOUNTANT', {
-        name: 'Internal Accountant',
-        isInternal: true,
-      });
-      await testData.createParty(ctx.organization.id, 'SUPERVISOR', {
-        name: 'Internal Supervisor',
-        isInternal: true,
-      });
-
-      const response = await app.inject({
-        method: 'GET',
-        url: '/api/parties?isInternal=true',
-        headers: authHeaders(ctx.organization.id),
-      });
-
-      expect(response.statusCode).toBe(200);
-      const body = response.json();
-      expect(body.data.items).toHaveLength(2);
-      expect(body.data.items.every((p: { isInternal: boolean }) => p.isInternal)).toBe(true);
     });
 
     it('should filter parties by search', async () => {

@@ -125,7 +125,7 @@ export function useDeleteStage() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, projectId }: { id: string; projectId: string }) => deleteStage(id),
+    mutationFn: ({ id }: { id: string; projectId: string }) => deleteStage(id),
     onSuccess: (_, { projectId }) => {
       queryClient.invalidateQueries({ queryKey: stageKeys.lists() });
       queryClient.invalidateQueries({ queryKey: stageKeys.byProject(projectId) });

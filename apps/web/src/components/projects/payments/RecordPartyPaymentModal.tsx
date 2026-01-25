@@ -37,7 +37,12 @@ import {
 import { DatePicker } from '@/components/ui/custom/date-picker';
 import { cn } from '@/lib/utils';
 import { useParties } from '@/lib/hooks/useParties';
-import { useCreatePayment, useUpdatePayment, usePartyOutstanding, usePartyUnpaidExpenses } from '@/lib/hooks/usePayments';
+import {
+  useCreatePayment,
+  useUpdatePayment,
+  usePartyOutstanding,
+  usePartyUnpaidExpenses,
+} from '@/lib/hooks/usePayments';
 import type { PaymentMode, Payment } from '@/lib/api/payments';
 
 // ============================================
@@ -153,7 +158,6 @@ export function RecordPartyPaymentModal({
     control,
     reset,
     watch,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<PaymentFormData>({
     resolver: zodResolver(paymentFormSchema),
@@ -271,9 +275,7 @@ export function RecordPartyPaymentModal({
                 </Select>
               )}
             />
-            {errors.partyId && (
-              <p className="text-sm text-destructive">{errors.partyId.message}</p>
-            )}
+            {errors.partyId && <p className="text-sm text-destructive">{errors.partyId.message}</p>}
           </div>
 
           {/* Outstanding Amount Display */}
@@ -329,9 +331,7 @@ export function RecordPartyPaymentModal({
                 {...register('amount')}
               />
             </div>
-            {errors.amount && (
-              <p className="text-sm text-destructive">{errors.amount.message}</p>
-            )}
+            {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
           </div>
 
           {/* Date */}
