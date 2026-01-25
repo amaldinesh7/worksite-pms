@@ -15,7 +15,7 @@ services:
     buildCommand: |
       corepack enable && 
       corepack prepare pnpm@9.15.0 --activate && 
-      pnpm install && 
+      HUSKY=0 pnpm install --ignore-scripts && 
       pnpm db:generate && 
       pnpm build
     startCommand: node dist/index.js
