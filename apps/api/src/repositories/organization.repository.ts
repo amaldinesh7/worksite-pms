@@ -110,34 +110,30 @@ async function createDefaultRoles(
 
 /**
  * Gets the role ID for a given role name in an organization.
- * Creates default roles if they don't exist.
+ * Uses upsert to avoid TOCTOU race conditions when multiple transactions
+ * try to create the same role simultaneously.
  */
 async function getOrCreateRoleId(
   tx: Prisma.TransactionClient,
   organizationId: string,
   roleName: RoleName
 ): Promise<string> {
-  // Try to find existing role
-  let role = await tx.role.findUnique({
+  // Use upsert for idempotent create-or-get behavior
+  const role = await tx.role.upsert({
     where: {
       organizationId_name: {
         organizationId,
         name: roleName,
       },
     },
+    create: {
+      organizationId,
+      name: roleName,
+      description: `${roleName} role`,
+      isSystemRole: true,
+    },
+    update: {}, // No updates needed if role exists
   });
-
-  if (!role) {
-    // Create the role
-    role = await tx.role.create({
-      data: {
-        organizationId,
-        name: roleName,
-        description: `${roleName} role`,
-        isSystemRole: true,
-      },
-    });
-  }
 
   return role.id;
 }
