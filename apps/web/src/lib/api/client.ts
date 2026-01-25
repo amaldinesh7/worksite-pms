@@ -11,7 +11,7 @@ import axios from 'axios';
 import { setupRequestInterceptor, setupResponseInterceptor } from './interceptors';
 import type { ApiSuccessResponse, ApiErrorResponse, ApiResponse } from './types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 export const api = axios.create({
   baseURL: API_BASE,
