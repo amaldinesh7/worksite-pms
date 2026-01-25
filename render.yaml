@@ -8,18 +8,23 @@ services:
   - type: web
     name: worksite-api-beta
     runtime: node
-    region: singapore # Closest to your users
+    region: singapore
     plan: free
     branch: beta
     rootDir: apps/api
-    buildCommand: pnpm install && pnpm build
-    startCommand: pnpm start
+    buildCommand: |
+      corepack enable && 
+      corepack prepare pnpm@9.15.0 --activate && 
+      pnpm install && 
+      pnpm db:generate && 
+      pnpm build
+    startCommand: node dist/index.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false # Set manually in dashboard
+        sync: false
       - key: DIRECT_URL
         sync: false
       - key: JWT_SECRET
@@ -27,7 +32,7 @@ services:
       - key: COOKIE_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        sync: false # Set to Vercel URL after deployment
+        sync: false
       - key: STORAGE_PROVIDER
         value: supabase
       - key: SUPABASE_URL
