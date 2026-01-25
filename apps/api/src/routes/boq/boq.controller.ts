@@ -5,7 +5,9 @@
  */
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import pdfParse from 'pdf-parse';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 import { boqItemRepository, boqSectionRepository } from '../../repositories/boq.repository';
 import { boqImportService } from '../../services/boq-import.service';
 import { createErrorHandler } from '../../lib/error-handler';
