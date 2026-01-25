@@ -1,17 +1,14 @@
-# Render Blueprint
+# Render Blueprint - BETA Environment Only
 # https://render.com/docs/blueprint-spec
 #
-# Deploy with: render.com/new/blueprint
-# Or connect repo and Render will auto-detect this file
+# This file is for beta deployment only.
+# Stage/Prod should be deployed from a separate Render account.
 
 services:
-  # ===========================================
-  # BETA Environment
-  # ===========================================
   - type: web
     name: worksite-api-beta
     runtime: node
-    region: oregon
+    region: singapore # Closest to your users
     plan: free
     branch: beta
     rootDir: apps/api
@@ -19,8 +16,6 @@ services:
     startCommand: pnpm start
     healthCheckPath: /health
     envVars:
-      - key: NODE_VERSION
-        value: "22.12.0"
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
@@ -32,7 +27,7 @@ services:
       - key: COOKIE_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        sync: false # Set to Vercel URL
+        sync: false # Set to Vercel URL after deployment
       - key: STORAGE_PROVIDER
         value: supabase
       - key: SUPABASE_URL
@@ -41,82 +36,3 @@ services:
         sync: false
       - key: SUPABASE_STORAGE_BUCKET
         value: documents
-
-  # ===========================================
-  # STAGE Environment
-  # ===========================================
-  - type: web
-    name: worksite-api-stage
-    runtime: node
-    region: oregon
-    plan: free
-    branch: stage
-    rootDir: apps/api
-    buildCommand: pnpm install && pnpm build
-    startCommand: pnpm start
-    healthCheckPath: /health
-    envVars:
-      - key: NODE_VERSION
-        value: "22.12.0"
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false
-      - key: DIRECT_URL
-        sync: false
-      - key: JWT_SECRET
-        generateValue: true
-      - key: COOKIE_SECRET
-        generateValue: true
-      - key: CORS_ORIGIN
-        sync: false
-      - key: STORAGE_PROVIDER
-        value: supabase
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-      - key: SUPABASE_STORAGE_BUCKET
-        value: documents
-
-  # ===========================================
-  # PRODUCTION Environment
-  # ===========================================
-  - type: web
-    name: worksite-api-prod
-    runtime: node
-    region: oregon
-    plan: starter # Paid plan for production
-    branch: main
-    rootDir: apps/api
-    buildCommand: pnpm install && pnpm build
-    startCommand: pnpm start
-    healthCheckPath: /health
-    envVars:
-      - key: NODE_VERSION
-        value: "22.12.0"
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false
-      - key: DIRECT_URL
-        sync: false
-      - key: JWT_SECRET
-        generateValue: true
-      - key: COOKIE_SECRET
-        generateValue: true
-      - key: CORS_ORIGIN
-        sync: false
-      # Cloudflare R2 for production storage
-      - key: STORAGE_PROVIDER
-        value: r2
-      - key: CLOUDFLARE_ACCOUNT_ID
-        sync: false
-      - key: CLOUDFLARE_R2_ACCESS_KEY
-        sync: false
-      - key: CLOUDFLARE_R2_SECRET_KEY
-        sync: false
-      - key: CLOUDFLARE_R2_BUCKET_NAME
-        value: worksite-prod-files
-      - key: CLOUDFLARE_R2_PUBLIC_URL
-        sync: false
