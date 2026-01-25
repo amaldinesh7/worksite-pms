@@ -2,7 +2,8 @@ import { buildApp } from '../app';
 import { prisma } from '../lib/prisma';
 import { faker } from '@faker-js/faker';
 import type { FastifyInstance } from 'fastify';
-import type { PartyType, PaymentType, PaymentMode, OrganizationRole } from '@prisma/client';
+import type { PartyType, PaymentType, PaymentMode } from '@prisma/client';
+import type { RoleName } from '../lib/permissions';
 
 /**
  * Creates a test app instance with logging disabled.
@@ -17,14 +18,37 @@ export async function createTestApp() {
  */
 export const testData = {
   /**
-   * Create a test organization
+   * Create a test organization with default roles
    */
   async createOrganization(name?: string) {
-    return prisma.organization.create({
+    const org = await prisma.organization.create({
       data: {
         name: name || faker.company.name(),
       },
     });
+
+    // Create default roles for the organization
+    await prisma.role.createMany({
+      data: [
+        { organizationId: org.id, name: 'ADMIN', description: 'Administrator', isSystemRole: true },
+        { organizationId: org.id, name: 'MANAGER', description: 'Manager', isSystemRole: true },
+        {
+          organizationId: org.id,
+          name: 'ACCOUNTANT',
+          description: 'Accountant',
+          isSystemRole: true,
+        },
+        {
+          organizationId: org.id,
+          name: 'SUPERVISOR',
+          description: 'Supervisor',
+          isSystemRole: true,
+        },
+        { organizationId: org.id, name: 'CLIENT', description: 'Client', isSystemRole: true },
+      ],
+    });
+
+    return org;
   },
 
   /**
@@ -41,18 +65,51 @@ export const testData = {
   },
 
   /**
+   * Get role ID for an organization by role name
+   */
+  async getRoleId(organizationId: string, roleName: RoleName): Promise<string> {
+    let role = await prisma.role.findUnique({
+      where: {
+        organizationId_name: {
+          organizationId,
+          name: roleName,
+        },
+      },
+    });
+
+    if (!role) {
+      // Create the role if it doesn't exist
+      role = await prisma.role.create({
+        data: {
+          organizationId,
+          name: roleName,
+          description: `${roleName} role`,
+          isSystemRole: true,
+        },
+      });
+    }
+
+    return role.id;
+  },
+
+  /**
    * Create organization member
    */
   async createOrganizationMember(
     organizationId: string,
     userId: string,
-    role: OrganizationRole = 'ADMIN'
+    roleName: RoleName = 'ADMIN'
   ) {
+    const roleId = await this.getRoleId(organizationId, roleName);
+
     return prisma.organizationMember.create({
       data: {
         organizationId,
         userId,
-        role,
+        roleId,
+      },
+      include: {
+        role: true,
       },
     });
   },
@@ -119,9 +176,7 @@ export const testData = {
       name: string;
       phone: string;
       location: string;
-      isInternal: boolean;
       profilePicture: string;
-      userId: string;
     }>
   ) {
     return prisma.party.create({
@@ -131,60 +186,9 @@ export const testData = {
         phone: data?.phone || faker.phone.number(),
         location: data?.location || faker.location.streetAddress(),
         type,
-        isInternal: data?.isInternal ?? false,
         profilePicture: data?.profilePicture,
-        userId: data?.userId,
       },
     });
-  },
-
-  /**
-   * Create a party with login capability
-   */
-  async createPartyWithLogin(
-    organizationId: string,
-    type: PartyType,
-    role: OrganizationRole,
-    data?: Partial<{
-      name: string;
-      phone: string;
-      email: string;
-      location: string;
-      isInternal: boolean;
-    }>
-  ) {
-    const name = data?.name || faker.person.fullName();
-    const phone = data?.phone || faker.phone.number();
-    const email = data?.email || faker.internet.email();
-
-    // Create user
-    const user = await prisma.user.create({
-      data: { name, phone, email },
-    });
-
-    // Create party linked to user
-    const party = await prisma.party.create({
-      data: {
-        organizationId,
-        name,
-        phone,
-        location: data?.location || faker.location.streetAddress(),
-        type,
-        isInternal: data?.isInternal ?? false,
-        userId: user.id,
-      },
-    });
-
-    // Create organization member
-    const member = await prisma.organizationMember.create({
-      data: {
-        organizationId,
-        userId: user.id,
-        role,
-      },
-    });
-
-    return { user, party, member };
   },
 
   /**
@@ -205,14 +209,26 @@ export const testData = {
   async createStage(
     organizationId: string,
     projectId: string,
-    data?: Partial<{ name: string; budgetAmount: number }>
+    data?: Partial<{
+      name: string;
+      budgetAmount: number;
+      startDate: Date;
+      endDate: Date;
+      weight: number;
+    }>
   ) {
+    const startDate = data?.startDate || new Date();
+    const endDate = data?.endDate || new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days later
+
     return prisma.stage.create({
       data: {
         organizationId,
         projectId,
         name: data?.name || faker.commerce.department() + ' Stage',
         budgetAmount: data?.budgetAmount || faker.number.int({ min: 10000, max: 1000000 }),
+        startDate,
+        endDate,
+        weight: data?.weight ?? 10,
       },
     });
   },
@@ -372,6 +388,7 @@ export const cleanup = {
     await prisma.categoryItem.deleteMany({ where: { organizationId } });
     // CategoryTypes are global, don't delete them per-org
     await prisma.organizationMember.deleteMany({ where: { organizationId } });
+    await prisma.role.deleteMany({ where: { organizationId } });
     await prisma.organization.delete({ where: { id: organizationId } });
   },
 
@@ -391,6 +408,7 @@ export const cleanup = {
     await prisma.categoryItem.deleteMany();
     await prisma.categoryType.deleteMany();
     await prisma.organizationMember.deleteMany();
+    await prisma.role.deleteMany();
     await prisma.refreshToken.deleteMany();
     await prisma.user.deleteMany();
     await prisma.organization.deleteMany();
@@ -403,7 +421,7 @@ export const cleanup = {
 export function authHeaders(
   organizationId: string,
   userId: string = 'test-user',
-  role: OrganizationRole = 'ADMIN'
+  role: RoleName = 'ADMIN'
 ) {
   return {
     'x-organization-id': organizationId,

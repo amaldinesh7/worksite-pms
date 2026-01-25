@@ -14,11 +14,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import {
-  Storefront,
-  HardHat,
-  Briefcase,
-} from '@phosphor-icons/react';
+import { Storefront, HardHat, Briefcase } from '@phosphor-icons/react';
 import { PageContent, Header } from '@/components/layout';
 import {
   SecondaryTabs,
@@ -27,12 +23,7 @@ import {
 } from '@/components/ui/custom/secondary-tabs';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import {
-  PartyStatsCards,
-  PartiesTable,
-  PartyFormDialog,
-  DeletePartyDialog,
-} from '@/components/parties';
+import { PartiesTable, PartyFormDialog, DeletePartyDialog } from '@/components/parties';
 import {
   useParties,
   usePartiesSummary,
@@ -42,7 +33,7 @@ import {
 } from '@/lib/hooks/useParties';
 import type { Party, PartyType, CreatePartyInput, UpdatePartyInput } from '@/lib/api/parties';
 
-const PAGINATION_LIMIT = 9;    
+const PAGINATION_LIMIT = 9;
 
 // ============================================
 // Types
@@ -57,7 +48,7 @@ type TabValue = PartyType;
 export default function PartiesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  
+
   // Get tab from URL or default to VENDOR
   const tabFromUrl = searchParams.get('tab') as TabValue | null;
   const isValidTab = tabFromUrl && ['VENDOR', 'LABOUR', 'SUBCONTRACTOR'].includes(tabFromUrl);
@@ -89,7 +80,7 @@ export default function PartiesPage() {
   // Data Fetching
   // ============================================
 
-  const { data: summary, isLoading: isSummaryLoading } = usePartiesSummary();
+  const { data: summary } = usePartiesSummary();
 
   const { data: partiesData, isLoading: isPartiesLoading } = useParties({
     page,
@@ -136,10 +127,13 @@ export default function PartiesPage() {
     setFormDialogOpen(true);
   }, []);
 
-  const handleViewParty = useCallback((party: Party) => {
-    // Navigate to party detail page
-    navigate(`/parties/${party.id}`);
-  }, [navigate]);
+  const handleViewParty = useCallback(
+    (party: Party) => {
+      // Navigate to party detail page
+      navigate(`/parties/${party.id}`);
+    },
+    [navigate]
+  );
 
   const handleEditParty = useCallback((party: Party) => {
     setSelectedParty(party);
@@ -231,8 +225,14 @@ export default function PartiesPage() {
                   <SecondaryTabsTrigger value="LABOUR" icon={HardHat} className="cursor-pointer">
                     Labours{(summary?.totalLabours ?? 0) > 0 && ` (${summary?.totalLabours})`}
                   </SecondaryTabsTrigger>
-                  <SecondaryTabsTrigger value="SUBCONTRACTOR" icon={Briefcase} className="cursor-pointer">
-                    Sub Contractors{(summary?.totalSubcontractors ?? 0) > 0 && ` (${summary?.totalSubcontractors})`}
+                  <SecondaryTabsTrigger
+                    value="SUBCONTRACTOR"
+                    icon={Briefcase}
+                    className="cursor-pointer"
+                  >
+                    Sub Contractors
+                    {(summary?.totalSubcontractors ?? 0) > 0 &&
+                      ` (${summary?.totalSubcontractors})`}
                   </SecondaryTabsTrigger>
                 </SecondaryTabsList>
               </SecondaryTabs>

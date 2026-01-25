@@ -33,7 +33,7 @@ import { completeOnboarding } from '@/lib/api/auth';
 const onboardingSchema = z.object({
   userName: z.string().min(1, 'Name is required').max(100),
   organizationName: z.string().min(1, 'Organization name is required').max(200),
-  organizationType: z.enum(['CONSTRUCTION', 'INTERIOR', 'CONTRACTOR', 'OTHER']).default('CONSTRUCTION'),
+  organizationType: z.enum(['CONSTRUCTION', 'INTERIOR', 'CONTRACTOR', 'OTHER']),
 });
 
 type OnboardingFormData = z.infer<typeof onboardingSchema>;
@@ -149,7 +149,9 @@ export default function Onboarding() {
               </Label>
               <Select
                 value={organizationType}
-                onValueChange={(value) => setValue('organizationType', value as OnboardingFormData['organizationType'])}
+                onValueChange={(value) =>
+                  setValue('organizationType', value as OnboardingFormData['organizationType'])
+                }
               >
                 <SelectTrigger className="cursor-pointer">
                   <SelectValue placeholder="Select organization type" />

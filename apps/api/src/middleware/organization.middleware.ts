@@ -1,5 +1,4 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import type { OrganizationRole } from '@prisma/client';
 import {
   hasPermission,
   requiresProjectAccess,
@@ -7,6 +6,7 @@ import {
   PERMISSION_ERRORS,
   type Resource,
   type Action,
+  type RoleName,
 } from '../lib/permissions';
 import { prisma } from '../lib/prisma';
 
@@ -19,7 +19,7 @@ declare module 'fastify' {
   interface FastifyRequest {
     organizationId: string;
     userId: string;
-    userRole: OrganizationRole;
+    userRole: RoleName;
     memberId?: string;
     accessibleProjectIds?: string[];
   }
@@ -49,7 +49,7 @@ export async function organizationMiddleware(request: FastifyRequest, reply: Fas
 
   request.organizationId = organizationId;
   request.userId = userId;
-  request.userRole = (userRole as OrganizationRole) || 'CLIENT';
+  request.userRole = (userRole as RoleName) || 'CLIENT';
 
   // For roles that require project-level access, fetch accessible projects
   if (requiresProjectAccess(request.userRole)) {
@@ -81,7 +81,7 @@ export async function organizationMiddleware(request: FastifyRequest, reply: Fas
 /**
  * Require specific roles to access a route
  */
-export function requireRole(...allowedRoles: OrganizationRole[]) {
+export function requireRole(...allowedRoles: RoleName[]) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
     if (!allowedRoles.includes(request.userRole)) {
       return reply.code(403).send({
@@ -227,8 +227,14 @@ export function requireResourceAccess(
  * Get a where clause filter for project-scoped queries
  * Returns undefined for roles with 'all' scope, or project IDs for scoped roles
  */
-export function getProjectFilter(request: FastifyRequest): { projectId: { in: string[] } } | undefined {
-  if (request.userRole === 'ADMIN' || request.userRole === 'MANAGER' || request.userRole === 'ACCOUNTANT') {
+export function getProjectFilter(
+  request: FastifyRequest
+): { projectId: { in: string[] } } | undefined {
+  if (
+    request.userRole === 'ADMIN' ||
+    request.userRole === 'MANAGER' ||
+    request.userRole === 'ACCOUNTANT'
+  ) {
     return undefined; // No filter needed
   }
 

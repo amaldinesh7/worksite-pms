@@ -204,7 +204,6 @@ export function GiveCashAdvanceModal({
         await updateMutation.mutateAsync({
           id: advance.id,
           data: {
-            memberId: data.memberId,
             amount: data.amount,
             advanceDate: data.advanceDate.toISOString(),
             purpose: data.purpose,
@@ -295,9 +294,7 @@ export function GiveCashAdvanceModal({
                 {...register('amount')}
               />
             </div>
-            {errors.amount && (
-              <p className="text-sm text-destructive">{errors.amount.message}</p>
-            )}
+            {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
           </div>
 
           {/* Date */}
@@ -327,9 +324,7 @@ export function GiveCashAdvanceModal({
               placeholder="e.g., Material purchase, Site expenses"
               {...register('purpose')}
             />
-            {errors.purpose && (
-              <p className="text-sm text-destructive">{errors.purpose.message}</p>
-            )}
+            {errors.purpose && <p className="text-sm text-destructive">{errors.purpose.message}</p>}
           </div>
 
           {/* Payment Mode */}

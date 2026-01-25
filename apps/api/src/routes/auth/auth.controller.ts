@@ -75,7 +75,8 @@ export const verifyOtp = withError(
     // Get first organization membership (if any)
     const primaryMembership = user.memberships[0] ?? null;
     const organization = primaryMembership?.organization ?? null;
-    const role = primaryMembership?.role ?? null;
+    // Get role name from the role relation
+    const role = primaryMembership?.role?.name ?? null;
 
     // Return user, organization, and token
     return sendCreated(reply, {
@@ -151,7 +152,8 @@ export const getCurrentUser = withError(
             name: primaryMembership.organization.name,
           }
         : null,
-      role: primaryMembership?.role ?? null,
+      // Get role name from the role relation
+      role: primaryMembership?.role?.name ?? null,
     });
   }
 );
@@ -163,7 +165,9 @@ export const getCurrentUser = withError(
  */
 export const completeOnboarding = withError(
   'complete onboarding',
-  async (request: FastifyRequest<{ Body: OnboardingInput }>, reply: FastifyReply) => {
+  async (request: FastifyRequest, reply: FastifyReply) => {
+    // Body is validated by the schema in the route definition
+    const body = request.body as OnboardingInput;
     const userId = request.user?.userId;
 
     if (!userId) {
@@ -185,7 +189,7 @@ export const completeOnboarding = withError(
       });
     }
 
-    const { userName, organizationName } = request.body;
+    const { userName, organizationName } = body;
 
     // Update user name
     await authRepository.updateUser(userId, { name: userName });
@@ -211,7 +215,8 @@ export const completeOnboarding = withError(
         id: organization.id,
         name: organization.name,
       },
-      role: primaryMembership?.role ?? null,
+      // Get role name from the role relation
+      role: primaryMembership?.role?.name ?? null,
     });
   }
 );

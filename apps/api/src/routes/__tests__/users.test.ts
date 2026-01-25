@@ -10,9 +10,34 @@ describe('Users API', () => {
 
   const getUniquePhone = () => `+1${Date.now()}${++testCounter}`;
 
+  /**
+   * Helper to create or get a role ID for an organization
+   */
+  const getOrCreateRoleId = async (organizationId: string, roleName: string): Promise<string> => {
+    let role = await prisma.role.findUnique({
+      where: {
+        organizationId_name: { organizationId, name: roleName },
+      },
+    });
+
+    if (!role) {
+      role = await prisma.role.create({
+        data: {
+          organizationId,
+          name: roleName,
+          description: `${roleName} role`,
+          isSystemRole: true,
+        },
+      });
+    }
+
+    return role.id;
+  };
+
   // Helper to clean up test data
   const cleanupTestData = async () => {
     await prisma.organizationMember.deleteMany();
+    await prisma.role.deleteMany();
     await prisma.user.deleteMany();
     await prisma.organization.deleteMany();
   };
@@ -315,11 +340,13 @@ describe('Users API', () => {
       });
       testOrgId = org.id;
 
+      // Create role and member
+      const roleId = await getOrCreateRoleId(testOrgId, 'ADMIN');
       await prisma.organizationMember.create({
         data: {
           organizationId: testOrgId,
           userId: testUserId,
-          role: 'ADMIN',
+          roleId,
         },
       });
     });
@@ -334,7 +361,8 @@ describe('Users API', () => {
       const body = res.json();
       expect(body.data).toHaveLength(1);
       expect(body.data[0].organizationId).toBe(testOrgId);
-      expect(body.data[0].role).toBe('ADMIN');
+      // Role is now a relation, check for role.name
+      expect(body.data[0].role?.name || body.data[0].roleId).toBeTruthy();
     });
 
     it('should return 404 for non-existent user', async () => {

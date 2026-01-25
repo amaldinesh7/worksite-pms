@@ -1,10 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  type ColumnDef,
-} from '@tanstack/react-table';
+import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
 import {
   Table,
   TableBody,
@@ -91,6 +86,10 @@ export function PartiesTable({
         return 'Add Labour';
       case 'SUBCONTRACTOR':
         return 'Add Sub Contractor';
+      case 'CLIENT':
+        return 'Add Client';
+      default:
+        return 'Add Party';
     }
   };
 
@@ -158,9 +157,7 @@ export function PartiesTable({
         return (
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <MapPin className="h-3.5 w-3.5" />
-            <TypographySmall className="font-normal">
-              {location || '—'}
-            </TypographySmall>
+            <TypographySmall className="font-normal">{location || '—'}</TypographySmall>
           </div>
         );
       },
@@ -179,17 +176,11 @@ export function PartiesTable({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => onViewParty(party)}
-                className="cursor-pointer"
-              >
+              <DropdownMenuItem onClick={() => onViewParty(party)} className="cursor-pointer">
                 <Eye className="mr-2 h-4 w-4" />
                 View
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onEditParty(party)}
-                className="cursor-pointer"
-              >
+              <DropdownMenuItem onClick={() => onEditParty(party)} className="cursor-pointer">
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
@@ -320,7 +311,7 @@ export function PartiesTable({
           total={pagination.total}
           limit={pagination.limit}
           onPageChange={onPageChange}
-          className='border-t'
+          className="border-t"
         />
       )}
     </div>

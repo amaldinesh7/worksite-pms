@@ -11,7 +11,7 @@
  * - Analytics: (future)
  */
 
-import { useMemo, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   House,
@@ -25,7 +25,6 @@ import {
 } from '@phosphor-icons/react';
 
 import { PageContent, Header } from '@/components/layout';
-import { Breadcrumb } from '@/components/ui/breadcrumb';
 import {
   SecondaryTabs,
   SecondaryTabsList,
@@ -104,15 +103,6 @@ export default function ProjectDetailPage() {
   // Data fetching
   const { data: project, isLoading: isProjectLoading } = useProject(id || '');
   const { data: stats, isLoading: isStatsLoading } = useProjectStats(id || '');
-
-  // Breadcrumb items
-  const breadcrumbItems = useMemo(() => {
-    if (!project) return [];
-    return [
-      { label: 'Projects', href: '/projects' },
-      { label: project.name },
-    ];
-  }, [project]);
 
   // Loading state
   if (isProjectLoading) {

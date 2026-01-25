@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma';
 import { handlePrismaError } from '../lib/database-errors';
 import { getDefaultCategoryTypes } from '../config/defaults/category-defaults';
 import type { Organization, OrganizationMember, Prisma } from '@prisma/client';
+import type { RoleName } from '../lib/permissions';
 
 export interface CreateOrganizationData {
   name: string;
@@ -20,11 +21,11 @@ export interface OrganizationListOptions {
 
 export interface AddMemberData {
   userId: string;
-  role: 'ADMIN' | 'MANAGER' | 'ACCOUNTANT';
+  role: RoleName;
 }
 
 export interface UpdateMemberRoleData {
-  role: 'ADMIN' | 'MANAGER' | 'ACCOUNTANT';
+  role: RoleName;
 }
 
 export interface FindByIdOptions {
@@ -74,9 +75,76 @@ async function ensureGlobalCategoryTypes(
   return typeIdMap;
 }
 
+/**
+ * Creates default system roles for an organization.
+ * Returns a map of role name -> role ID.
+ */
+async function createDefaultRoles(
+  tx: Prisma.TransactionClient,
+  organizationId: string
+): Promise<Map<RoleName, string>> {
+  const defaultRoles: Array<{ name: RoleName; description: string }> = [
+    { name: 'ADMIN', description: 'Full access to all organization resources' },
+    { name: 'MANAGER', description: 'Can manage projects and team members' },
+    { name: 'ACCOUNTANT', description: 'Can manage finances and view projects' },
+    { name: 'SUPERVISOR', description: 'Can manage assigned projects' },
+    { name: 'CLIENT', description: 'Can view their own projects' },
+  ];
+
+  const roles = await tx.role.createManyAndReturn({
+    data: defaultRoles.map((role) => ({
+      organizationId,
+      name: role.name,
+      description: role.description,
+      isSystemRole: true,
+    })),
+  });
+
+  const roleMap = new Map<RoleName, string>();
+  roles.forEach((role) => {
+    roleMap.set(role.name as RoleName, role.id);
+  });
+
+  return roleMap;
+}
+
+/**
+ * Gets the role ID for a given role name in an organization.
+ * Creates default roles if they don't exist.
+ */
+async function getOrCreateRoleId(
+  tx: Prisma.TransactionClient,
+  organizationId: string,
+  roleName: RoleName
+): Promise<string> {
+  // Try to find existing role
+  let role = await tx.role.findUnique({
+    where: {
+      organizationId_name: {
+        organizationId,
+        name: roleName,
+      },
+    },
+  });
+
+  if (!role) {
+    // Create the role
+    role = await tx.role.create({
+      data: {
+        organizationId,
+        name: roleName,
+        description: `${roleName} role`,
+        isSystemRole: true,
+      },
+    });
+  }
+
+  return role.id;
+}
+
 export class OrganizationRepository {
   /**
-   * Create organization with default category items.
+   * Create organization with default category items and roles.
    * Global category types are created if they don't exist.
    * Organization-specific category items are created based on defaults.
    */
@@ -88,10 +156,13 @@ export class OrganizationRepository {
           data: { name: data.name },
         });
 
-        // 2. Ensure global category types exist
+        // 2. Create default roles for the organization
+        const roleMap = await createDefaultRoles(tx, organization.id);
+
+        // 3. Ensure global category types exist
         const typeIdMap = await ensureGlobalCategoryTypes(tx);
 
-        // 3. Create organization-specific category items
+        // 4. Create organization-specific category items
         const defaultCategories = getDefaultCategoryTypes();
         const categoryItemData = defaultCategories.flatMap((ct) =>
           ct.items.map((item) => ({
@@ -106,15 +177,18 @@ export class OrganizationRepository {
           await tx.categoryItem.createMany({ data: categoryItemData });
         }
 
-        // 4. If ownerId is provided, add user as ADMIN member
+        // 5. If ownerId is provided, add user as ADMIN member
         if (data.ownerId) {
-          await tx.organizationMember.create({
-            data: {
-              organizationId: organization.id,
-              userId: data.ownerId,
-              role: 'ADMIN',
-            },
-          });
+          const adminRoleId = roleMap.get('ADMIN');
+          if (adminRoleId) {
+            await tx.organizationMember.create({
+              data: {
+                organizationId: organization.id,
+                userId: data.ownerId,
+                roleId: adminRoleId,
+              },
+            });
+          }
         }
 
         return organization;
@@ -138,6 +212,7 @@ export class OrganizationRepository {
             members: {
               include: {
                 user: true,
+                role: true,
               },
             },
           }),
@@ -218,16 +293,21 @@ export class OrganizationRepository {
   // Member management
   async addMember(organizationId: string, data: AddMemberData): Promise<OrganizationMember> {
     try {
-      return await prisma.organizationMember.create({
-        data: {
-          organizationId,
-          userId: data.userId,
-          role: data.role,
-        },
-        include: {
-          user: true,
-          organization: true,
-        },
+      return await prisma.$transaction(async (tx) => {
+        const roleId = await getOrCreateRoleId(tx, organizationId, data.role);
+
+        return await tx.organizationMember.create({
+          data: {
+            organizationId,
+            userId: data.userId,
+            roleId,
+          },
+          include: {
+            user: true,
+            organization: true,
+            role: true,
+          },
+        });
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -240,6 +320,7 @@ export class OrganizationRepository {
         where: { organizationId },
         include: {
           user: true,
+          role: true,
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -254,15 +335,19 @@ export class OrganizationRepository {
     data: UpdateMemberRoleData
   ): Promise<OrganizationMember> {
     try {
-      // Prisma's update throws P2025 if record doesn't exist
-      return await prisma.organizationMember.update({
-        where: {
-          organizationId_userId: { organizationId, userId },
-        },
-        data: { role: data.role },
-        include: {
-          user: true,
-        },
+      return await prisma.$transaction(async (tx) => {
+        const roleId = await getOrCreateRoleId(tx, organizationId, data.role);
+
+        return await tx.organizationMember.update({
+          where: {
+            organizationId_userId: { organizationId, userId },
+          },
+          data: { roleId },
+          include: {
+            user: true,
+            role: true,
+          },
+        });
       });
     } catch (error) {
       throw handlePrismaError(error);

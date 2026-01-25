@@ -18,7 +18,7 @@ import type {
 // Types
 // ============================================
 
-export type PartyType = 'VENDOR' | 'LABOUR' | 'SUBCONTRACTOR';
+export type PartyType = 'VENDOR' | 'LABOUR' | 'SUBCONTRACTOR' | 'CLIENT';
 
 export interface Party {
   id: string;
@@ -141,9 +141,8 @@ export async function getPartyStats(id: string): Promise<PartyStats> {
  * Get summary of all parties by type (for stats cards)
  */
 export async function getPartiesSummary(): Promise<PartySummary> {
-  const response: AxiosResponse<ApiSuccessResponse<PartySummary>> = await api.get(
-    '/parties/summary'
-  );
+  const response: AxiosResponse<ApiSuccessResponse<PartySummary>> =
+    await api.get('/parties/summary');
   return response.data.data;
 }
 

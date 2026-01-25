@@ -2,7 +2,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TypographyMuted } from '@/components/ui/typography';
-import type { Permission, PermissionsByCategory } from '@/lib/api/permissions';
+import type { PermissionsByCategory } from '@/lib/api/permissions';
 
 interface PermissionsEditorProps {
   permissionsGrouped: PermissionsByCategory;
@@ -59,11 +59,12 @@ export function PermissionsEditor({
           selectedPermissionIds.has(p.id)
         ).length;
         const isAllSelected = categorySelectedCount === permissions.length;
-        const isSomeSelected = categorySelectedCount > 0 && categorySelectedCount < permissions.length;
+        const isSomeSelected =
+          categorySelectedCount > 0 && categorySelectedCount < permissions.length;
 
         const handleCategoryToggle = () => {
           if (disabled) return;
-          
+
           if (isAllSelected) {
             // Deselect all in category
             permissions.forEach((p) => {
@@ -90,7 +91,8 @@ export function PermissionsEditor({
                   checked={isAllSelected}
                   ref={(el) => {
                     if (el) {
-                      (el as HTMLButtonElement & { indeterminate: boolean }).indeterminate = isSomeSelected;
+                      (el as HTMLButtonElement & { indeterminate: boolean }).indeterminate =
+                        isSomeSelected;
                     }
                   }}
                   onCheckedChange={handleCategoryToggle}
@@ -114,10 +116,7 @@ export function PermissionsEditor({
                     className="mt-0.5 cursor-pointer"
                   />
                   <div className="flex-1">
-                    <Label
-                      htmlFor={permission.id}
-                      className="text-sm font-medium cursor-pointer"
-                    >
+                    <Label htmlFor={permission.id} className="text-sm font-medium cursor-pointer">
                       {permission.name}
                     </Label>
                     {permission.description && (
