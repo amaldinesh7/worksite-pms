@@ -2,14 +2,9 @@
 
 /* ========================================
    FONTS
+   Figtree loaded via Google Fonts in index.html
+   Fallback: Inter, system-ui, sans-serif
    ======================================== */
-@font-face {
-  font-family: 'Outfit';
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url('https://fonts.gstatic.com/s/outfit/v11/QGYyz_MVcBeNP4NjuGObqx1XmO1I4TC0C4eDs0xn.woff2') format('woff2');
-}
 
 /* ========================================
    DESIGN TOKENS (Tailwind v4)
@@ -185,8 +180,8 @@
   --radius-full: 9999px;
 
   /* Fonts */
-  --font-heading: 'Outfit', system-ui, sans-serif;
-  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-heading: 'Figtree', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Figtree', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -233,6 +228,16 @@ body {
 
 .font-body {
   font-family: var(--font-body);
+}
+
+/* Numeric Typography - for tables, amounts, and financial data */
+.numeric {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.amount {
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.01em;
 }
 
 /* ========================================

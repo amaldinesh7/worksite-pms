@@ -72,8 +72,8 @@ export function BOQSummaryCards({ stats, isLoading }: BOQSummaryCardsProps) {
           <Receipt className="h-4 w-4" />
           <span>Total Quoted</span>
         </div>
-        <div className="text-2xl font-semibold">{formatCurrency(totalQuoted)}</div>
-        <div className="text-xs text-muted-foreground">{itemCount} line items</div>
+        <div className="text-2xl font-semibold numeric">{formatCurrency(totalQuoted)}</div>
+        <div className="text-xs text-muted-foreground numeric">{itemCount} line items</div>
       </div>
 
       {/* Actual Spent */}
@@ -82,8 +82,8 @@ export function BOQSummaryCards({ stats, isLoading }: BOQSummaryCardsProps) {
           <CurrencyDollar className="h-4 w-4" />
           <span>Actual Spent</span>
         </div>
-        <div className="text-2xl font-semibold">{formatCurrency(totalActual)}</div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-2xl font-semibold numeric">{formatCurrency(totalActual)}</div>
+        <div className="text-xs text-muted-foreground numeric">
           {formatPercent(budgetUsage)} of budget
         </div>
       </div>
@@ -95,12 +95,12 @@ export function BOQSummaryCards({ stats, isLoading }: BOQSummaryCardsProps) {
           <span>Variance</span>
         </div>
         <div className={cn(
-          'text-2xl font-semibold',
+          'text-2xl font-semibold numeric',
           variance >= 0 ? 'text-green-600' : 'text-red-600'
         )}>
           {variance >= 0 ? '+' : ''}{formatCurrency(variance)}
         </div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs text-muted-foreground numeric">
           {100 - budgetUsage > 0 ? `${(100 - budgetUsage).toFixed(0)}% remaining` : 'Over budget'}
         </div>
       </div>
@@ -111,7 +111,7 @@ export function BOQSummaryCards({ stats, isLoading }: BOQSummaryCardsProps) {
           <ChartPie className="h-4 w-4" />
           <span>Projected Margin</span>
         </div>
-        <div className="text-2xl font-semibold">{formatPercent(projectedMargin)}</div>
+        <div className="text-2xl font-semibold numeric">{formatPercent(projectedMargin)}</div>
         <div className="flex items-center gap-2">
           <span className={cn(
             'text-xs px-2 py-0.5 rounded-full',
