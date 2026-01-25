@@ -173,6 +173,18 @@ export const completeOnboarding = withError(
       });
     }
 
+    // Check if user already belongs to an organization
+    const existingUser = await authRepository.findById(userId);
+    if (existingUser && existingUser.memberships.length > 0) {
+      return reply.code(409).send({
+        success: false,
+        error: {
+          message: 'User already belongs to an organization',
+          code: 'ALREADY_HAS_ORGANIZATION',
+        },
+      });
+    }
+
     const { userName, organizationName } = request.body;
 
     // Update user name

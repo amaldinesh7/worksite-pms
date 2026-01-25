@@ -50,11 +50,16 @@ export const listBOQItems = handle(
     const { page, limit, category, stageId, sectionId, search, sortBy, sortOrder } = request.query;
     const skip = (page - 1) * limit;
 
-    const { items, total } = await boqItemRepository.findAll(
-      request.organizationId,
-      projectId,
-      { skip, take: limit, category, stageId, sectionId, search, sortBy, sortOrder }
-    );
+    const { items, total } = await boqItemRepository.findAll(request.organizationId, projectId, {
+      skip,
+      take: limit,
+      category,
+      stageId,
+      sectionId,
+      search,
+      sortBy,
+      sortOrder,
+    });
 
     return sendPaginated(reply, items, buildPagination(page, limit, total));
   }
@@ -78,9 +83,12 @@ export const getBOQByCategory = handle(
         0
       );
       const actualTotal = items.reduce((sum, item) => {
-        return sum + item.expenseLinks.reduce((expSum, link) => {
-          return expSum + link.expense.rate.toNumber() * link.expense.quantity.toNumber();
-        }, 0);
+        return (
+          sum +
+          item.expenseLinks.reduce((expSum, link) => {
+            return expSum + link.expense.rate.toNumber() * link.expense.quantity.toNumber();
+          }, 0)
+        );
       }, 0);
 
       return {
@@ -115,9 +123,12 @@ export const getBOQByStage = handle(
         0
       );
       const actualTotal = items.reduce((sum, item) => {
-        return sum + item.expenseLinks.reduce((expSum, link) => {
-          return expSum + link.expense.rate.toNumber() * link.expense.quantity.toNumber();
-        }, 0);
+        return (
+          sum +
+          item.expenseLinks.reduce((expSum, link) => {
+            return expSum + link.expense.rate.toNumber() * link.expense.quantity.toNumber();
+          }, 0)
+        );
       }, 0);
 
       return {
@@ -156,10 +167,7 @@ export const getBOQStats = handle(
 export const getBOQItem = handle(
   'fetch',
   async (request: FastifyRequest<{ Params: BOQItemParams }>, reply: FastifyReply) => {
-    const item = await boqItemRepository.findById(
-      request.organizationId,
-      request.params.id
-    );
+    const item = await boqItemRepository.findById(request.organizationId, request.params.id);
 
     if (!item) {
       return sendNotFound(reply, 'BOQ Item');
@@ -296,7 +304,7 @@ export const parseFile = handle(
   async (request: FastifyRequest<{ Params: ProjectParams }>, reply: FastifyReply) => {
     // Get multipart file
     const file = await request.file();
-    
+
     if (!file) {
       return reply.code(400).send({
         success: false,
@@ -308,13 +316,17 @@ export const parseFile = handle(
     const buffer = await file.toBuffer();
 
     // Check file type and parse accordingly
-    const isExcel = fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv');
+    const isExcel =
+      fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv');
     const isPdf = fileName.endsWith('.pdf');
 
     if (!isExcel && !isPdf) {
       return reply.code(400).send({
         success: false,
-        error: { message: 'Unsupported file type. Please upload Excel (.xlsx, .xls), CSV, or PDF files.', code: 'INVALID_FILE_TYPE' },
+        error: {
+          message: 'Unsupported file type. Please upload Excel (.xlsx, .xls), CSV, or PDF files.',
+          code: 'INVALID_FILE_TYPE',
+        },
       });
     }
 
@@ -324,22 +336,26 @@ export const parseFile = handle(
       if (!env.OPENAI_API_KEY) {
         return reply.code(400).send({
           success: false,
-          error: { 
-            message: 'PDF import requires OpenAI API configuration. Please contact your administrator or use Excel/CSV format instead.', 
-            code: 'PDF_NOT_CONFIGURED' 
+          error: {
+            message:
+              'PDF import requires OpenAI API configuration. Please contact your administrator or use Excel/CSV format instead.',
+            code: 'PDF_NOT_CONFIGURED',
           },
         });
       }
 
-      // Extract text from PDF
-      const pdfParser = new PDFParse();
-      const pdfData = await pdfParser.loadPDF(buffer);
+      // Extract text from PDF using pdf-parse v2 API
+      const pdfParser = new PDFParse({ data: buffer });
+      const pdfData = await pdfParser.getText();
       const pdfText = pdfData.text;
 
       if (!pdfText || pdfText.trim().length === 0) {
         return reply.code(400).send({
           success: false,
-          error: { message: 'Could not extract text from PDF. The file may be image-based or corrupted.', code: 'PDF_PARSE_ERROR' },
+          error: {
+            message: 'Could not extract text from PDF. The file may be image-based or corrupted.',
+            code: 'PDF_PARSE_ERROR',
+          },
         });
       }
 
@@ -352,8 +368,8 @@ export const parseFile = handle(
       });
     }
 
-    // Parse Excel/CSV file
-    const result = boqImportService.parseExcelBuffer(buffer, file.filename);
+    // Parse Excel/CSV file (now async with ExcelJS)
+    const result = await boqImportService.parseExcelBuffer(buffer, file.filename);
 
     return sendSuccess(reply, {
       fileName: file.filename,
@@ -437,7 +453,11 @@ export const linkExpense = handle(
 export const unlinkExpense = handle(
   'delete',
   async (request: FastifyRequest<{ Params: UnlinkExpenseParams }>, reply: FastifyReply) => {
-    await boqItemRepository.unlinkExpense(request.params.id, request.params.expenseId);
+    await boqItemRepository.unlinkExpense(
+      request.organizationId,
+      request.params.id,
+      request.params.expenseId
+    );
     return sendNoContent(reply);
   }
 );

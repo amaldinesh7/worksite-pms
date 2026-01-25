@@ -5,7 +5,8 @@
  * to structured BOQ items for import.
  */
 
-import * as XLSX from 'xlsx';
+import { Readable } from 'stream';
+import ExcelJS from 'exceljs';
 import OpenAI from 'openai';
 import type { BOQCategory } from '@prisma/client';
 
@@ -34,7 +35,7 @@ export interface ParseResult {
 }
 
 interface RawRowData {
-  [key: string]: string | number | undefined;
+  [key: string]: ExcelJS.CellValue;
 }
 
 // ============================================
@@ -44,7 +45,15 @@ interface RawRowData {
 // Common column name variations for BOQ data
 const COLUMN_MAPPINGS = {
   code: ['code', 'item code', 'item no', 'item_code', 'sr no', 'sr. no', 's.no', 'sl no', 'sl. no'],
-  description: ['description', 'item description', 'particulars', 'item', 'work description', 'details', 'name'],
+  description: [
+    'description',
+    'item description',
+    'particulars',
+    'item',
+    'work description',
+    'details',
+    'name',
+  ],
   unit: ['unit', 'uom', 'unit of measurement', 'units'],
   quantity: ['quantity', 'qty', 'qnty', 'nos', 'no.', 'number'],
   rate: ['rate', 'unit rate', 'price', 'unit price', 'cost', 'amount per unit'],
@@ -54,10 +63,42 @@ const COLUMN_MAPPINGS = {
 
 // Category detection keywords
 const CATEGORY_KEYWORDS: Record<BOQCategory, string[]> = {
-  MATERIAL: ['material', 'cement', 'steel', 'brick', 'sand', 'aggregate', 'tile', 'paint', 'pipe', 'wire', 'fitting'],
-  LABOUR: ['labour', 'labor', 'mason', 'carpenter', 'plumber', 'electrician', 'worker', 'manpower', 'wages'],
+  MATERIAL: [
+    'material',
+    'cement',
+    'steel',
+    'brick',
+    'sand',
+    'aggregate',
+    'tile',
+    'paint',
+    'pipe',
+    'wire',
+    'fitting',
+  ],
+  LABOUR: [
+    'labour',
+    'labor',
+    'mason',
+    'carpenter',
+    'plumber',
+    'electrician',
+    'worker',
+    'manpower',
+    'wages',
+  ],
   SUB_WORK: ['sub work', 'subwork', 'sub-work', 'contract', 'subcontract', 'turnkey'],
-  EQUIPMENT: ['equipment', 'machinery', 'machine', 'tool', 'rental', 'hire', 'crane', 'mixer', 'scaffolding'],
+  EQUIPMENT: [
+    'equipment',
+    'machinery',
+    'machine',
+    'tool',
+    'rental',
+    'hire',
+    'crane',
+    'mixer',
+    'scaffolding',
+  ],
   OTHER: ['other', 'misc', 'miscellaneous', 'general', 'overhead'],
 };
 
@@ -68,30 +109,71 @@ const CATEGORY_KEYWORDS: Record<BOQCategory, string[]> = {
 /**
  * Parse an Excel or CSV file buffer into BOQ items
  */
-export function parseExcelBuffer(buffer: Buffer, fileName: string): ParseResult {
+export async function parseExcelBuffer(buffer: Buffer, fileName: string): Promise<ParseResult> {
   const errors: string[] = [];
   const items: ParsedBOQItem[] = [];
   const sectionsSet = new Set<string>();
 
   try {
-    // Read workbook
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    
-    // Get first sheet
-    const sheetName = workbook.SheetNames[0];
-    if (!sheetName) {
-      return { items: [], sections: [], totalItems: 0, flaggedItems: 0, errors: ['No sheets found in file'] };
+    // Read workbook using ExcelJS
+    const workbook = new ExcelJS.Workbook();
+
+    // Determine file type and load accordingly
+    const isCSV = fileName.toLowerCase().endsWith('.csv');
+    if (isCSV) {
+      // For CSV files, convert buffer to readable stream and parse
+      const csvStream = Readable.from(buffer);
+      await workbook.csv.read(csvStream);
+    } else {
+      // @ts-expect-error - Buffer type variance between Node.js versions
+      await workbook.xlsx.load(buffer);
     }
 
-    const sheet = workbook.Sheets[sheetName];
-    const rawData = XLSX.utils.sheet_to_json<RawRowData>(sheet, { defval: '' });
+    // Get first sheet
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet) {
+      return {
+        items: [],
+        sections: [],
+        totalItems: 0,
+        flaggedItems: 0,
+        errors: ['No sheets found in file'],
+      };
+    }
+
+    // Convert worksheet to JSON-like format
+    const rawData: RawRowData[] = [];
+    let headers: string[] = [];
+
+    worksheet.eachRow((row: ExcelJS.Row, rowNumber: number) => {
+      if (rowNumber === 1) {
+        // First row is headers
+        const values = row.values as ExcelJS.CellValue[];
+        headers = values.slice(1).map((val: ExcelJS.CellValue) => String(val ?? '').trim());
+      } else {
+        // Data rows
+        const rowData: RawRowData = {};
+        const values = row.values as ExcelJS.CellValue[];
+        values.slice(1).forEach((val: ExcelJS.CellValue, index: number) => {
+          if (headers[index]) {
+            rowData[headers[index]] = val !== null && val !== undefined ? val : '';
+          }
+        });
+        rawData.push(rowData);
+      }
+    });
 
     if (rawData.length === 0) {
-      return { items: [], sections: [], totalItems: 0, flaggedItems: 0, errors: ['No data found in file'] };
+      return {
+        items: [],
+        sections: [],
+        totalItems: 0,
+        flaggedItems: 0,
+        errors: ['No data found in file'],
+      };
     }
 
     // Detect column mappings from headers
-    const headers = Object.keys(rawData[0] || {});
     const columnMap = detectColumnMappings(headers);
 
     if (!columnMap.description) {
@@ -101,7 +183,7 @@ export function parseExcelBuffer(buffer: Buffer, fileName: string): ParseResult 
 
     // Parse each row
     let currentSection = '';
-    
+
     for (let i = 0; i < rawData.length; i++) {
       const row = rawData[i];
       const rowNum = i + 2; // Excel row number (1-indexed + header)
@@ -118,7 +200,11 @@ export function parseExcelBuffer(buffer: Buffer, fileName: string): ParseResult 
       }
 
       // Detect section headers (rows with description but no numeric values)
-      if ((quantity === 0 || isNaN(quantity)) && (rate === 0 || isNaN(rate)) && (amount === 0 || isNaN(amount))) {
+      if (
+        (quantity === 0 || isNaN(quantity)) &&
+        (rate === 0 || isNaN(rate)) &&
+        (amount === 0 || isNaN(amount))
+      ) {
         // Check if it looks like a section header
         const descStr = description.toString().toUpperCase();
         if (descStr.length < 100 && !descStr.includes('TOTAL')) {
@@ -135,7 +221,7 @@ export function parseExcelBuffer(buffer: Buffer, fileName: string): ParseResult 
       }
     }
 
-    const flaggedItems = items.filter(item => item.isReviewFlagged).length;
+    const flaggedItems = items.filter((item) => item.isReviewFlagged).length;
 
     return {
       items,
@@ -155,11 +241,11 @@ export function parseExcelBuffer(buffer: Buffer, fileName: string): ParseResult 
  */
 function detectColumnMappings(headers: string[]): Record<string, string | undefined> {
   const map: Record<string, string | undefined> = {};
-  const normalizedHeaders = headers.map(h => h.toLowerCase().trim());
+  const normalizedHeaders = headers.map((h) => h.toLowerCase().trim());
 
   for (const [field, variations] of Object.entries(COLUMN_MAPPINGS)) {
     for (const variation of variations) {
-      const index = normalizedHeaders.findIndex(h => h.includes(variation));
+      const index = normalizedHeaders.findIndex((h) => h.includes(variation));
       if (index !== -1) {
         map[field] = headers[index];
         break;
@@ -173,7 +259,7 @@ function detectColumnMappings(headers: string[]): Record<string, string | undefi
 /**
  * Get value from row using column mapping
  */
-function getColumnValue(row: RawRowData, column: string | undefined): string | number | undefined {
+function getColumnValue(row: RawRowData, column: string | undefined): ExcelJS.CellValue {
   if (!column) return undefined;
   return row[column];
 }
@@ -181,12 +267,15 @@ function getColumnValue(row: RawRowData, column: string | undefined): string | n
 /**
  * Parse a number from various formats
  */
-function parseNumber(value: string | number | undefined): number {
+function parseNumber(value: ExcelJS.CellValue): number {
   if (value === undefined || value === null || value === '') return 0;
   if (typeof value === 'number') return value;
-  
+
+  // Handle ExcelJS cell value types
+  const strValue = String(value);
+
   // Remove currency symbols, commas, spaces
-  const cleaned = value.toString().replace(/[₹$,\s]/g, '').trim();
+  const cleaned = strValue.replace(/[₹$,\s]/g, '').trim();
   const num = parseFloat(cleaned);
   return isNaN(num) ? 0 : num;
 }
@@ -202,7 +291,7 @@ function parseRowToItem(
   errors: string[]
 ): ParsedBOQItem | null {
   const description = getColumnValue(row, columnMap.description)?.toString().trim() || '';
-  
+
   if (!description) {
     return null;
   }
@@ -239,7 +328,12 @@ function parseRowToItem(
   } else if (!unit || unit === 'nos') {
     // Only flag if unit seems important
     const descLower = description.toLowerCase();
-    if (descLower.includes('sq') || descLower.includes('meter') || descLower.includes('kg') || descLower.includes('cum')) {
+    if (
+      descLower.includes('sq') ||
+      descLower.includes('meter') ||
+      descLower.includes('kg') ||
+      descLower.includes('cum')
+    ) {
       isReviewFlagged = true;
       flagReason = 'Unit may need verification';
     }
@@ -282,10 +376,7 @@ function detectCategory(description: string, section: string): BOQCategory {
 /**
  * Parse a PDF file using OpenAI GPT-4
  */
-export async function parsePDFWithAI(
-  pdfText: string,
-  openaiApiKey: string
-): Promise<ParseResult> {
+export async function parsePDFWithAI(pdfText: string, openaiApiKey: string): Promise<ParseResult> {
   const errors: string[] = [];
 
   try {
@@ -327,7 +418,13 @@ Return a JSON object with:
 
     const content = response.choices[0]?.message?.content;
     if (!content) {
-      return { items: [], sections: [], totalItems: 0, flaggedItems: 0, errors: ['No response from AI'] };
+      return {
+        items: [],
+        sections: [],
+        totalItems: 0,
+        flaggedItems: 0,
+        errors: ['No response from AI'],
+      };
     }
 
     const parsed = JSON.parse(content) as {
@@ -356,10 +453,12 @@ Return a JSON object with:
       rate: item.rate || 0,
       sectionName: item.sectionName,
       isReviewFlagged: item.isReviewFlagged || item.quantity <= 0 || item.rate <= 0,
-      flagReason: item.flagReason || (item.quantity <= 0 || item.rate <= 0 ? 'AI flagged for review' : undefined),
+      flagReason:
+        item.flagReason ||
+        (item.quantity <= 0 || item.rate <= 0 ? 'AI flagged for review' : undefined),
     }));
 
-    const flaggedItems = items.filter(item => item.isReviewFlagged).length;
+    const flaggedItems = items.filter((item) => item.isReviewFlagged).length;
 
     return {
       items,

@@ -5,7 +5,19 @@
  */
 
 import { useState, useCallback } from 'react';
-import { CaretDown, CaretRight, Plus, DotsThree, PencilSimple, Trash, Package, Users, Wrench, Gear, DotsThreeCircle } from '@phosphor-icons/react';
+import {
+  CaretDown,
+  CaretRight,
+  Plus,
+  DotsThree,
+  PencilSimple,
+  Trash,
+  Package,
+  Users,
+  Wrench,
+  Gear,
+  DotsThreeCircle,
+} from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -23,11 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useBOQByCategory, useCreateBOQItem, useDeleteBOQItem } from '@/lib/hooks/useBOQ';
 import { useStagesByProject } from '@/lib/hooks/useStages';
 import { BOQItemFormDialog } from './BOQItemFormDialog';
@@ -54,15 +62,30 @@ interface InlineAddFormState {
 // Constants
 // ============================================
 
-const CATEGORY_CONFIG: Record<BOQCategory, { label: string; icon: typeof Package; color: string }> = {
-  MATERIAL: { label: 'Material', icon: Package, color: 'text-blue-600' },
-  LABOUR: { label: 'Labour', icon: Users, color: 'text-amber-600' },
-  SUB_WORK: { label: 'Sub Work', icon: Wrench, color: 'text-purple-600' },
-  EQUIPMENT: { label: 'Equipment', icon: Gear, color: 'text-green-600' },
-  OTHER: { label: 'Other', icon: DotsThreeCircle, color: 'text-gray-600' },
-};
+const CATEGORY_CONFIG: Record<BOQCategory, { label: string; icon: typeof Package; color: string }> =
+  {
+    MATERIAL: { label: 'Material', icon: Package, color: 'text-blue-600' },
+    LABOUR: { label: 'Labour', icon: Users, color: 'text-amber-600' },
+    SUB_WORK: { label: 'Sub Work', icon: Wrench, color: 'text-purple-600' },
+    EQUIPMENT: { label: 'Equipment', icon: Gear, color: 'text-green-600' },
+    OTHER: { label: 'Other', icon: DotsThreeCircle, color: 'text-gray-600' },
+  };
 
-const COMMON_UNITS = ['nos', 'sqft', 'sqm', 'cum', 'cft', 'rft', 'kg', 'MT', 'bags', 'liters', 'points', 'days', 'meters'];
+const COMMON_UNITS = [
+  'nos',
+  'sqft',
+  'sqm',
+  'cum',
+  'cft',
+  'rft',
+  'kg',
+  'MT',
+  'bags',
+  'liters',
+  'points',
+  'days',
+  'meters',
+];
 
 const INITIAL_FORM_STATE: InlineAddFormState = {
   description: '',
@@ -154,14 +177,17 @@ function CategorySection({ category, group, projectId, stages, onEditItem }: Cat
     }
   }, [category, formState, createMutation]);
 
-  const handleDeleteItem = useCallback(async (item: BOQItem) => {
-    try {
-      await deleteMutation.mutateAsync(item.id);
-      toast.success('Item deleted');
-    } catch {
-      toast.error('Failed to delete item');
-    }
-  }, [deleteMutation]);
+  const handleDeleteItem = useCallback(
+    async (item: BOQItem) => {
+      try {
+        await deleteMutation.mutateAsync(item.id);
+        toast.success('Item deleted');
+      } catch {
+        toast.error('Failed to delete item');
+      }
+    },
+    [deleteMutation]
+  );
 
   // Calculate form amount
   const formQuantity = parseFloat(formState.quantity) || 0;
@@ -233,13 +259,17 @@ function CategorySection({ category, group, projectId, stages, onEditItem }: Cat
               </div>
               <Select
                 value={formState.stageId || 'none'}
-                onValueChange={(value) => handleInputChange('stageId', value === 'none' ? '' : value)}
+                onValueChange={(value) =>
+                  handleInputChange('stageId', value === 'none' ? '' : value)
+                }
               >
                 <SelectTrigger className="w-32 h-9 cursor-pointer">
                   <SelectValue placeholder="Stage (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none" className="cursor-pointer">No stage</SelectItem>
+                  <SelectItem value="none" className="cursor-pointer">
+                    No stage
+                  </SelectItem>
                   {stages.map((stage) => (
                     <SelectItem key={stage.id} value={stage.id} className="cursor-pointer">
                       {stage.name}
@@ -301,12 +331,16 @@ function CategorySection({ category, group, projectId, stages, onEditItem }: Cat
                     <div className="text-sm text-muted-foreground">{item.unit}</div>
                     <div className="text-right text-sm">{item.quantity.toLocaleString()}</div>
                     <div className="text-right text-sm">₹{item.rate.toLocaleString()}</div>
-                    <div className="text-right text-sm font-medium">{formatCurrency(quotedAmount)}</div>
+                    <div className="text-right text-sm font-medium">
+                      {formatCurrency(quotedAmount)}
+                    </div>
                     <div className="text-sm text-muted-foreground">{item.stage?.name || '-'}</div>
-                    <div className={cn(
-                      'text-right text-sm',
-                      variance >= 0 ? 'text-green-600' : 'text-red-600'
-                    )}>
+                    <div
+                      className={cn(
+                        'text-right text-sm',
+                        variance >= 0 ? 'text-green-600' : 'text-red-600'
+                      )}
+                    >
                       {formatVariance(variance)}
                     </div>
                     <div>
@@ -367,10 +401,13 @@ export function BOQCategoryView({ projectId }: BOQCategoryViewProps) {
   }, []);
 
   // Create a map for easy lookup
-  const groupMap = (categoryGroups ?? []).reduce((acc, group) => {
-    acc[group.category] = group;
-    return acc;
-  }, {} as Record<BOQCategory, BOQCategoryGroup>);
+  const groupMap = (categoryGroups ?? []).reduce(
+    (acc, group) => {
+      acc[group.category] = group;
+      return acc;
+    },
+    {} as Record<BOQCategory, BOQCategoryGroup>
+  );
 
   if (isLoading) {
     return (
@@ -384,7 +421,7 @@ export function BOQCategoryView({ projectId }: BOQCategoryViewProps) {
     );
   }
 
-  const categories: BOQCategory[] = ['MATERIAL', 'LABOUR', 'SUB_WORK', 'OTHER'];
+  const categories: BOQCategory[] = ['MATERIAL', 'LABOUR', 'SUB_WORK', 'EQUIPMENT', 'OTHER'];
 
   return (
     <div className="space-y-4">

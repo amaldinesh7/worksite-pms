@@ -159,7 +159,16 @@ export class BOQItemRepository {
    */
   async findAll(organizationId: string, projectId: string, options: BOQListOptions = {}) {
     try {
-      const { skip = 0, take = 50, category, stageId, sectionId, search, sortBy = 'createdAt', sortOrder = 'desc' } = options;
+      const {
+        skip = 0,
+        take = 50,
+        category,
+        stageId,
+        sectionId,
+        search,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+      } = options;
 
       const where: Prisma.BOQItemWhereInput = {
         organizationId,
@@ -213,14 +222,17 @@ export class BOQItemRepository {
       });
 
       // Group by category
-      const grouped = items.reduce((acc, item) => {
-        const cat = item.category;
-        if (!acc[cat]) {
-          acc[cat] = [];
-        }
-        acc[cat].push(item);
-        return acc;
-      }, {} as Record<BOQCategory, typeof items>);
+      const grouped = items.reduce(
+        (acc, item) => {
+          const cat = item.category;
+          if (!acc[cat]) {
+            acc[cat] = [];
+          }
+          acc[cat].push(item);
+          return acc;
+        },
+        {} as Record<BOQCategory, typeof items>
+      );
 
       return grouped;
     } catch (error) {
@@ -240,15 +252,18 @@ export class BOQItemRepository {
       });
 
       // Group by stage (null stage = "Unassigned")
-      const grouped = items.reduce((acc, item) => {
-        const stageKey = item.stageId || 'unassigned';
-        const stageName = item.stage?.name || 'Unassigned';
-        if (!acc[stageKey]) {
-          acc[stageKey] = { stageName, items: [] };
-        }
-        acc[stageKey].items.push(item);
-        return acc;
-      }, {} as Record<string, { stageName: string; items: typeof items }>);
+      const grouped = items.reduce(
+        (acc, item) => {
+          const stageKey = item.stageId || 'unassigned';
+          const stageName = item.stage?.name || 'Unassigned';
+          if (!acc[stageKey]) {
+            acc[stageKey] = { stageName, items: [] };
+          }
+          acc[stageKey].items.push(item);
+          return acc;
+        },
+        {} as Record<string, { stageName: string; items: typeof items }>
+      );
 
       return grouped;
     } catch (error) {
@@ -316,7 +331,10 @@ export class BOQItemRepository {
 
       let totalQuoted = 0;
       let totalActual = 0;
-      const categoryBreakdown: Record<BOQCategory, { quoted: number; actual: number; count: number }> = {
+      const categoryBreakdown: Record<
+        BOQCategory,
+        { quoted: number; actual: number; count: number }
+      > = {
         MATERIAL: { quoted: 0, actual: 0, count: 0 },
         LABOUR: { quoted: 0, actual: 0, count: 0 },
         SUB_WORK: { quoted: 0, actual: 0, count: 0 },
@@ -389,9 +407,25 @@ export class BOQItemRepository {
 
   /**
    * Unlink an expense from a BOQ item
+   * @param organizationId - The requesting organization's ID for tenancy validation
+   * @param boqItemId - The BOQ item ID
+   * @param expenseId - The expense ID to unlink
    */
-  async unlinkExpense(boqItemId: string, expenseId: string) {
+  async unlinkExpense(organizationId: string, boqItemId: string, expenseId: string) {
     try {
+      // Verify BOQ item belongs to the organization (tenancy check)
+      const boqItem = await prisma.bOQItem.findUnique({
+        where: { id: boqItemId },
+      });
+
+      if (!boqItem) {
+        throw new Error('BOQ item not found');
+      }
+
+      if (boqItem.organizationId !== organizationId) {
+        throw new Error('Unauthorized: BOQ item does not belong to this organization');
+      }
+
       await prisma.bOQExpenseLink.delete({
         where: {
           boqItemId_expenseId: { boqItemId, expenseId },

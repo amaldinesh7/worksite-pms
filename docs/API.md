@@ -1,7 +1,7 @@
 # API Reference
 
 > Auto-generated
-> Last generated: 2026-01-24T17:18:58.133Z
+> Last generated: 2026-01-25T12:17:14.194Z
 
 ---
 
@@ -12,4 +12,4 @@
 ## Endpoints
 
 | Method | Endpoint |
-|--------|----------|
+| ------ | -------- |

@@ -41,7 +41,13 @@ export default function PhoneInput() {
 
     setError(null);
 
-    const result = await sendOtpMutation.mutateAsync({ phone: phoneNumber, countryCode: COUNTRY_CODE });
+    // Normalize phone number by stripping all non-digit characters before sending
+    const normalizedPhone = phoneNumber.replace(/\D/g, '');
+
+    const result = await sendOtpMutation.mutateAsync({
+      phone: normalizedPhone,
+      countryCode: COUNTRY_CODE,
+    });
 
     if (result.success) {
       setStep('otp');
@@ -67,7 +73,17 @@ export default function PhoneInput() {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Allow: backspace, delete, tab, escape, enter, arrows
     if (
-      ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) ||
+      [
+        'Backspace',
+        'Delete',
+        'Tab',
+        'Escape',
+        'Enter',
+        'ArrowLeft',
+        'ArrowRight',
+        'ArrowUp',
+        'ArrowDown',
+      ].includes(e.key) ||
       // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
       (e.ctrlKey && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase())) ||
       (e.metaKey && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase()))
