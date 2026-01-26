@@ -5,6 +5,10 @@ language: en-US
 
 # Review settings
 reviews:
+  # Only review PRs targeting the beta branch
+  base_branches:
+    - beta
+
   # Enable high-level summary
   high_level_summary: true
 
