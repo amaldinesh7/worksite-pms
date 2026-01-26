@@ -1,0 +1,254 @@
+---
+description: Storybook best practices for writing component stories
+globs: apps/web/src/stories/**/*.tsx
+alwaysApply: false
+---
+
+# Storybook Best Practices
+
+Guidelines for writing consistent, well-documented component stories in this project.
+
+## Story File Structure
+
+Every story file should follow this structure:
+
+```tsx
+import type { Meta, StoryObj } from '@storybook/react-vite';
+// ... other imports
+
+/**
+ * Component description with:
+ * 
+ * ## Usage
+ * 
+ * ```tsx
+ * // Code examples showing basic usage
+ * ```
+ * 
+ * ## Props
+ * 
+ * - **propName**: description
+ */
+const meta: Meta<typeof Component> = {
+  title: 'UI/ComponentName',
+  component: Component,
+  parameters: { layout: 'centered' },
+  tags: ['autodocs'],
+  argTypes: {
+    // Control definitions with descriptions and defaults
+  },
+};
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+// Stories organized by category
+export const Playground: Story = { ... };
+export const Variants: Story = { ... };
+export const States: Story = { ... };
+// Usage examples integrated into relevant sections
+```
+
+## argTypes Configuration
+
+Always define argTypes with proper controls, descriptions, and default values:
+
+```tsx
+argTypes: {
+  variant: {
+    control: 'select',
+    options: ['primary', 'secondary', 'outline'],
+    description: 'Visual style variant',
+    table: {
+      defaultValue: { summary: 'primary' },
+    },
+  },
+  isError: {
+    control: 'boolean',
+    description: 'Error state with red border',
+    table: {
+      defaultValue: { summary: 'false' },
+    },
+  },
+},
+```
+
+## Playground Story (Required)
+
+Every component must have a Playground story with working controls:
+
+```tsx
+export const Playground: Story = {
+  args: {
+    // ALL controllable props with sensible defaults
+    variant: 'primary',
+    size: 'default',
+    disabled: false,
+    placeholder: 'Enter value...',
+  },
+  // Use render function if wrapper is needed
+  render: (args) => (
+    <div className="w-80">
+      <Component {...args} />
+    </div>
+  ),
+};
+```
+
+Key rules for Playground:
+- Include ALL props that have argTypes defined
+- Use `args` object, not hardcoded values
+- Spread `{...args}` in render function
+- Wrap in container if component needs specific width
+
+## Story Organization
+
+Organize stories by category using section comments:
+
+```tsx
+// =============================================================================
+// PLAYGROUND
+// =============================================================================
+
+export const Playground: Story = { ... };
+
+// =============================================================================
+// VARIANTS
+// =============================================================================
+
+export const Variants: Story = { ... };
+
+// =============================================================================
+// SIZES
+// =============================================================================
+
+export const Sizes: Story = { ... };
+
+// =============================================================================
+// STATES
+// =============================================================================
+
+export const States: Story = { ... };
+
+// =============================================================================
+// USAGE EXAMPLES
+// =============================================================================
+
+export const LoginForm: Story = { ... };
+```
+
+## Story Naming
+
+- Use PascalCase for story names
+- Use descriptive names that explain what's shown
+- For sub-categories, use format: `CategoryName` not `Category / SubName`
+- Avoid "Example /" prefix - integrate examples into the docs
+
+Good:
+- `Sizes`
+- `WithIcons`
+- `ErrorStates`
+- `LoginForm`
+- `FormValidation`
+
+Bad:
+- `sizes`
+- `Example / Login Form`
+- `With Icons / Left`
+
+## Documentation in Stories
+
+Add JSDoc comments to stories for autodocs:
+
+```tsx
+/**
+ * All button variants showing different visual styles.
+ * - **Primary**: Main action, high emphasis
+ * - **Secondary**: Alternative action, medium emphasis
+ */
+export const Variants: Story = { ... };
+```
+
+## Usage Examples
+
+Integrate real-world usage examples directly into the story file:
+
+```tsx
+/**
+ * Login form pattern showing typical form layout with labels.
+ */
+export const LoginForm: Story = {
+  name: 'Login Form',
+  render: () => (
+    <div className="flex w-80 flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium">Email</label>
+        <Input type="email" leftIcon={<Envelope />} placeholder="you@example.com" />
+      </div>
+      ...
+    </div>
+  ),
+};
+```
+
+## Interactive Stories
+
+For stories with state, use function components:
+
+```tsx
+export const PasswordToggle: Story = {
+  name: 'Password with Toggle',
+  render: function PasswordToggleExample() {
+    const [showPassword, setShowPassword] = useState(false);
+    return (
+      <Input
+        type={showPassword ? 'text' : 'password'}
+        rightIcon={
+          <button onClick={() => setShowPassword(!showPassword)}>
+            {showPassword ? <EyeSlash /> : <Eye />}
+          </button>
+        }
+      />
+    );
+  },
+};
+```
+
+## Component Meta Description
+
+The meta description should include:
+1. Brief component overview
+2. Usage section with code examples
+3. Props section listing key props
+
+```tsx
+/**
+ * Input component with size and state variants.
+ *
+ * ## Usage
+ *
+ * ```tsx
+ * import { Input } from '@/components/ui/input';
+ *
+ * <Input placeholder="Enter value..." />
+ * <Input inputSize="lg" isError />
+ * ```
+ *
+ * ## Props
+ *
+ * - **inputSize**: `default` | `lg` | `sm` | `mini`
+ * - **isError**: Shows red border and focus ring
+ * - **leftIcon**: Icon element for left side
+ */
+```
+
+## Checklist for New Stories
+
+- [ ] Meta with title, component, parameters, tags, argTypes
+- [ ] Playground story with all controllable args
+- [ ] Variant stories for each major prop variation
+- [ ] State stories (normal, error, disabled, loading)
+- [ ] Size stories if component has sizes
+- [ ] Usage examples integrated (forms, patterns, etc.)
+- [ ] JSDoc comments on all stories
+- [ ] No lint errors
