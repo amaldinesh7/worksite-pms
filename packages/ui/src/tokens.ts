@@ -112,7 +112,7 @@ export const fontWeight = {
 
 export const fontFamily = {
   sans: ['Figtree', 'Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-  mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+  mono: ['Geist', 'Geist Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
 } as const;
 
 // =============================================================================
@@ -141,6 +141,16 @@ export const boxShadow = {
   md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
   lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
   xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+} as const;
+
+// =============================================================================
+// LAYOUT DIMENSIONS (in pixels)
+// =============================================================================
+
+export const layout = {
+  sidebarWidth: 256,       // w-64 in Tailwind
+  sidebarCollapsed: 64,    // w-16 in Tailwind
+  headerHeight: 64,
 } as const;
 
 // =============================================================================
