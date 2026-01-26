@@ -225,7 +225,7 @@ export class CompressionService {
 
       zip.getEntries().forEach((entry) => {
         if (!entry.isDirectory) {
-          newZip.addFile(entry.entryName, entry.getData(), entry.comment, 0o644);
+          newZip.addFile(entry.entryName, entry.getData(), entry.comment);
         }
       });
 

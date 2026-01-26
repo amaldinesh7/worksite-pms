@@ -5,7 +5,9 @@
  */
 
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { PDFParse } from 'pdf-parse';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
 import { boqItemRepository, boqSectionRepository } from '../../repositories/boq.repository';
 import { boqImportService } from '../../services/boq-import.service';
 import { createErrorHandler } from '../../lib/error-handler';
@@ -344,9 +346,8 @@ export const parseFile = handle(
         });
       }
 
-      // Extract text from PDF using pdf-parse v2 API
-      const pdfParser = new PDFParse({ data: buffer });
-      const pdfData = await pdfParser.getText();
+      // Extract text from PDF
+      const pdfData = await pdfParse(buffer);
       const pdfText = pdfData.text;
 
       if (!pdfText || pdfText.trim().length === 0) {
