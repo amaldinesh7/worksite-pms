@@ -1,10 +1,10 @@
 import {
   HouseIcon,
   FolderIcon,
-  UsersIcon,
-  GridFourIcon,
-  ShieldIcon,
-  HandshakeIcon,
+  UsersFourIcon,
+  TagIcon,
+  AddressBookIcon,
+  ShieldCheckeredIcon
 } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 
@@ -23,17 +23,17 @@ export interface NavSection {
 }
 
 export const mainNavItems: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: HouseIcon, href: '/' },
+  { id: 'my-company', label: 'My Company', icon: HouseIcon, href: '/' },
   { id: 'projects', label: 'Projects', icon: FolderIcon, href: '/projects' },
-  { id: 'parties', label: 'Parties', icon: HandshakeIcon, href: '/parties' },
-  { id: 'team', label: 'Team Directory', icon: UsersIcon, href: '/team' },
+  { id: 'parties', label: 'Parties', icon: AddressBookIcon, href: '/parties' },
+  { id: 'team', label: 'Team Directory', icon: UsersFourIcon, href: '/team' },
 ];
 
 export const settingsSection: NavSection = {
   id: 'settings',
   title: 'Settings',
   items: [
-    { id: 'categories', label: 'Categories', icon: GridFourIcon, href: '/categories' },
-    { id: 'roles', label: 'Roles & Permissions', icon: ShieldIcon, href: '/settings/roles' },
+    { id: 'categories', label: 'Categories', icon: TagIcon, href: '/categories' },
+    { id: 'roles', label: 'Roles & Permissions', icon: ShieldCheckeredIcon, href: '/settings/roles' },
   ],
 };

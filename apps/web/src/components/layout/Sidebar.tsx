@@ -5,13 +5,11 @@ import {
   DotsThreeVertical,
   X,
   Buildings,
-  HardHat,
 } from '@phosphor-icons/react';
 
 import { cn } from '@/lib/utils';
-import { TypographySmall, TypographyMuted, TypographyLarge } from '@/components/ui/typography';
 import { useSidebarStore } from '@/stores/sidebar';
-import { useAuthStore } from '@/stores/auth.store';
+import { useAuthStore, type UserRole } from '@/stores/auth.store';
 import {
   NavItemButton,
   NavSection,
@@ -19,7 +17,6 @@ import {
   mainNavItems,
   settingsSection,
 } from './sidebar/index';
-import { ThemeToggle } from './sidebar/ThemeToggle';
 
 interface SidebarProps {
   className?: string;
@@ -36,7 +33,7 @@ export function Sidebar({ className }: SidebarProps) {
     closeProfileMenu,
   } = useSidebarStore();
 
-  const { user } = useAuthStore();
+  const { user, userRole } = useAuthStore();
 
   // Close mobile menu on navigation
   const handleNavClick = () => {
@@ -87,9 +84,9 @@ export function Sidebar({ className }: SidebarProps) {
           'bg-white border-r border-neutral-200',
           'flex flex-col relative overflow-visible',
           'transition-all duration-300 ease-out',
-          isCollapsed ? 'w-16' : 'w-64',
+          isCollapsed ? 'w-16' : 'w-[232px]',
           '-translate-x-full lg:translate-x-0',
-          isMobileOpen && 'translate-x-0 w-64',
+          isMobileOpen && 'translate-x-0 w-[232px]',
           className
         )}
         role="navigation"
@@ -99,7 +96,7 @@ export function Sidebar({ className }: SidebarProps) {
         <SidebarHeader isCollapsed={effectiveCollapsed} onCloseMobile={closeMobile} />
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto overflow-x-visible p-3">
+        <nav className="flex-1 overflow-y-auto overflow-x-visible px-3 pt-6 pb-3">
           <ul className="space-y-1">
             {mainNavItems.map((item) => (
               <li key={item.id}>
@@ -125,6 +122,7 @@ export function Sidebar({ className }: SidebarProps) {
         <SidebarFooter
           isCollapsed={effectiveCollapsed}
           user={user}
+          userRole={userRole}
           isProfileMenuOpen={isProfileMenuOpen}
           onToggleProfileMenu={toggleProfileMenu}
           onCloseProfileMenu={closeProfileMenu}
@@ -166,43 +164,58 @@ interface SidebarHeaderProps {
 
 function SidebarHeader({ isCollapsed, onCloseMobile }: SidebarHeaderProps) {
   const { organization } = useAuthStore();
-  
+  const orgName = organization?.name || 'My Organization';
+  const hasLogo = Boolean(organization?.logoUrl);
+
   return (
     <div
       className={cn(
-        'h-[65px] flex items-center border-b border-neutral-200',
-        isCollapsed ? 'px-3 justify-center' : 'px-4'
+        'border-b border-neutral-200',
+        isCollapsed ? 'px-3 py-4' : 'px-4 py-4'
       )}
     >
       <div
         className={cn(
-          'flex items-center',
-          isCollapsed ? 'justify-center' : 'justify-between w-full'
+          'flex items-center gap-3',
+          isCollapsed ? 'justify-center' : 'justify-between'
         )}
       >
-        <div className="flex items-center min-w-0">
-          <div
-            className={cn(
-              'w-10 h-10 rounded-lg shrink-0',
-              'bg-neutral-200 text-neutral-600',
-              'flex items-center justify-center',
-              !isCollapsed && 'mr-3'
-            )}
-          >
-            <Buildings className="h-5 w-5" weight="fill" />
-          </div>
-          {!isCollapsed && (
-            <div className="min-w-0 flex-1">
-              <TypographyLarge className="font-heading font-semibold text-neutral-800 leading-tight text-base truncate max-w-[140px]">
-                {organization?.name || 'My Organization'}
-              </TypographyLarge>
+        <div className={cn('flex items-center gap-3 min-w-0', isCollapsed && 'justify-center')}>
+          {/* Logo/Icon Container */}
+          {hasLogo ? (
+            <img
+              src={organization?.logoUrl || ''}
+              alt={orgName}
+              className="w-8 h-8 rounded-[6.4px] object-cover shrink-0"
+            />
+          ) : (
+            <div
+              className={cn(
+                'w-8 h-8 rounded-[6.4px] shrink-0',
+                'bg-btn-primary text-btn-primary-foreground',
+                'flex items-center justify-center'
+              )}
+            >
+              <Buildings className="h-4 w-4" weight="fill" />
             </div>
           )}
+
+          {/* Organization Name */}
+          {!isCollapsed && (
+            <span
+              className="text-base font-medium text-secondary-foreground leading-tight line-clamp-2 overflow-wrap-break-word max-w-[140px]"
+              title={orgName}
+            >
+              {orgName}
+            </span>
+          )}
         </div>
+
+        {/* Mobile Close Button */}
         {!isCollapsed && (
           <button
             onClick={onCloseMobile}
-            className="text-neutral-400 hover:text-neutral-600 p-1 lg:hidden"
+            className="text-muted-foreground hover:text-foreground p-1 lg:hidden cursor-pointer"
             aria-label="Close navigation"
           >
             <X className="h-5 w-5" weight="bold" />
@@ -219,6 +232,7 @@ function SidebarHeader({ isCollapsed, onCloseMobile }: SidebarHeaderProps) {
 interface SidebarFooterProps {
   isCollapsed: boolean;
   user: { name: string; phone: string } | null;
+  userRole: UserRole | null;
   isProfileMenuOpen: boolean;
   onToggleProfileMenu: () => void;
   onCloseProfileMenu: () => void;
@@ -227,39 +241,58 @@ interface SidebarFooterProps {
 function SidebarFooter({
   isCollapsed,
   user,
+  userRole,
   isProfileMenuOpen,
   onToggleProfileMenu,
   onCloseProfileMenu,
 }: SidebarFooterProps) {
+  // Format role for display
+  const getRoleDisplay = (role: UserRole | null): string => {
+    if (!role) return '';
+    const roleMap: Record<UserRole, string> = {
+      ADMIN: 'Admin',
+      MANAGER: 'Manager',
+      ACCOUNTANT: 'Accountant',
+    };
+    return roleMap[role] || role;
+  };
+
   return (
-    <div className="border-t border-neutral-200 p-3">
-      {/* User Profile */}
+    <div className="border-t border-neutral-200 pt-[13px] pb-3 px-3">
       <div className="relative">
         <div
-          className={cn('flex items-center px-3 py-2 mb-3', isCollapsed && 'justify-center px-0')}
+          className={cn(
+            'flex items-center gap-2 px-3 py-2 rounded-lg',
+            isCollapsed && 'justify-center px-0'
+          )}
         >
+          {/* User Avatar */}
           <div
             className={cn(
-              'w-8 h-8 rounded-full shrink-0 bg-neutral-200 flex items-center justify-center',
-              !isCollapsed && 'mr-3'
+              'w-8 h-8 rounded-full shrink-0 bg-muted flex items-center justify-center overflow-hidden'
             )}
           >
-            <TypographySmall className="text-neutral-600 font-medium">
+            <span className="text-sm font-medium text-muted-foreground">
               {user?.name?.charAt(0).toUpperCase() || 'U'}
-            </TypographySmall>
+            </span>
           </div>
+
           {!isCollapsed && (
             <>
+              {/* User Info */}
               <div className="flex-1 min-w-0">
-                <TypographySmall className="text-neutral-800 truncate">
+                <p className="text-[14px] font-medium leading-[20px] text-secondary-foreground truncate">
                   {user?.name || 'User'}
-                </TypographySmall>
-                <TypographyMuted className="text-xs truncate">{user?.phone || ''}</TypographyMuted>
+                </p>
+                <p className="text-[12px] leading-[16px] text-muted-foreground truncate">
+                  {getRoleDisplay(userRole)}
+                </p>
               </div>
-              <ThemeToggle />
+
+              {/* Menu Button */}
               <button
                 onClick={onToggleProfileMenu}
-                className="text-neutral-400 hover:text-neutral-600 p-1"
+                className="p-2 rounded-lg text-muted-foreground hover:bg-black/5 cursor-pointer"
                 aria-label="User menu"
               >
                 <DotsThreeVertical className="h-5 w-5" weight="bold" />
@@ -267,36 +300,14 @@ function SidebarFooter({
             </>
           )}
         </div>
+
         <ProfileMenu
           isOpen={isProfileMenuOpen}
           onClose={onCloseProfileMenu}
           isCollapsed={isCollapsed}
         />
       </div>
-
-      {/* Powered By */}
-      <div
-        className={cn(
-          'flex items-center rounded-lg bg-neutral-50',
-          isCollapsed ? 'p-2 justify-center' : 'px-3 py-2'
-        )}
-      >
-        <div
-          className={cn(
-            'w-8 h-8 rounded-lg shrink-0 bg-neutral-700 text-white flex items-center justify-center',
-            !isCollapsed && 'mr-3'
-          )}
-        >
-          <HardHat className="h-4 w-4" weight="fill" />
-        </div>
-        {!isCollapsed && (
-          <div>
-            <TypographyMuted className="text-xs">Powered by</TypographyMuted>
-            <TypographySmall className="text-neutral-800">SiteMate</TypographySmall>
-          </div>
-        )}
-      </div>
-    </div >
+    </div>
   );
 }
 
