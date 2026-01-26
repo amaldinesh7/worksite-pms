@@ -10,7 +10,7 @@ import { MagnifyingGlass, Plus, PencilSimple, Trash } from '@phosphor-icons/reac
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { TypographyH4, TypographyMuted, TypographySmall } from '@/components/ui/typography';
+import { Typography } from '@/components/ui/typography';
 import {
   Dialog,
   DialogContent,
@@ -143,7 +143,7 @@ export function CategoryDetails({
   if (!categoryType) {
     return (
       <Card className="bg-card border border-border rounded-lg p-6 flex items-center justify-center h-full">
-        <TypographyMuted>Select a category type to view items</TypographyMuted>
+        <Typography variant="muted">Select a category type to view items</Typography>
       </Card>
     );
   }
@@ -153,7 +153,7 @@ export function CategoryDetails({
       <Card className="bg-card border border-border rounded-lg flex flex-col h-full min-h-0 overflow-hidden">
         {/* Header */}
         <div className="p-6 border-b border-border shrink-0 flex flex-row items-center justify-between gap-4">
-          <TypographyH4 >{categoryType.label}</TypographyH4>
+          <Typography variant="h4">{categoryType.label}</Typography>
           {/* Search Input */}
           <div className="relative">
             <MagnifyingGlass
@@ -276,9 +276,9 @@ function LoadingState() {
 function EmptyState({ hasSearch }: { hasSearch: boolean }) {
   return (
     <div className="text-center py-12">
-      <TypographyMuted>
+      <Typography variant="muted">
         {hasSearch ? 'No items match your search' : 'No items yet. Add one above.'}
-      </TypographyMuted>
+      </Typography>
     </div>
   );
 }
@@ -301,7 +301,7 @@ function ItemsList({ items, onEditItem, onDeleteItem, isDeleting }: ItemsListPro
             index < items.length - 1 && 'border-b border-border'
           )}
         >
-          <TypographySmall>{item.name}</TypographySmall>
+          <Typography variant="paragraph-small">{item.name}</Typography>
           {/* Only show actions for editable items */}
           {item.isEditable && (onEditItem || onDeleteItem) && (
             <div className="flex items-center gap-2">

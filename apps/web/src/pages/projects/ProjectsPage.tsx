@@ -40,6 +40,7 @@ import {
 } from '@/lib/hooks/useProjects';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import type { Project, ProjectStatus, CreateProjectInput, UpdateProjectInput } from '@/lib/api/projects';
+import { Typography } from '@/components/ui/typography';
 
 // ============================================
 // Constants
@@ -197,12 +198,7 @@ export default function ProjectsPage() {
 
   return (
     <>
-      <Header
-        title="Projects Overview"
-        subtitle="Manage all construction projects"
-        showSearch={false}
-        primaryActionLabel=""
-      />
+      <Header title="Projects" />
 
       <PageContent>
         <div className="space-y-4">
@@ -245,7 +241,7 @@ export default function ProjectsPage() {
 
             {/* Sort By */}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Sort by:</span>
+              <Typography variant="paragraph-small" as="span" className="text-muted-foreground">Sort by:</Typography>
               <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
                 <SelectTrigger className="w-[140px] cursor-pointer">
                   <SelectValue />

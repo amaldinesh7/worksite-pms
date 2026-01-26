@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { useAuthStore } from '@/stores/auth.store';
+import { Typography } from '@/components/ui/typography';
 
 // India country code - hardcoded for now, will expand later
 const COUNTRY_CODE = '+91';
@@ -141,7 +142,7 @@ export default function PhoneInput() {
         </div>
 
         {/* Error Message */}
-        {error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
+        {error && <Typography variant="paragraph-small" className="text-red-600 mt-3 text-center">{error}</Typography>}
 
         {/* Submit Button */}
         <Button

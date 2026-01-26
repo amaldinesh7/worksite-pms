@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { TypographySmall, TypographyMuted } from '@/components/ui/typography';
+import { Typography } from '@/components/ui/typography';
 import type { Project } from '@/lib/api/projects';
 
 // ============================================
@@ -142,7 +142,7 @@ export function ProjectCard({ project, onEdit, onDelete, onClick }: ProjectCardP
         {/* Title and Type */}
         <div className="space-y-1">
           <div className="flex items-start justify-between gap-2">
-            <TypographySmall className="font-semibold line-clamp-1">{project.name}</TypographySmall>
+            <Typography variant="paragraph-small" className="font-semibold line-clamp-1">{project.name}</Typography>
             <Badge variant="outline" className="shrink-0 text-xs">
               {project.projectType?.name || 'Unknown'}
             </Badge>
@@ -161,8 +161,8 @@ export function ProjectCard({ project, onEdit, onDelete, onClick }: ProjectCardP
         {/* Progress */}
         <div className="space-y-1">
           <div className="flex items-center justify-between text-xs">
-            <TypographyMuted className="text-xs">Progress</TypographyMuted>
-            <TypographySmall>{project.progress || 0}%</TypographySmall>
+            <Typography variant="muted" className="text-xs">Progress</Typography>
+            <Typography variant="paragraph-small">{project.progress || 0}%</Typography>
           </div>
           <Progress value={project.progress || 0} className="h-1.5" />
         </div>

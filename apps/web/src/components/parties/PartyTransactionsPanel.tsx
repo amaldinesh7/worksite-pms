@@ -7,7 +7,7 @@
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { TypographyH3, TypographyMuted } from '@/components/ui/typography';
+import { Typography } from '@/components/ui/typography';
 import {
   Table,
   TableBody,
@@ -109,17 +109,17 @@ export function PartyTransactionsPanel({
       <Card className="p-6 shrink-0 flex flex-col gap-4">
         <div className="flex items-center justify-between gap-8">
           <div className="flex flex-col gap-1">
-            <TypographyMuted className="mb-1">Paid</TypographyMuted>
-            <TypographyH3 className="font-semibold">
+            <Typography variant="muted" className="mb-1">Paid</Typography>
+            <Typography variant="h3" className="font-semibold">
               {formatCurrency(totalPaid)}
-            </TypographyH3>
+            </Typography>
           </div>
 
           <div className="flex flex-col gap-1 text-right">
-            <TypographyMuted className="mb-1">{expensesLabel}</TypographyMuted>
-            <TypographyH3 className="font-semibold">
+            <Typography variant="muted" className="mb-1">{expensesLabel}</Typography>
+            <Typography variant="h3" className="font-semibold">
               {formatCurrency(totalExpenses)}
-            </TypographyH3>
+            </Typography>
           </div>
         </div>
         <div className="flex-1">
@@ -186,7 +186,7 @@ export function PartyTransactionsPanel({
             ) : transactions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="h-32 text-center">
-                  <TypographyMuted>No transactions found</TypographyMuted>
+                  <Typography variant="muted">No transactions found</Typography>
                 </TableCell>
               </TableRow>
             ) : (

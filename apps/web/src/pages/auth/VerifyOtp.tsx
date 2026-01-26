@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { OtpInput, OTP_LENGTH } from '@/components/auth/OtpInput';
 import { useAuthStore } from '@/stores/auth.store';
+import { Typography } from '@/components/ui/typography';
 
 const RESEND_COOLDOWN = 30;
 // India country code - hardcoded for now
@@ -125,14 +126,14 @@ export default function VerifyOtp() {
       <form onSubmit={handleSubmit}>
         {/* OTP Input */}
         <div className="text-left">
-          <label className="text-sm font-medium text-foreground">Verification Code</label>
+          <Typography variant="paragraph-small-medium" as="label" className="text-foreground">Verification Code</Typography>
           <div className="mt-2">
             <OtpInput value={otp} onChange={setOtp} error={!!error} disabled={isLoading} />
           </div>
         </div>
 
         {/* Error Message */}
-        {error && <p className="text-red-600 text-sm mt-3 text-center">{error}</p>}
+        {error && <Typography variant="paragraph-small" className="text-red-600 mt-3 text-center">{error}</Typography>}
 
         {/* Submit Button */}
         <Button type="submit" disabled={isLoading} className="w-full mt-6" size="lg">

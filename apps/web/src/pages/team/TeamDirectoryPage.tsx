@@ -43,6 +43,7 @@ import {
 import { useRoles } from '@/lib/hooks/useRoles';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import type { TeamMember, CreateTeamMemberInput, UpdateTeamMemberInput } from '@/lib/api/team';
+import { Typography } from '@/components/ui/typography';
 
 // ============================================
 // Constants
@@ -195,12 +196,7 @@ export default function TeamDirectoryPage() {
 
   return (
     <>
-      <Header
-        title="Team Directory"
-        subtitle="Manage your team members and roles"
-        showSearch={false}
-        primaryActionLabel=""
-      />
+      <Header title="Team" />
 
       <PageContent>
         <div className="space-y-4">
@@ -239,7 +235,7 @@ export default function TeamDirectoryPage() {
 
             {/* Sort By */}
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Sort by:</span>
+              <Typography variant="paragraph-small" as="span" className="text-muted-foreground">Sort by:</Typography>
               <Select value={sortBy} onValueChange={handleSortChange}>
                 <SelectTrigger className="w-[140px] cursor-pointer">
                   <SelectValue />

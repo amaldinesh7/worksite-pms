@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { TypographyMuted } from '@/components/ui/typography';
+import { Typography } from '@/components/ui/typography';
 import { useRole, useCreateRole, useUpdateRole } from '@/lib/hooks/useRoles';
 import { usePermissionsGrouped } from '@/lib/hooks/usePermissions';
 import type { CreateRoleInput, UpdateRoleInput } from '@/lib/api/roles';
@@ -193,10 +193,10 @@ export default function RoleDetailPage() {
     return (
       <>
         <Header
-          title="Roles & Permissions"
-          subtitle="Manage roles and configure permissions for your team members"
-          showSearch={false}
-          primaryActionLabel=""
+          breadcrumbs={[
+            { label: 'Roles & Permissions', href: '/settings/roles' },
+            { label: 'Loading...' },
+          ]}
         />
         <PageContent>
           <div className="space-y-6 animate-pulse">
@@ -222,15 +222,15 @@ export default function RoleDetailPage() {
     return (
       <>
         <Header
-          title="Roles & Permissions"
-          subtitle="Manage roles and configure permissions for your team members"
-          showSearch={false}
-          primaryActionLabel=""
+          breadcrumbs={[
+            { label: 'Roles & Permissions', href: '/settings/roles' },
+            { label: 'Not Found' },
+          ]}
         />
         <PageContent>
           <div className="flex flex-col items-center justify-center py-12">
             <Shield className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <TypographyMuted className="mb-4">Role not found</TypographyMuted>
+            <Typography variant="muted" className="mb-4">Role not found</Typography>
             <Button variant="outline" onClick={handleBack} className="cursor-pointer">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Roles
@@ -241,20 +241,19 @@ export default function RoleDetailPage() {
     );
   }
 
-  // Determine the title based on mode
-  const getTitle = () => {
-    if (isNewRole) return 'Create a new role';
-    if (isEditMode) return `Edit ${role?.name}`;
+  // Determine the breadcrumb label
+  const getBreadcrumbLabel = () => {
+    if (isNewRole) return 'New Role';
     return role?.name || 'Role Details';
   };
 
   return (
     <>
       <Header
-        title="Roles & Permissions"
-        subtitle="Manage roles and configure permissions for your team members"
-        showSearch={false}
-        primaryActionLabel=""
+        breadcrumbs={[
+          { label: 'Roles & Permissions', href: '/settings/roles' },
+          { label: getBreadcrumbLabel() },
+        ]}
       />
 
       <PageContent>
@@ -270,7 +269,9 @@ export default function RoleDetailPage() {
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <span className="text-lg font-medium">{getTitle()}</span>
+              <span className="text-lg font-medium">
+                {isNewRole ? 'Create a new role' : isEditMode ? `Edit ${role?.name}` : role?.name || 'Role Details'}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               {isEditMode ? (
@@ -344,11 +345,11 @@ export default function RoleDetailPage() {
           <div className="rounded-lg border bg-card p-6">
             <div className="mb-4">
               <h3 className="text-base font-semibold">Permissions</h3>
-              <TypographyMuted className="text-sm">
+              <Typography variant="muted" className="text-sm">
                 {isEditMode
                   ? 'Select the permissions this role should have access to'
                   : 'Permissions assigned to this role'}
-              </TypographyMuted>
+              </Typography>
             </div>
 
             <div className="space-y-6">
