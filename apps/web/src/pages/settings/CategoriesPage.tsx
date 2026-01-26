@@ -104,13 +104,7 @@ export default function CategoriesPage() {
 
   return (
     <>
-      <Header
-        title="Categories Management"
-        subtitle="Manage expense types, materials, labour, and more"
-        showSearch={false}
-        primaryActionLabel=""
-        actions={headerActions}
-      />
+      <Header title="Categories" actions={headerActions} />
       <PageContent className="overflow-hidden min-h-0">
         <div className="grid grid-cols-12 gap-6 h-full min-h-0 overflow-hidden">
           {/* Left Panel - Category Types Navigation */}

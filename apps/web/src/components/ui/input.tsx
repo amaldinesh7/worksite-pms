@@ -12,12 +12,12 @@ import { cn } from '@/lib/utils';
 const inputVariants = cva(
   // Base styles
   [
-    'flex w-full bg-white border border-gray-200 text-foreground',
+    'flex w-full bg-white border border-neutral-200 text-foreground',
     'shadow-sm transition-colors duration-150 ease-in-out',
     'placeholder:text-muted-foreground',
     'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
-    // Focus state (normal) - border #a3a3a3, ring #d4d4d4
-    'focus-visible:outline-none focus-visible:border-gray-400 focus-visible:ring-[3px] focus-visible:ring-gray-300',
+    // Focus state moved to component for error state handling
+    'focus-visible:outline-none focus-visible:ring-[3px]',
     // Disabled state
     'disabled:cursor-not-allowed disabled:opacity-50',
   ],
@@ -85,10 +85,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const iconClasses = iconWrapperClasses[currentSize];
     const roundness = roundnessClasses[currentSize];
 
-    // Error state classes
-    const errorClasses = isError
+    // Focus state classes - mutually exclusive normal/error
+    const focusClasses = isError
       ? 'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-300'
-      : '';
+      : 'focus-visible:border-neutral-400 focus-visible:ring-neutral-300';
 
     // If we have icons, render a wrapper
     if (hasIcons) {
@@ -96,16 +96,17 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <div
           className={cn(
             'relative flex items-center w-full',
-            'bg-white border border-gray-200 shadow-sm',
+            'bg-white border border-neutral-200 shadow-sm',
             roundness,
             // Size-specific min-height
             currentSize === 'lg' ? 'min-h-10' : currentSize === 'sm' ? 'min-h-8' : currentSize === 'mini' ? 'min-h-6' : 'min-h-9',
-            // Focus-within states - border #a3a3a3, ring #d4d4d4
-            'has-[:focus-visible]:outline-none has-[:focus-visible]:border-gray-400 has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-gray-300',
-            // Error states - border #ef4444, ring #fca5a5
-            isError && 'border-red-500 has-[:focus-visible]:border-red-500 has-[:focus-visible]:ring-red-300',
+            // Focus-within states - mutually exclusive normal/error
+            'has-focus-visible:outline-none has-focus-visible:ring-[3px]',
+            isError
+              ? 'border-red-500 has-focus-visible:border-red-500 has-focus-visible:ring-red-300'
+              : 'has-focus-visible:border-neutral-400 has-focus-visible:ring-neutral-300',
             // Disabled state
-            'has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50',
+            'has-disabled:cursor-not-allowed has-disabled:opacity-50',
             className
           )}
         >
@@ -157,7 +158,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         type={type}
         className={cn(
           inputVariants({ inputSize }),
-          errorClasses,
+          focusClasses,
           className
         )}
         ref={ref}

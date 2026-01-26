@@ -205,12 +205,7 @@ export default function PartiesPage() {
 
   return (
     <>
-      <Header
-        title="Parties Overview"
-        subtitle="Manage your vendors, labours, and subcontractors"
-        showSearch={false}
-        primaryActionLabel=""
-      />
+      <Header title="Parties" />
 
       <PageContent>
         <div className="space-y-4">

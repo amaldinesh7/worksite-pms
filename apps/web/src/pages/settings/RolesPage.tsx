@@ -91,12 +91,7 @@ export default function RolesPage() {
 
   return (
     <>
-      <Header
-        title="Roles & Permissions"
-        subtitle="Manage roles and configure permissions for your team members"
-        showSearch={false}
-        primaryActionLabel=""
-      />
+      <Header title="Roles & Permissions" />
 
       <PageContent>
         <div className="space-y-4">

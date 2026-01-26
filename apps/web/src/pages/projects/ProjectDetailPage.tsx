@@ -142,11 +142,13 @@ export default function ProjectDetailPage() {
 
   return (
     <>
-      <Header title={project.name} />
+      <Header
+        breadcrumbs={[
+          { label: 'Projects', href: '/projects' },
+          { label: project.name },
+        ]}
+      />
       <PageContent className="pt-2">
-        {/* Breadcrumb */}
-        {/* <Breadcrumb items={breadcrumbItems} className="mb-2" /> */}
-
         {/* Tabs */}
         <SecondaryTabs value={activeTab} onValueChange={setActiveTab}>
           <SecondaryTabsList>
