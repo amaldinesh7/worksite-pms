@@ -53,6 +53,25 @@
     --input: #e5e5e5;
     --ring: #171717;
 
+    /* Button-specific colors (Figma Design System) */
+    --btn-primary: #115e59;
+    --btn-primary-hover: #134e4a;
+    --btn-primary-foreground: #fafafa;
+    --btn-secondary: #f5f5f5;
+    --btn-secondary-hover: #e5e5e5;
+    --btn-secondary-foreground: #171717;
+    --btn-outline-bg: rgba(255, 255, 255, 0.1);
+    --btn-outline-hover: rgba(0, 0, 0, 0.04);
+    --btn-outline-border: #d4d4d4;
+    --btn-outline-foreground: #0a0a0a;
+    --btn-ghost-bg: transparent;
+    --btn-ghost-hover: rgba(0, 0, 0, 0.04);
+    --btn-ghost-foreground: #404040;
+    --btn-destructive: #dc2626;
+    --btn-destructive-hover: #b91c1c;
+    --btn-destructive-foreground: #ffffff;
+    --btn-focus-ring: #d4d4d4;
+
     --radius: 0.5rem;
 
     /* Sidebar */
@@ -107,6 +126,25 @@
     /* zinc-800 */
     --ring: #d4d4d4;
 
+    /* Button-specific colors (Dark Mode) */
+    --btn-primary: #14b8a6;
+    --btn-primary-hover: #0d9488;
+    --btn-primary-foreground: #0a0a0a;
+    --btn-secondary: #27272a;
+    --btn-secondary-hover: #3f3f46;
+    --btn-secondary-foreground: #fafafa;
+    --btn-outline-bg: rgba(255, 255, 255, 0.05);
+    --btn-outline-hover: rgba(255, 255, 255, 0.1);
+    --btn-outline-border: #52525b;
+    --btn-outline-foreground: #fafafa;
+    --btn-ghost-bg: transparent;
+    --btn-ghost-hover: rgba(255, 255, 255, 0.1);
+    --btn-ghost-foreground: #a1a1aa;
+    --btn-destructive: #dc2626;
+    --btn-destructive-hover: #ef4444;
+    --btn-destructive-foreground: #ffffff;
+    --btn-focus-ring: #52525b;
+
     /* Sidebar Dark */
     --sidebar-background: #09090b;
     /* Match main background */
@@ -149,6 +187,25 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Button Tokens */
+  --color-btn-primary: var(--btn-primary);
+  --color-btn-primary-hover: var(--btn-primary-hover);
+  --color-btn-primary-foreground: var(--btn-primary-foreground);
+  --color-btn-secondary: var(--btn-secondary);
+  --color-btn-secondary-hover: var(--btn-secondary-hover);
+  --color-btn-secondary-foreground: var(--btn-secondary-foreground);
+  --color-btn-outline-bg: var(--btn-outline-bg);
+  --color-btn-outline-hover: var(--btn-outline-hover);
+  --color-btn-outline-border: var(--btn-outline-border);
+  --color-btn-outline-foreground: var(--btn-outline-foreground);
+  --color-btn-ghost-bg: var(--btn-ghost-bg);
+  --color-btn-ghost-hover: var(--btn-ghost-hover);
+  --color-btn-ghost-foreground: var(--btn-ghost-foreground);
+  --color-btn-destructive: var(--btn-destructive);
+  --color-btn-destructive-hover: var(--btn-destructive-hover);
+  --color-btn-destructive-foreground: var(--btn-destructive-foreground);
+  --color-btn-focus-ring: var(--btn-focus-ring);
 
   /* Sidebar Tokens mapping */
   --color-sidebar-bg: var(--sidebar-background);
