@@ -34,14 +34,16 @@
     --popover: #ffffff;
     --popover-foreground: #171717;
 
-    --primary: #171717;
+    /* Primary (Brand - Teal) - from tokens.ts semanticColors.light */
+    --primary: #115e59;              /* teal.800 - brand color */
+    --primary-hover: #134e4a;        /* teal.900 */
     --primary-foreground: #fafafa;
 
     --secondary: #f5f5f5;
     --secondary-foreground: #171717;
 
     --muted: #f5f5f5;
-    --muted-foreground: #737373;
+    --muted-foreground: #525252;     /* neutral.600 - Figma aligned */
 
     --accent: #f5f5f5;
     --accent-foreground: #171717;
@@ -51,7 +53,11 @@
 
     --border: #e5e5e5;
     --input: #e5e5e5;
-    --ring: #171717;
+    
+    /* Focus Rings (from Figma "focus" section) */
+    --ring: #d4d4d4;                 /* neutral.300 - default focus ring */
+    --ring-primary: #14b8a6;         /* teal.500 - interactive elements */
+    --ring-error: #fca5a5;           /* red.300 - error states */
 
     /* Button-specific colors (Figma Design System) */
     --btn-primary: #115e59;
@@ -124,7 +130,11 @@
     /* zinc-800 */
     --input: #27272a;
     /* zinc-800 */
-    --ring: #d4d4d4;
+    
+    /* Focus Rings (Dark Mode) - TODO: Fill from Figma dark mode export */
+    --ring: ;                        /* TODO: dark mode default ring */
+    --ring-primary: ;                /* TODO: dark mode primary ring */
+    --ring-error: ;                  /* TODO: dark mode error ring */
 
     /* Button-specific colors (Dark Mode) */
     --btn-primary: #14b8a6;
@@ -170,6 +180,7 @@
   --color-popover-foreground: var(--popover-foreground);
 
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
 
   --color-secondary: var(--secondary);
@@ -186,7 +197,11 @@
 
   --color-border: var(--border);
   --color-input: var(--input);
+  
+  /* Focus Ring Utilities */
   --color-ring: var(--ring);
+  --color-ring-primary: var(--ring-primary);
+  --color-ring-error: var(--ring-error);
 
   /* Button Tokens */
   --color-btn-primary: var(--btn-primary);
@@ -246,8 +261,10 @@
 /* ========================================
    BASE STYLES
    ======================================== */
-* {
-  border-color: var(--color-border);
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
 }
 
 html {
@@ -325,6 +342,9 @@ body {
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
+button:focus-visible,
+[role="switch"]:focus-visible,
+[role="checkbox"]:focus-visible,
 [role="combobox"]:focus-visible,
 [role="listbox"]:focus-visible,
 [role="menu"]:focus-visible {
