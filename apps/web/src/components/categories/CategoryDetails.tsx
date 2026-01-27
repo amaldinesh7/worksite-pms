@@ -264,7 +264,7 @@ function LoadingState() {
       {[1, 2, 3, 4, 5].map((i) => (
         <div
           key={i}
-          className="flex items-center justify-between py-3 border-b border-border last:border-b-0"
+          className="flex items-center justify-between py-3 min-h-[44px] border-b border-border last:border-b-0"
         >
           <div className="h-4 w-32 bg-muted rounded animate-pulse" />
         </div>
@@ -297,48 +297,44 @@ function ItemsList({ items, onEditItem, onDeleteItem, isDeleting }: ItemsListPro
         <div
           key={item.id}
           className={cn(
-            'flex items-center justify-between py-3 group',
+            'flex items-center justify-between py-3 min-h-[44px] group',
             index < items.length - 1 && 'border-b border-border'
           )}
         >
           <Typography variant="paragraph-small">{item.name}</Typography>
           {/* Only show actions for editable items */}
           {item.isEditable && (onEditItem || onDeleteItem) && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               {onEditItem && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => onEditItem(item)}
                   className={cn(
-                    'inline-flex items-center px-3 py-1 cursor-pointer',
-                    'text-xs border border-border rounded-md',
-                    'text-muted-foreground bg-card hover:bg-muted',
-                    'transition-all duration-150',
-                    'opacity-40 group-hover:opacity-100 focus-visible:opacity-100',
-                    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
+                    'h-7 w-7 cursor-pointer',
+                    'text-muted-foreground hover:text-foreground',
+                    'opacity-40 group-hover:opacity-100 focus-visible:opacity-100'
                   )}
                 >
-                  <PencilSimple className="mr-1.5 h-3 w-3" weight="bold" />
-                  Edit
-                </button>
+                  <PencilSimple className="h-4 w-4" weight="bold" />
+                </Button>
               )}
               {onDeleteItem && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       disabled={isDeleting}
                       className={cn(
-                        'inline-flex items-center px-3 py-1 cursor-pointer',
-                        'text-xs border border-red-200 rounded-md',
-                        'text-red-600 bg-card hover:bg-red-50',
-                        'transition-all duration-150',
+                        'h-7 w-7 cursor-pointer',
+                        'text-red-500 hover:text-red-600 hover:bg-red-50',
                         'opacity-40 group-hover:opacity-100 focus-visible:opacity-100',
-                        'focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none',
                         isDeleting && 'opacity-50 cursor-not-allowed'
                       )}
                     >
-                      <Trash className="mr-1.5 h-3 w-3" weight="bold" />
-                      Delete
-                    </button>
+                      <Trash className="h-4 w-4" weight="bold" />
+                    </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>

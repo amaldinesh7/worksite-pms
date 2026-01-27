@@ -44,7 +44,7 @@ export default function RoleDetailPage() {
   const [hasChanges, setHasChanges] = useState(false);
 
   // Queries
-  const { data: role, isLoading: isLoadingRole } = useRole(isNewRole ? '' : (id || ''));
+  const { data: role, isLoading: isLoadingRole } = useRole(isNewRole ? '' : id || '');
   const { data: permissionsGrouped, isLoading: isLoadingPermissions } = usePermissionsGrouped();
 
   // Mutations
@@ -110,18 +110,21 @@ export default function RoleDetailPage() {
     setIsEditMode(true);
   }, []);
 
-  const handlePermissionToggle = useCallback((permissionId: string) => {
-    if (!isEditMode) return;
-    setSelectedPermissionIds((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(permissionId)) {
-        newSet.delete(permissionId);
-      } else {
-        newSet.add(permissionId);
-      }
-      return newSet;
-    });
-  }, [isEditMode]);
+  const handlePermissionToggle = useCallback(
+    (permissionId: string) => {
+      if (!isEditMode) return;
+      setSelectedPermissionIds((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(permissionId)) {
+          newSet.delete(permissionId);
+        } else {
+          newSet.add(permissionId);
+        }
+        return newSet;
+      });
+    },
+    [isEditMode]
+  );
 
   const handleSelectAllInCategory = useCallback(
     (category: string) => {
@@ -230,7 +233,9 @@ export default function RoleDetailPage() {
         <PageContent>
           <div className="flex flex-col items-center justify-center py-12">
             <Shield className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <Typography variant="muted" className="mb-4">Role not found</Typography>
+            <Typography variant="muted" className="mb-4">
+              Role not found
+            </Typography>
             <Button variant="outline" onClick={handleBack} className="cursor-pointer">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Roles
@@ -265,12 +270,16 @@ export default function RoleDetailPage() {
                 variant="ghost"
                 size="icon"
                 onClick={handleBack}
-                className="cursor-pointer h-8 w-8"
+                className="cursor-pointer h-5 w-5"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <span className="text-lg font-medium">
-                {isNewRole ? 'Create a new role' : isEditMode ? `Edit ${role?.name}` : role?.name || 'Role Details'}
+                {isNewRole
+                  ? 'Create a new role'
+                  : isEditMode
+                    ? `Edit ${role?.name}`
+                    : role?.name || 'Role Details'}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -293,11 +302,7 @@ export default function RoleDetailPage() {
                   </Button>
                 </>
               ) : (
-                <Button
-                  variant="outline"
-                  onClick={handleEdit}
-                  className="cursor-pointer"
-                >
+                <Button variant="outline" onClick={handleEdit} className="cursor-pointer">
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </Button>
@@ -376,7 +381,9 @@ export default function RoleDetailPage() {
                             checked={isAllSelected}
                             ref={(el) => {
                               if (el) {
-                                (el as HTMLButtonElement & { indeterminate: boolean }).indeterminate = isSomeSelected;
+                                (
+                                  el as HTMLButtonElement & { indeterminate: boolean }
+                                ).indeterminate = isSomeSelected;
                               }
                             }}
                             className="cursor-pointer"

@@ -53,9 +53,7 @@ export default function RolesPage() {
   // Filter roles by search
   const roles = rolesData?.items || [];
   const filteredRoles = debouncedSearch
-    ? roles.filter((role) =>
-      role.name.toLowerCase().includes(debouncedSearch.toLowerCase())
-    )
+    ? roles.filter((role) => role.name.toLowerCase().includes(debouncedSearch.toLowerCase()))
     : roles;
 
   // Handlers
@@ -191,7 +189,7 @@ export default function RolesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 cursor-pointer text-destructive hover:text-destructive"
+                      className="h-5 w-5 cursor-pointer text-destructive hover:text-destructive"
                       onClick={(e) => handleDeleteRole(e, role)}
                     >
                       <Trash2 className="h-4 w-4" />

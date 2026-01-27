@@ -8,7 +8,6 @@
  */
 
 import { useState, useEffect } from 'react';
-import { MagnifyingGlass } from '@phosphor-icons/react';
 
 import { PageContent, Header } from '@/components/layout';
 import { CategoryTypesNav, CategoryDetails } from '@/components/categories';
@@ -20,7 +19,6 @@ import {
   useDeleteCategoryItem,
 } from '@/lib/hooks/useCategories';
 import type { CategoryType, CategoryItem } from '@/lib/api/categories';
-import { cn } from '@/lib/utils';
 
 // Default category type key to select on load
 const DEFAULT_TYPE_KEY = 'labour_type';
@@ -28,7 +26,6 @@ const DEFAULT_TYPE_KEY = 'labour_type';
 export default function CategoriesPage() {
   // State for selected category type
   const [selectedType, setSelectedType] = useState<CategoryType | null>(null);
-  const [globalSearch, setGlobalSearch] = useState('');
 
   // Fetch category types
   const { data: categoryTypes = [], isLoading: isLoadingTypes } = useCategoryTypes();
@@ -73,38 +70,9 @@ export default function CategoriesPage() {
     deleteItemMutation.mutate(item.id);
   };
 
-  // Filter items based on global search (if implemented)
-  const filteredItems = globalSearch
-    ? items.filter((item) => item.name.toLowerCase().includes(globalSearch.toLowerCase()))
-    : items;
-
-  // Custom header actions with global search
-  const headerActions = (
-    <div className="relative">
-      <MagnifyingGlass
-        className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400"
-        weight="bold"
-      />
-      <input
-        type="text"
-        placeholder="Search categories..."
-        value={globalSearch}
-        onChange={(e) => setGlobalSearch(e.target.value)}
-        className={cn(
-          'w-64 pl-10 pr-4 py-2 text-sm',
-          'bg-neutral-100 border border-neutral-200 rounded-lg',
-          'placeholder:text-neutral-400 text-neutral-800',
-          'focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-transparent',
-          'transition-all duration-150'
-        )}
-        aria-label="Search categories"
-      />
-    </div>
-  );
-
   return (
     <>
-      <Header title="Categories" actions={headerActions} />
+      <Header title="Categories" />
       <PageContent className="overflow-hidden min-h-0">
         <div className="grid grid-cols-12 gap-6 h-full min-h-0 overflow-hidden">
           {/* Left Panel - Category Types Navigation */}
@@ -121,7 +89,7 @@ export default function CategoriesPage() {
           <div className="col-span-9 h-full overflow-hidden">
             <CategoryDetails
               categoryType={selectedType}
-              items={filteredItems}
+              items={items}
               isLoading={isLoadingItems}
               onCreateItem={handleCreateItem}
               isCreating={createItemMutation.isPending}
