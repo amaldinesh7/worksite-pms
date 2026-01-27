@@ -12,7 +12,6 @@ import { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import { PageContent, Header } from '@/components/layout';
-import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { PartyProjectsList, PartyTransactionsPanel } from '@/components/parties';
 import { useParty, usePartyProjects, usePartyTransactions } from '@/lib/hooks/useParties';
 import type { PartyType } from '@/lib/api/parties';
@@ -154,10 +153,8 @@ export default function PartyDetailPage() {
 
   return (
     <>
-      <Header title={party.name} />
+      <Header breadcrumbs={breadcrumbItems} />
       <PageContent className="overflow-hidden min-h-0 pt-4">
-        {/* Breadcrumb */}
-        <Breadcrumb items={breadcrumbItems} className="mb-2" />
 
         {/* 2-Column Layout */}
 

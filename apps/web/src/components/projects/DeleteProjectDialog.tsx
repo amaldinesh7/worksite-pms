@@ -55,11 +55,7 @@ export function DeleteProjectDialog({
           <AlertDialogCancel disabled={isDeleting} className="cursor-pointer">
             Cancel
           </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
-            disabled={isDeleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
-          >
+          <AlertDialogAction onClick={onConfirm} disabled={isDeleting} className="cursor-pointer">
             {isDeleting ? 'Deleting...' : 'Delete'}
           </AlertDialogAction>
         </AlertDialogFooter>

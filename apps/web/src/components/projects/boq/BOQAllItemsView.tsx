@@ -5,7 +5,14 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Plus, DotsThree, PencilSimple, Trash, MagnifyingGlass, CircleNotch } from '@phosphor-icons/react';
+import {
+  Plus,
+  DotsThree,
+  PencilSimple,
+  Trash,
+  MagnifyingGlass,
+  CircleNotch,
+} from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -128,7 +135,7 @@ export function BOQAllItemsView({ projectId, onAddItem }: BOQAllItemsViewProps) 
   }, []);
 
   const handleCategoryChange = useCallback((value: string) => {
-    setCategoryFilter(value as BOQCategory || undefined);
+    setCategoryFilter((value as BOQCategory) || undefined);
     setPage(1);
   }, []);
 
@@ -138,7 +145,10 @@ export function BOQAllItemsView({ projectId, onAddItem }: BOQAllItemsViewProps) 
   }, []);
 
   const handleSortChange = useCallback((value: string) => {
-    const [field, order] = value.split('-') as [BOQListParams['sortBy'], BOQListParams['sortOrder']];
+    const [field, order] = value.split('-') as [
+      BOQListParams['sortBy'],
+      BOQListParams['sortOrder'],
+    ];
     setSortBy(field);
     setSortOrder(order);
     setPage(1);
@@ -149,14 +159,17 @@ export function BOQAllItemsView({ projectId, onAddItem }: BOQAllItemsViewProps) 
     setIsFormOpen(true);
   }, []);
 
-  const handleDelete = useCallback(async (item: BOQItem) => {
-    try {
-      await deleteMutation.mutateAsync(item.id);
-      toast.success('Item deleted');
-    } catch {
-      toast.error('Failed to delete item');
-    }
-  }, [deleteMutation]);
+  const handleDelete = useCallback(
+    async (item: BOQItem) => {
+      try {
+        await deleteMutation.mutateAsync(item.id);
+        toast.success('Item deleted');
+      } catch {
+        toast.error('Failed to delete item');
+      }
+    },
+    [deleteMutation]
+  );
 
   const handleFormClose = useCallback(() => {
     setIsFormOpen(false);
@@ -165,7 +178,13 @@ export function BOQAllItemsView({ projectId, onAddItem }: BOQAllItemsViewProps) 
 
   // Derived data
   const items = data?.items ?? [];
-  const pagination = data?.pagination ?? { page: 1, limit: PAGINATION_LIMIT, total: 0, pages: 0, hasMore: false };
+  const pagination = data?.pagination ?? {
+    page: 1,
+    limit: PAGINATION_LIMIT,
+    total: 0,
+    pages: 0,
+    hasMore: false,
+  };
 
   return (
     <div className="space-y-4">
@@ -212,11 +231,21 @@ export function BOQAllItemsView({ projectId, onAddItem }: BOQAllItemsViewProps) 
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="createdAt-desc" className="cursor-pointer">Newest First</SelectItem>
-              <SelectItem value="createdAt-asc" className="cursor-pointer">Oldest First</SelectItem>
-              <SelectItem value="amount-desc" className="cursor-pointer">Amount (High-Low)</SelectItem>
-              <SelectItem value="amount-asc" className="cursor-pointer">Amount (Low-High)</SelectItem>
-              <SelectItem value="description-asc" className="cursor-pointer">Description (A-Z)</SelectItem>
+              <SelectItem value="createdAt-desc" className="cursor-pointer">
+                Newest First
+              </SelectItem>
+              <SelectItem value="createdAt-asc" className="cursor-pointer">
+                Oldest First
+              </SelectItem>
+              <SelectItem value="amount-desc" className="cursor-pointer">
+                Amount (High-Low)
+              </SelectItem>
+              <SelectItem value="amount-asc" className="cursor-pointer">
+                Amount (Low-High)
+              </SelectItem>
+              <SelectItem value="description-asc" className="cursor-pointer">
+                Description (A-Z)
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -314,15 +343,19 @@ export function BOQAllItemsView({ projectId, onAddItem }: BOQAllItemsViewProps) 
                     <TableCell className="text-muted-foreground">{item.unit}</TableCell>
                     <TableCell className="text-right">{item.quantity.toLocaleString()}</TableCell>
                     <TableCell className="text-right">₹{item.rate.toLocaleString()}</TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(quotedTotal)}</TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency(quotedTotal)}
+                    </TableCell>
                     <TableCell className="text-right">{formatCurrency(actualTotal)}</TableCell>
-                    <TableCell className={`text-right ${variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <TableCell
+                      className={`text-right ${variance >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                    >
                       {formatVariance(variance)}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+                          <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer">
                             <DotsThree className="h-4 w-4" weight="bold" />
                           </Button>
                         </DropdownMenuTrigger>

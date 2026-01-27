@@ -1,0 +1,164 @@
+---
+description: Tailwind CSS v4.1 configuration and usage rules
+globs: ["apps/web/**/*.{ts,tsx,css}", "packages/ui/**/*.ts"]
+alwaysApply: false
+---
+
+# Tailwind CSS v4.1 Rules
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    SINGLE SOURCE OF TRUTH                   │
+│              packages/ui/src/tokens.ts                      │
+│  - rawColors: Color palette from Figma                      │
+│  - semanticColors: Light/dark mode mappings                 │
+│  - tailwindTheme: Exported for mobile/NativeWind            │
+└─────────────────────────────────────────────────────────────┘
+                              │
+              ┌───────────────┴───────────────┐
+              ▼                               ▼
+┌─────────────────────────┐     ┌─────────────────────────┐
+│      WEB (Tailwind v4)  │     │  MOBILE (NativeWind)    │
+│ apps/web/src/styles/    │     │ apps/mobile/            │
+│   globals.css           │     │   tailwind.config.js    │
+│                         │     │                         │
+│ - CSS vars in @layer    │     │ - Imports tailwindTheme │
+│ - @theme directive      │     │ - Uses NativeWind preset│
+│ - NO JS config needed   │     │ - JS config required    │
+└─────────────────────────┘     └─────────────────────────┘
+```
+
+## Key Differences from Tailwind v3
+
+### 1. CSS-First Configuration
+
+**DO**: Define theme in CSS using `@theme` directive
+
+```css
+@theme {
+  --color-primary: var(--primary);
+  --color-ring-primary: var(--ring-primary);
+}
+```
+
+**DON'T**: Extend theme in tailwind.config.js for web
+
+```javascript
+// ❌ WRONG for web - this is Tailwind v3 pattern
+export default {
+  theme: {
+    extend: {
+      colors: { primary: '#115e59' }
+    }
+  }
+}
+
+// ✅ CORRECT for web - minimal config
+export default {
+  content: ['./src/**/*.{ts,tsx}'],
+  plugins: [],
+}
+```
+
+### 2. CSS Variable Pattern
+
+Define raw values in `@layer base`, map to utilities in `@theme`:
+
+```css
+@layer base {
+  :root {
+    --primary: #115e59;           /* Raw value */
+    --ring-primary: #14b8a6;      /* Raw value */
+  }
+}
+
+@theme {
+  --color-primary: var(--primary);         /* Maps to bg-primary, text-primary */
+  --color-ring-primary: var(--ring-primary); /* Maps to ring-ring-primary */
+}
+```
+
+### 3. Theme Variable Naming
+
+| Prefix | Purpose | Example |
+|--------|---------|---------|
+| `--color-*` | Colors | `--color-primary`, `--color-ring-primary` |
+| `--radius-*` | Border radius | `--radius-sm`, `--radius-lg` |
+| `--font-*` | Fonts | `--font-heading`, `--font-body` |
+
+## Color Tokens (from Figma)
+
+| Token | CSS Variable | Hex Value | Usage |
+|-------|--------------|-----------|-------|
+| primary | `--primary` | `#115e59` (teal.800) | Brand color, buttons |
+| primary-hover | `--primary-hover` | `#134e4a` (teal.900) | Hover states |
+| ring | `--ring` | `#d4d4d4` (neutral.300) | Default focus ring |
+| ring-primary | `--ring-primary` | `#14b8a6` (teal.500) | Interactive element focus |
+| ring-error | `--ring-error` | `#fca5a5` (red.300) | Error state focus |
+| muted-foreground | `--muted-foreground` | `#525252` (neutral.600) | Secondary text |
+
+## Focus Ring Usage
+
+```tsx
+// Default focus ring (neutral) - for general elements
+"focus-visible:ring-2 focus-visible:ring-ring"
+
+// Primary focus ring (teal) - for interactive elements like checkbox, buttons
+"focus-visible:ring-2 focus-visible:ring-ring-primary"
+
+// Error focus ring (red) - for error states
+"focus-visible:ring-2 focus-visible:ring-ring-error"
+```
+
+## Adding New Tokens
+
+1. **Add to tokens.ts first** (source of truth)
+
+```typescript
+// packages/ui/src/tokens.ts
+export const semanticColors = {
+  light: {
+    // ... existing tokens
+    newToken: rawColors.teal[600],  // Add here first
+  }
+}
+```
+
+2. **Add CSS variable to globals.css**
+
+```css
+@layer base {
+  :root {
+    --new-token: #0d9488;  /* teal.600 from tokens.ts */
+  }
+}
+
+@theme {
+  --color-new-token: var(--new-token);
+}
+```
+
+3. **Use in components**
+
+```tsx
+<div className="bg-new-token">...</div>
+```
+
+## DO NOT
+
+- ❌ Add colors to tailwind.config.js `theme.extend` for web
+- ❌ Use hex values directly in components (use tokens)
+- ❌ Create new tokens without adding to tokens.ts first
+- ❌ Bypass CSS variables with arbitrary values like `bg-[#115e59]`
+- ❌ Modify globals.css without updating tokens.ts comment references
+
+## File Reference
+
+| File | Purpose |
+|------|---------|
+| `packages/ui/src/tokens.ts` | Single source of truth for all design tokens |
+| `apps/web/src/styles/globals.css` | Web CSS variables and @theme mappings |
+| `apps/web/tailwind.config.js` | Minimal - content + plugins only |
+| `apps/mobile/tailwind.config.js` | NativeWind config - imports tailwindTheme |

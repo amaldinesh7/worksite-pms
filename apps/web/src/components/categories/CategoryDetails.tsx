@@ -6,11 +6,11 @@
  */
 
 import { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 'react';
-import { MagnifyingGlass, Plus, PencilSimple, Trash } from '@phosphor-icons/react';
+import { MagnifyingGlass, PencilSimpleIcon, TrashSimpleIcon } from '@phosphor-icons/react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { TypographyH4, TypographyMuted, TypographySmall } from '@/components/ui/typography';
+import { Typography } from '@/components/ui/typography';
 import {
   Dialog,
   DialogContent,
@@ -143,7 +143,7 @@ export function CategoryDetails({
   if (!categoryType) {
     return (
       <Card className="bg-card border border-border rounded-lg p-6 flex items-center justify-center h-full">
-        <TypographyMuted>Select a category type to view items</TypographyMuted>
+        <Typography variant="muted">Select a category type to view items</Typography>
       </Card>
     );
   }
@@ -153,7 +153,7 @@ export function CategoryDetails({
       <Card className="bg-card border border-border rounded-lg flex flex-col h-full min-h-0 overflow-hidden">
         {/* Header */}
         <div className="p-6 border-b border-border shrink-0 flex flex-row items-center justify-between gap-4">
-          <TypographyH4 >{categoryType.label}</TypographyH4>
+          <Typography variant="h4">{categoryType.label}</Typography>
           {/* Search Input */}
           <div className="relative">
             <MagnifyingGlass
@@ -180,12 +180,11 @@ export function CategoryDetails({
           {/* Create Input */}
           <div className="border border-border rounded-lg bg-muted/50">
             <div className="p-3 flex items-center gap-3">
-              <Plus
+              <PencilSimpleIcon
                 className={cn(
                   'h-4 w-4 shrink-0',
                   isCreating ? 'text-muted-foreground/50' : 'text-muted-foreground'
                 )}
-                weight="bold"
               />
               <input
                 ref={createInputRef}
@@ -264,7 +263,7 @@ function LoadingState() {
       {[1, 2, 3, 4, 5].map((i) => (
         <div
           key={i}
-          className="flex items-center justify-between py-3 border-b border-border last:border-b-0"
+          className="flex items-center justify-between py-3 min-h-[44px] border-b border-border last:border-b-0"
         >
           <div className="h-4 w-32 bg-muted rounded animate-pulse" />
         </div>
@@ -276,9 +275,9 @@ function LoadingState() {
 function EmptyState({ hasSearch }: { hasSearch: boolean }) {
   return (
     <div className="text-center py-12">
-      <TypographyMuted>
+      <Typography variant="muted">
         {hasSearch ? 'No items match your search' : 'No items yet. Add one above.'}
-      </TypographyMuted>
+      </Typography>
     </div>
   );
 }
@@ -297,48 +296,35 @@ function ItemsList({ items, onEditItem, onDeleteItem, isDeleting }: ItemsListPro
         <div
           key={item.id}
           className={cn(
-            'flex items-center justify-between py-3 group',
+            'flex items-center justify-between py-3 min-h-[44px] group',
             index < items.length - 1 && 'border-b border-border'
           )}
         >
-          <TypographySmall>{item.name}</TypographySmall>
+          <Typography variant="paragraph-small">{item.name}</Typography>
           {/* Only show actions for editable items */}
           {item.isEditable && (onEditItem || onDeleteItem) && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               {onEditItem && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="iconMini"
                   onClick={() => onEditItem(item)}
-                  className={cn(
-                    'inline-flex items-center px-3 py-1 cursor-pointer',
-                    'text-xs border border-border rounded-md',
-                    'text-muted-foreground bg-card hover:bg-muted',
-                    'transition-all duration-150',
-                    'opacity-40 group-hover:opacity-100 focus-visible:opacity-100',
-                    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none'
-                  )}
+                  className={cn(' cursor-pointer')}
                 >
-                  <PencilSimple className="mr-1.5 h-3 w-3" weight="bold" />
-                  Edit
-                </button>
+                  <PencilSimpleIcon />
+                </Button>
               )}
               {onDeleteItem && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="iconMini"
                       disabled={isDeleting}
-                      className={cn(
-                        'inline-flex items-center px-3 py-1 cursor-pointer',
-                        'text-xs border border-red-200 rounded-md',
-                        'text-red-600 bg-card hover:bg-red-50',
-                        'transition-all duration-150',
-                        'opacity-40 group-hover:opacity-100 focus-visible:opacity-100',
-                        'focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none',
-                        isDeleting && 'opacity-50 cursor-not-allowed'
-                      )}
+                      className={cn('cursor-pointer text-destructive hover:text-destructive-hover')}
                     >
-                      <Trash className="mr-1.5 h-3 w-3" weight="bold" />
-                      Delete
-                    </button>
+                      <TrashSimpleIcon />
+                    </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
@@ -351,7 +337,7 @@ function ItemsList({ items, onEditItem, onDeleteItem, isDeleting }: ItemsListPro
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => onDeleteItem(item)}
-                        className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                        className="cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         Delete
                       </AlertDialogAction>

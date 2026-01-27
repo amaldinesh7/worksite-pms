@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { TypographyH2, TypographyMuted } from '@/components/ui/typography';
+import { Typography } from '@/components/ui/typography';
 import { cn } from '@/lib/utils';
 
 interface AuthCardProps {
@@ -25,8 +25,8 @@ export function AuthCard({ icon, title, subtitle, children, footer, className }:
           </div>
 
           {/* Title */}
-          <TypographyH2 className="border-none pb-0 text-foreground">{title}</TypographyH2>
-          <TypographyMuted className="mt-2">{subtitle}</TypographyMuted>
+          <Typography variant="h2" className="border-none pb-0 text-foreground">{title}</Typography>
+          <Typography variant="muted" className="mt-2">{subtitle}</Typography>
 
           {/* Content */}
           <div className="w-full mt-8">{children}</div>

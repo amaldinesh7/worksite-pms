@@ -19,6 +19,7 @@ export interface User {
 export interface Organization {
   id: string;
   name: string;
+  logoUrl?: string | null;
 }
 
 export type UserRole = 'ADMIN' | 'MANAGER' | 'ACCOUNTANT';

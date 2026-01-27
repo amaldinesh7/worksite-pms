@@ -1,7 +1,7 @@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TypographyMuted } from '@/components/ui/typography';
+import { Typography } from '@/components/ui/typography';
 import type { PermissionsByCategory } from '@/lib/api/permissions';
 
 interface PermissionsEditorProps {
@@ -46,7 +46,7 @@ export function PermissionsEditor({
   if (categories.length === 0) {
     return (
       <div className="text-center py-8">
-        <TypographyMuted>No permissions available</TypographyMuted>
+        <Typography variant="muted">No permissions available</Typography>
       </div>
     );
   }

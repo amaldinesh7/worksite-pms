@@ -17,7 +17,7 @@ interface LayoutProps {
    ======================================== */
 export function Layout({ children, className }: LayoutProps) {
   return (
-    <div className={cn('flex h-screen bg-background overflow-hidden', className)}>
+    <div className={cn('flex h-screen bg-background-secondary overflow-hidden', className)}>
       {/* Sidebar */}
       <Sidebar />
 
@@ -45,7 +45,7 @@ interface PageContentProps {
 
 export function PageContent({ children, className }: PageContentProps) {
   return (
-    <main className={cn('flex-1 overflow-y-auto p-6', className)} role="main">
+    <main className={cn('flex-1 overflow-y-auto p-5', className)} role="main">
       {children}
     </main>
   );

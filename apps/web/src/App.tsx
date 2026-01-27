@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 
 import { useAuthStore } from './stores/auth.store';
 import { Layout, PageContent, Header } from '@/components/layout';
-import { TypographyH2, TypographyMuted } from '@/components/ui/typography';
+import { Typography } from '@/components/ui/typography';
 import PhoneInput from './pages/auth/PhoneInput';
 import VerifyOtp from './pages/auth/VerifyOtp';
 import Onboarding from './pages/auth/Onboarding';
@@ -49,30 +49,28 @@ function ProtectedLayout() {
 
 // Dashboard page content (no Layout wrapper needed)
 function DashboardPage() {
-  const { user } = useAuthStore();
-
   return (
     <>
-      <Header
-        title="Dashboard Overview"
-        subtitle={`Welcome back, ${user?.name || 'User'}`}
-        searchPlaceholder="Search projects..."
-        primaryActionLabel="New Project"
-        onPrimaryAction={() => console.log('New project clicked')}
-      />
+      <Header title="Dashboard Overview" />
       <PageContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="bg-card rounded-xl border border-border p-6">
-            <TypographyMuted>Active Projects</TypographyMuted>
-            <TypographyH2 className="mt-2 border-none pb-0">12</TypographyH2>
+            <Typography variant="muted">Active Projects</Typography>
+            <Typography variant="h2" className="mt-2 border-none pb-0">
+              12
+            </Typography>
           </div>
           <div className="bg-card rounded-xl border border-border p-6">
-            <TypographyMuted>Total Expenses</TypographyMuted>
-            <TypographyH2 className="mt-2 border-none pb-0">₹4.2L</TypographyH2>
+            <Typography variant="muted">Total Expenses</Typography>
+            <Typography variant="h2" className="mt-2 border-none pb-0">
+              ₹4.2L
+            </Typography>
           </div>
           <div className="bg-card rounded-xl border border-border p-6">
-            <TypographyMuted>Pending Payments</TypographyMuted>
-            <TypographyH2 className="mt-2 border-none pb-0">8</TypographyH2>
+            <Typography variant="muted">Pending Payments</Typography>
+            <Typography variant="h2" className="mt-2 border-none pb-0">
+              8
+            </Typography>
           </div>
         </div>
       </PageContent>

@@ -365,7 +365,7 @@ function StageDetailView({ stageId, onBack }: StageDetailViewProps) {
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="cursor-pointer h-8 w-8 -ml-2"
+            className="cursor-pointer h-5 w-5 -ml-2"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>

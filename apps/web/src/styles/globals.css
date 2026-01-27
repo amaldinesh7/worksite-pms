@@ -25,7 +25,8 @@
     --neutral-900: #171717;
     --neutral-950: #0a0a0a;
 
-    --background: #fafafa;
+    --background: #ffffff;
+    --background-secondary: #fafafa;
     --foreground: #171717;
 
     --card: #ffffff;
@@ -34,14 +35,16 @@
     --popover: #ffffff;
     --popover-foreground: #171717;
 
-    --primary: #171717;
+    /* Primary (Brand - Teal) - from tokens.ts semanticColors.light */
+    --primary: #115e59;              /* teal.800 - brand color */
+    --primary-hover: #134e4a;        /* teal.900 */
     --primary-foreground: #fafafa;
 
     --secondary: #f5f5f5;
     --secondary-foreground: #171717;
 
     --muted: #f5f5f5;
-    --muted-foreground: #737373;
+    --muted-foreground: #525252;     /* neutral.600 - Figma aligned */
 
     --accent: #f5f5f5;
     --accent-foreground: #171717;
@@ -51,7 +54,11 @@
 
     --border: #e5e5e5;
     --input: #e5e5e5;
-    --ring: #171717;
+    
+    /* Focus Rings (from Figma "focus" section) */
+    --ring: #d4d4d4;                 /* neutral.300 - default focus ring */
+    --ring-primary: #14b8a6;         /* teal.500 - interactive elements */
+    --ring-error: #fca5a5;           /* red.300 - error states */
 
     /* Button-specific colors (Figma Design System) */
     --btn-primary: #115e59;
@@ -89,8 +96,10 @@
     --neutral-50: #171717;
     /* Inverted for utility mapping if needed, but usually kept static */
 
-    --background: #09090b;
-    /* zinc-950 - slightly lighter than pure black */
+    --background: #18181b;
+    /* zinc-900 - elevated surface */
+    --background-secondary: #09090b;
+    /* zinc-950 - page background */
     --foreground: #fafafa;
 
     --card: #18181b;
@@ -124,7 +133,11 @@
     /* zinc-800 */
     --input: #27272a;
     /* zinc-800 */
-    --ring: #d4d4d4;
+    
+    /* Focus Rings (Dark Mode) - TODO: Fill from Figma dark mode export */
+    --ring: ;                        /* TODO: dark mode default ring */
+    --ring-primary: ;                /* TODO: dark mode primary ring */
+    --ring-error: ;                  /* TODO: dark mode error ring */
 
     /* Button-specific colors (Dark Mode) */
     --btn-primary: #14b8a6;
@@ -161,6 +174,7 @@
 @theme {
   /* Use CSS variables for semantic tokens */
   --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
   --color-foreground: var(--foreground);
 
   --color-card: var(--card);
@@ -170,6 +184,7 @@
   --color-popover-foreground: var(--popover-foreground);
 
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
 
   --color-secondary: var(--secondary);
@@ -186,7 +201,11 @@
 
   --color-border: var(--border);
   --color-input: var(--input);
+  
+  /* Focus Ring Utilities */
   --color-ring: var(--ring);
+  --color-ring-primary: var(--ring-primary);
+  --color-ring-error: var(--ring-error);
 
   /* Button Tokens */
   --color-btn-primary: var(--btn-primary);
@@ -224,11 +243,6 @@
   --color-sidebar-icon: var(--muted-foreground);
   --color-sidebar-icon-active: var(--sidebar-foreground);
 
-  /* Layout Dimensions */
-  --sidebar-width: 18rem;
-  --sidebar-collapsed-width: 4.5rem;
-  --header-height: 4rem;
-
   /* Border Radius */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -239,11 +253,7 @@
   /* Fonts */
   --font-heading: 'Figtree', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-body: 'Figtree', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --font-mono: 'Geist', 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Animations */
   --transition-fast: 150ms;
@@ -255,15 +265,17 @@
 /* ========================================
    BASE STYLES
    ======================================== */
-* {
-  border-color: var(--color-border);
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
 }
 
 html {
   font-family: var(--font-body);
   color: var(--color-foreground);
-  background-color: var(--color-background);
-  font-size: 14px;
+  background-color: var(--color-background-secondary);
+  font-size: 16px; /* Standard root size for correct rem calculations */
 }
 
 body {
@@ -285,6 +297,10 @@ body {
 
 .font-body {
   font-family: var(--font-body);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
 }
 
 /* Numeric Typography - for tables, amounts, and financial data */
@@ -324,6 +340,19 @@ body {
 *:focus-visible {
   outline: 2px solid var(--color-ring);
   outline-offset: 2px;
+}
+
+/* Form elements have custom focus rings via Tailwind - disable global outline */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible,
+[role="switch"]:focus-visible,
+[role="checkbox"]:focus-visible,
+[role="combobox"]:focus-visible,
+[role="listbox"]:focus-visible,
+[role="menu"]:focus-visible {
+  outline: none;
 }
 
 /* ========================================

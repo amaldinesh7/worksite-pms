@@ -32,13 +32,14 @@
 
 import { createContext, useContext, type ReactNode } from 'react';
 import { Card } from '@/components/ui/card';
-import { TypographyLarge, TypographyMuted } from '@/components/ui/typography';
+import { Typography } from '@/components/ui/typography';
 import { cn } from '@/lib/utils';
 
 // ============================================
 // Context
 // ============================================
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface ListPanelContextValue {
   // Reserved for future shared state
 }
@@ -94,9 +95,9 @@ function ListPanelHeader({ title, rightContent, className }: ListPanelHeaderProp
   return (
     <div className={cn('p-4 border-b border-neutral-200 shrink-0', className)}>
       <div className="flex items-center justify-between">
-        <TypographyLarge>{title}</TypographyLarge>
+        <Typography variant="paragraph-bold">{title}</Typography>
         {rightContent && (
-          <TypographyLarge>{rightContent}</TypographyLarge>
+          <Typography variant="paragraph-bold">{rightContent}</Typography>
         )}
       </div>
     </div>
@@ -186,7 +187,7 @@ function ListPanelEmpty({ children, className }: ListPanelEmptyProps) {
   useListPanelContext();
   return (
     <div className={cn('p-4 text-center', className)}>
-      <TypographyMuted>{children}</TypographyMuted>
+      <Typography variant="muted">{children}</Typography>
     </div>
   );
 }

@@ -17,8 +17,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TablePagination } from '@/components/ui/table-pagination';
-import { TypographySmall, TypographyMuted } from '@/components/ui/typography';
-import { MoreHorizontal, Search, Plus, Eye, Pencil, Trash2, Users, MapPin } from 'lucide-react';
+import { Typography } from '@/components/ui/typography';
+import { MoreVertical, Search, Plus, Eye, Pencil, Trash2, Users, MapPin } from 'lucide-react';
 import type { Party, PartyType } from '@/lib/api/parties';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 
@@ -118,8 +118,12 @@ export function PartiesTable({
               <Users className="h-4 w-4" />
             </div>
             <div>
-              <TypographySmall className="font-medium">{party.name}</TypographySmall>
-              <TypographyMuted className="text-xs">{party.location || '—'}</TypographyMuted>
+              <Typography variant="paragraph-small" className="font-medium">
+                {party.name}
+              </Typography>
+              <Typography variant="muted" className="text-xs">
+                {party.location || '—'}
+              </Typography>
             </div>
           </div>
         );
@@ -143,9 +147,9 @@ export function PartiesTable({
       cell: ({ row }) => {
         const phone = row.original.phone;
         return (
-          <TypographySmall className="text-muted-foreground font-normal">
+          <Typography variant="paragraph-small" className="text-muted-foreground font-normal">
             {phone || '—'}
-          </TypographySmall>
+          </Typography>
         );
       },
     },
@@ -157,7 +161,9 @@ export function PartiesTable({
         return (
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <MapPin className="h-3.5 w-3.5" />
-            <TypographySmall className="font-normal">{location || '—'}</TypographySmall>
+            <Typography variant="paragraph-small" className="font-normal">
+              {location || '—'}
+            </Typography>
           </div>
         );
       },
@@ -170,8 +176,8 @@ export function PartiesTable({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
-                <MoreHorizontal className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer">
+                <MoreVertical className="h-4 w-4" />
                 <span className="sr-only">Open menu</span>
               </Button>
             </DropdownMenuTrigger>
@@ -285,7 +291,7 @@ export function PartiesTable({
                 <TableCell colSpan={columns.length} className="h-32 text-center">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <Users className="h-8 w-8 text-muted-foreground/50" />
-                    <TypographyMuted>No parties found</TypographyMuted>
+                    <Typography variant="muted">No parties found</Typography>
                     <Button
                       variant="outline"
                       size="sm"

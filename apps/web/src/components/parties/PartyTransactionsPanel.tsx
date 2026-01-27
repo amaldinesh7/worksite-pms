@@ -7,7 +7,7 @@
 
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { TypographyH3, TypographyMuted } from '@/components/ui/typography';
+import { Typography } from '@/components/ui/typography';
 import {
   Table,
   TableBody,
@@ -16,11 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { MoreVertical } from 'lucide-react';
@@ -101,7 +97,8 @@ export function PartyTransactionsPanel({
   isLoading = false,
 }: PartyTransactionsPanelProps) {
   const expensesLabel = getExpensesLabel(partyType);
-  const progressPercentage = totalExpenses > 0 ? Math.min((totalPaid / totalExpenses) * 100, 100) : 0;
+  const progressPercentage =
+    totalExpenses > 0 ? Math.min((totalPaid / totalExpenses) * 100, 100) : 0;
 
   return (
     <div className="h-full flex flex-col gap-5">
@@ -109,17 +106,21 @@ export function PartyTransactionsPanel({
       <Card className="p-6 shrink-0 flex flex-col gap-4">
         <div className="flex items-center justify-between gap-8">
           <div className="flex flex-col gap-1">
-            <TypographyMuted className="mb-1">Paid</TypographyMuted>
-            <TypographyH3 className="font-semibold">
+            <Typography variant="muted" className="mb-1">
+              Paid
+            </Typography>
+            <Typography variant="h3" className="font-semibold">
               {formatCurrency(totalPaid)}
-            </TypographyH3>
+            </Typography>
           </div>
 
           <div className="flex flex-col gap-1 text-right">
-            <TypographyMuted className="mb-1">{expensesLabel}</TypographyMuted>
-            <TypographyH3 className="font-semibold">
+            <Typography variant="muted" className="mb-1">
+              {expensesLabel}
+            </Typography>
+            <Typography variant="h3" className="font-semibold">
               {formatCurrency(totalExpenses)}
-            </TypographyH3>
+            </Typography>
           </div>
         </div>
         <div className="flex-1">
@@ -131,11 +132,8 @@ export function PartyTransactionsPanel({
       <div className="rounded-lg border overflow-hidden flex flex-col">
         {/* Tabs Header (replacing search bar position) */}
         <div className="bg-card p-3">
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => onTabChange(v as 'payments' | 'expenses')}
-          >
-            <TabsList className='bg-transparent'>
+          <Tabs value={activeTab} onValueChange={(v) => onTabChange(v as 'payments' | 'expenses')}>
+            <TabsList className="bg-transparent">
               <TabsTrigger value="payments" className="cursor-pointer">
                 Transactions
               </TabsTrigger>
@@ -150,18 +148,10 @@ export function PartyTransactionsPanel({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>
-                Date
-              </TableHead>
-              <TableHead>
-                Title
-              </TableHead>
-              <TableHead>
-                Amount
-              </TableHead>
-              <TableHead className="text-center">
-                Actions
-              </TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead className="text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -186,27 +176,17 @@ export function PartyTransactionsPanel({
             ) : transactions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="h-32 text-center">
-                  <TypographyMuted>No transactions found</TypographyMuted>
+                  <Typography variant="muted">No transactions found</Typography>
                 </TableCell>
               </TableRow>
             ) : (
               transactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell>
-                    {formatDate(transaction.date)}
-                  </TableCell>
-                  <TableCell>
-                    {transaction.title}
-                  </TableCell>
-                  <TableCell>
-                    {formatCurrency(transaction.amount)}
-                  </TableCell>
-                  <TableCell className='text-center'>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 cursor-pointer"
-                    >
+                  <TableCell>{formatDate(transaction.date)}</TableCell>
+                  <TableCell>{transaction.title}</TableCell>
+                  <TableCell>{formatCurrency(transaction.amount)}</TableCell>
+                  <TableCell className="text-center">
+                    <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </TableCell>
@@ -225,7 +205,7 @@ export function PartyTransactionsPanel({
             limit={pagination.limit}
             onPageChange={onPageChange}
             itemLabel="Transactions"
-            className='border-t'
+            className="border-t"
           />
         )}
       </div>

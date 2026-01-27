@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { TypographySmall, TypographyMuted } from '@/components/ui/typography';
+import { Typography } from '@/components/ui/typography';
 import { MoreVertical, Pencil, Trash2, Phone } from 'lucide-react';
 import { useMemberTotalBalancesBatch } from '@/lib/hooks/useMemberAdvances';
 import { MemberBalancePopover } from './MemberBalancePopover';
@@ -117,8 +117,12 @@ export function TeamMembersTable({
               {getInitials(member.name)}
             </div>
             <div>
-              <TypographySmall className="font-medium">{member.name}</TypographySmall>
-              <TypographyMuted className="text-xs">{member.email || '—'}</TypographyMuted>
+              <Typography variant="paragraph-small" className="font-medium">
+                {member.name}
+              </Typography>
+              <Typography variant="muted" className="text-xs">
+                {member.email || '—'}
+              </Typography>
             </div>
           </div>
         );
@@ -178,7 +182,7 @@ export function TeamMembersTable({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+              <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer">
                 <MoreVertical className="h-4 w-4" />
                 <span className="sr-only">Open menu</span>
               </Button>

@@ -1,9 +1,37 @@
+/**
+ * Test Helper Utilities
+ *
+ * IMPORTANT: Tests run against a separate test database (worksite_test).
+ * This is configured in src/tests/setup.ts which runs before all tests.
+ *
+ * The test database is completely isolated from development data.
+ * Your seed data in the main 'worksite' database will NOT be affected by tests.
+ */
+
 import { buildApp } from '../app';
 import { prisma } from '../lib/prisma';
 import { faker } from '@faker-js/faker';
 import type { FastifyInstance } from 'fastify';
 import type { PartyType, PaymentType, PaymentMode } from '@prisma/client';
 import type { RoleName } from '../lib/permissions';
+
+/**
+ * Safety check: Verify we're using the test database.
+ * This prevents accidental data deletion in development/production.
+ */
+function verifyTestDatabase() {
+  const dbUrl = process.env.DATABASE_URL || '';
+  if (!dbUrl.includes('worksite_test')) {
+    console.warn(
+      '⚠️  WARNING: Tests may not be running against test database!',
+      '\n   Expected: worksite_test',
+      '\n   Current:', dbUrl.replace(/:[^:@]+@/, ':****@')
+    );
+  }
+}
+
+// Run safety check on module load
+verifyTestDatabase();
 
 /**
  * Creates a test app instance with logging disabled.

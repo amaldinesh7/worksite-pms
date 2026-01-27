@@ -23,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { TypographySmall, TypographyMuted } from '@/components/ui/typography';
+import { Typography } from '@/components/ui/typography';
 import type { Project } from '@/lib/api/projects';
 
 // ============================================
@@ -160,10 +160,12 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                       )}
                     </div>
                     <div>
-                      <TypographySmall className="font-medium">{project.name}</TypographySmall>
-                      <TypographyMuted className="text-xs">
+                      <Typography variant="paragraph-small" className="font-medium">
+                        {project.name}
+                      </Typography>
+                      <Typography variant="muted" className="text-xs">
                         {project.projectType?.name || 'Unknown'}
-                      </TypographyMuted>
+                      </Typography>
                     </div>
                   </div>
                 </TableCell>
@@ -174,11 +176,13 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                 {/* Budget */}
                 <TableCell>
                   <div>
-                    <TypographySmall className="font-medium">{formatCurrency(project.amount)}</TypographySmall>
+                    <Typography variant="paragraph-small" className="font-medium">
+                      {formatCurrency(project.amount)}
+                    </Typography>
                     {project.amount && (
-                      <TypographyMuted className="text-xs">
+                      <Typography variant="muted" className="text-xs">
                         of {formatCurrency(project.amount)}
-                      </TypographyMuted>
+                      </Typography>
                     )}
                   </div>
                 </TableCell>
@@ -187,9 +191,12 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                 <TableCell>
                   <div className="flex items-center gap-2 min-w-[100px]">
                     <Progress value={project.progress || 0} className="h-2 flex-1" />
-                    <TypographySmall className="text-muted-foreground font-normal w-10 text-right">
+                    <Typography
+                      variant="paragraph-small"
+                      className="text-muted-foreground font-normal w-10 text-right"
+                    >
                       {project.progress || 0}%
-                    </TypographySmall>
+                    </Typography>
                   </div>
                 </TableCell>
 
@@ -200,10 +207,12 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                       <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
                         {manager.name.charAt(0).toUpperCase()}
                       </div>
-                      <TypographySmall className="font-normal">{manager.name}</TypographySmall>
+                      <Typography variant="paragraph-small" className="font-normal">
+                        {manager.name}
+                      </Typography>
                     </div>
                   ) : (
-                    <TypographyMuted>—</TypographyMuted>
+                    <Typography variant="muted">—</Typography>
                   )}
                 </TableCell>
 
@@ -211,11 +220,15 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                 <TableCell>
                   {deadline ? (
                     <div>
-                      <TypographySmall className="font-normal">{deadline.date}</TypographySmall>
-                      <TypographyMuted className="text-xs">{deadline.daysLeft}</TypographyMuted>
+                      <Typography variant="paragraph-small" className="font-normal">
+                        {deadline.date}
+                      </Typography>
+                      <Typography variant="muted" className="text-xs">
+                        {deadline.daysLeft}
+                      </Typography>
                     </div>
                   ) : (
-                    <TypographyMuted>—</TypographyMuted>
+                    <Typography variant="muted">—</Typography>
                   )}
                 </TableCell>
 
@@ -226,7 +239,7 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 cursor-pointer"
+                        className="h-5 w-5 cursor-pointer"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreVertical className="h-4 w-4" />
