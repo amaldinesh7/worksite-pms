@@ -49,30 +49,28 @@ function ProtectedLayout() {
 
 // Dashboard page content (no Layout wrapper needed)
 function DashboardPage() {
-  const { user } = useAuthStore();
-
   return (
     <>
-      <Header
-        title="Dashboard Overview"
-        subtitle={`Welcome back, ${user?.name || 'User'}`}
-        searchPlaceholder="Search projects..."
-        primaryActionLabel="New Project"
-        onPrimaryAction={() => console.log('New project clicked')}
-      />
+      <Header title="Dashboard Overview" />
       <PageContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="bg-card rounded-xl border border-border p-6">
             <Typography variant="muted">Active Projects</Typography>
-            <Typography variant="h2" className="mt-2 border-none pb-0">12</Typography>
+            <Typography variant="h2" className="mt-2 border-none pb-0">
+              12
+            </Typography>
           </div>
           <div className="bg-card rounded-xl border border-border p-6">
             <Typography variant="muted">Total Expenses</Typography>
-            <Typography variant="h2" className="mt-2 border-none pb-0">₹4.2L</Typography>
+            <Typography variant="h2" className="mt-2 border-none pb-0">
+              ₹4.2L
+            </Typography>
           </div>
           <div className="bg-card rounded-xl border border-border p-6">
             <Typography variant="muted">Pending Payments</Typography>
-            <Typography variant="h2" className="mt-2 border-none pb-0">8</Typography>
+            <Typography variant="h2" className="mt-2 border-none pb-0">
+              8
+            </Typography>
           </div>
         </div>
       </PageContent>

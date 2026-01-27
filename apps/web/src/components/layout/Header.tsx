@@ -1,14 +1,13 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
 import { List, Bell, CaretRight } from '@phosphor-icons/react';
 
 import { cn } from '@/lib/utils';
 import { useSidebarStore } from '@/stores/sidebar';
+import { Breadcrumb, type BreadcrumbItem } from '@/components/ui/breadcrumb';
+import { Typography } from '../ui/typography';
 
-export interface BreadcrumbItem {
-  label: string;
-  href?: string;
-}
+// Re-export for convenience
+export type { BreadcrumbItem };
 
 interface HeaderProps {
   /** Page title displayed in the header (for single pages) */
@@ -21,12 +20,7 @@ interface HeaderProps {
   className?: string;
 }
 
-export function Header({
-  title,
-  breadcrumbs,
-  actions,
-  className,
-}: HeaderProps) {
+export function Header({ title, breadcrumbs, actions, className }: HeaderProps) {
   const { openMobile } = useSidebarStore();
 
   // Determine what to show: breadcrumbs take precedence
@@ -60,42 +54,15 @@ export function Header({
 
           {/* Breadcrumbs or Title */}
           {hasBreadcrumbs ? (
-            <nav aria-label="Breadcrumb" className="flex items-center min-w-0">
-              <ol className="flex items-center gap-1 min-w-0">
-                {breadcrumbs.map((item, index) => {
-                  const isLast = index === breadcrumbs.length - 1;
-                  return (
-                    <li key={index} className="flex items-center min-w-0">
-                      {index > 0 && (
-                        <CaretRight
-                          className="h-3.5 w-3.5 mx-1 text-muted-foreground shrink-0"
-                          weight="bold"
-                        />
-                      )}
-                      {item.href && !isLast ? (
-                        <Link
-                          to={item.href}
-                          className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors truncate cursor-pointer"
-                        >
-                          {item.label}
-                        </Link>
-                      ) : (
-                        <span
-                          className={cn(
-                            'text-xs font-medium truncate',
-                            isLast ? 'text-foreground' : 'text-muted-foreground'
-                          )}
-                        >
-                          {item.label}
-                        </span>
-                      )}
-                    </li>
-                  );
-                })}
-              </ol>
-            </nav>
+            <Breadcrumb
+              items={breadcrumbs}
+              separator={<CaretRight className="h-3.5 w-3.5 text-muted-foreground" weight="bold" />}
+              className="min-w-0"
+            />
           ) : title ? (
-            <h1 className="text-sm font-medium text-foreground truncate">{title}</h1>
+            <Typography variant="paragraph-medium" className="text-foreground truncate">
+              {title}
+            </Typography>
           ) : null}
         </div>
 
