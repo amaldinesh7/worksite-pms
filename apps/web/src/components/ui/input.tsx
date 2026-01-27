@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 const inputVariants = cva(
   // Base styles
   [
-    'flex w-full bg-white border border-neutral-200 text-foreground',
+    'flex w-full bg-background border border-neutral-200 text-foreground',
     'shadow-sm transition-colors duration-150 ease-in-out',
     'placeholder:text-muted-foreground',
     'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
@@ -57,7 +57,8 @@ const roundnessClasses = {
 } as const;
 
 export interface InputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
     VariantProps<typeof inputVariants> {
   /** Error state - shows red border and focus ring */
   isError?: boolean;
@@ -68,18 +69,7 @@ export interface InputProps
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  (
-    {
-      className,
-      type,
-      inputSize,
-      isError = false,
-      leftIcon,
-      rightIcon,
-      ...props
-    },
-    ref
-  ) => {
+  ({ className, type, inputSize, isError = false, leftIcon, rightIcon, ...props }, ref) => {
     const hasIcons = leftIcon || rightIcon;
     const currentSize = inputSize ?? 'default';
     const iconClasses = iconWrapperClasses[currentSize];
@@ -96,10 +86,16 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <div
           className={cn(
             'relative flex items-center w-full',
-            'bg-white border border-neutral-200 shadow-sm',
+            'bg-background border border-neutral-200 shadow-sm',
             roundness,
             // Size-specific min-height
-            currentSize === 'lg' ? 'min-h-10' : currentSize === 'sm' ? 'min-h-8' : currentSize === 'mini' ? 'min-h-6' : 'min-h-9',
+            currentSize === 'lg'
+              ? 'min-h-10'
+              : currentSize === 'sm'
+                ? 'min-h-8'
+                : currentSize === 'mini'
+                  ? 'min-h-6'
+                  : 'min-h-9',
             // Focus-within states - mutually exclusive normal/error
             'has-focus-visible:outline-none has-focus-visible:ring-[3px]',
             isError
@@ -129,9 +125,27 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
               'focus:outline-none focus:ring-0',
               'disabled:cursor-not-allowed',
               // Size-specific text and padding
-              currentSize === 'lg' ? 'text-base py-[9.5px]' : currentSize === 'mini' ? 'text-xs py-1' : currentSize === 'sm' ? 'text-sm py-[5.5px]' : 'text-sm py-[7.5px]',
-              leftIcon ? 'pl-2' : currentSize === 'mini' ? 'pl-1.5' : currentSize === 'sm' ? 'pl-2' : 'pl-3',
-              rightIcon ? 'pr-2' : currentSize === 'mini' ? 'pr-1.5' : currentSize === 'sm' ? 'pr-2' : 'pr-3',
+              currentSize === 'lg'
+                ? 'text-base py-[9.5px]'
+                : currentSize === 'mini'
+                  ? 'text-xs py-1'
+                  : currentSize === 'sm'
+                    ? 'text-sm py-[5.5px]'
+                    : 'text-sm py-[7.5px]',
+              leftIcon
+                ? 'pl-2'
+                : currentSize === 'mini'
+                  ? 'pl-1.5'
+                  : currentSize === 'sm'
+                    ? 'pl-2'
+                    : 'pl-3',
+              rightIcon
+                ? 'pr-2'
+                : currentSize === 'mini'
+                  ? 'pr-1.5'
+                  : currentSize === 'sm'
+                    ? 'pr-2'
+                    : 'pr-3'
             )}
             ref={ref}
             aria-invalid={isError || undefined}
@@ -156,11 +170,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <input
         type={type}
-        className={cn(
-          inputVariants({ inputSize }),
-          focusClasses,
-          className
-        )}
+        className={cn(inputVariants({ inputSize }), focusClasses, className)}
         ref={ref}
         aria-invalid={isError || undefined}
         {...props}

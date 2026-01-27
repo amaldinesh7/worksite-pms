@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect, type KeyboardEvent } from 'react';
-import { MagnifyingGlass, Plus, PencilSimple, Trash } from '@phosphor-icons/react';
+import { MagnifyingGlass, PencilSimpleIcon, TrashSimpleIcon } from '@phosphor-icons/react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -180,12 +180,11 @@ export function CategoryDetails({
           {/* Create Input */}
           <div className="border border-border rounded-lg bg-muted/50">
             <div className="p-3 flex items-center gap-3">
-              <Plus
+              <PencilSimpleIcon
                 className={cn(
                   'h-4 w-4 shrink-0',
                   isCreating ? 'text-muted-foreground/50' : 'text-muted-foreground'
                 )}
-                weight="bold"
               />
               <input
                 ref={createInputRef}
@@ -308,15 +307,11 @@ function ItemsList({ items, onEditItem, onDeleteItem, isDeleting }: ItemsListPro
               {onEditItem && (
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="iconMini"
                   onClick={() => onEditItem(item)}
-                  className={cn(
-                    'h-7 w-7 cursor-pointer',
-                    'text-muted-foreground hover:text-foreground',
-                    'opacity-40 group-hover:opacity-100 focus-visible:opacity-100'
-                  )}
+                  className={cn(' cursor-pointer')}
                 >
-                  <PencilSimple className="h-4 w-4" weight="bold" />
+                  <PencilSimpleIcon />
                 </Button>
               )}
               {onDeleteItem && (
@@ -324,16 +319,11 @@ function ItemsList({ items, onEditItem, onDeleteItem, isDeleting }: ItemsListPro
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="ghost"
-                      size="icon"
+                      size="iconMini"
                       disabled={isDeleting}
-                      className={cn(
-                        'h-7 w-7 cursor-pointer',
-                        'text-red-500 hover:text-red-600 hover:bg-red-50',
-                        'opacity-40 group-hover:opacity-100 focus-visible:opacity-100',
-                        isDeleting && 'opacity-50 cursor-not-allowed'
-                      )}
+                      className={cn('cursor-pointer text-destructive hover:text-destructive-hover')}
                     >
-                      <Trash className="h-4 w-4" weight="bold" />
+                      <TrashSimpleIcon />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -347,7 +337,7 @@ function ItemsList({ items, onEditItem, onDeleteItem, isDeleting }: ItemsListPro
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={() => onDeleteItem(item)}
-                        className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                        className="cursor-pointer bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
                         Delete
                       </AlertDialogAction>

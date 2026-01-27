@@ -17,7 +17,7 @@ interface LayoutProps {
    ======================================== */
 export function Layout({ children, className }: LayoutProps) {
   return (
-    <div className={cn('flex h-screen bg-background overflow-hidden', className)}>
+    <div className={cn('flex h-screen bg-background-secondary overflow-hidden', className)}>
       {/* Sidebar */}
       <Sidebar />
 

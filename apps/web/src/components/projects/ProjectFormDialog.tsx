@@ -243,7 +243,7 @@ export function ProjectFormDialog({
               ) : (
                 <label
                   className={cn(
-                    'flex flex-col items-center justify-center w-full h-24 cursor-pointer rounded-lg border-2 border-dashed transition-colors',
+                    'flex flex-col items-center justify-center w-full h-24 cursor-pointer rounded-lg border-2 border-dashed transition-colors bg-background',
                     isDragging
                       ? 'border-primary bg-primary/5'
                       : 'border-muted-foreground/25 hover:border-muted-foreground/50'
@@ -283,9 +283,7 @@ export function ProjectFormDialog({
                   {...register('name')}
                   aria-invalid={!!errors.name}
                 />
-                {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name.message}</p>
-                )}
+                {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
               </div>
 
               {/* Project Type */}
@@ -369,9 +367,7 @@ export function ProjectFormDialog({
                   {...register('area')}
                   aria-invalid={!!errors.area}
                 />
-                {errors.area && (
-                  <p className="text-sm text-destructive">{errors.area.message}</p>
-                )}
+                {errors.area && <p className="text-sm text-destructive">{errors.area.message}</p>}
               </div>
             </div>
 

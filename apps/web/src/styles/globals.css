@@ -25,7 +25,8 @@
     --neutral-900: #171717;
     --neutral-950: #0a0a0a;
 
-    --background: #fafafa;
+    --background: #ffffff;
+    --background-secondary: #fafafa;
     --foreground: #171717;
 
     --card: #ffffff;
@@ -95,8 +96,10 @@
     --neutral-50: #171717;
     /* Inverted for utility mapping if needed, but usually kept static */
 
-    --background: #09090b;
-    /* zinc-950 - slightly lighter than pure black */
+    --background: #18181b;
+    /* zinc-900 - elevated surface */
+    --background-secondary: #09090b;
+    /* zinc-950 - page background */
     --foreground: #fafafa;
 
     --card: #18181b;
@@ -171,6 +174,7 @@
 @theme {
   /* Use CSS variables for semantic tokens */
   --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
   --color-foreground: var(--foreground);
 
   --color-card: var(--card);
@@ -270,7 +274,7 @@
 html {
   font-family: var(--font-body);
   color: var(--color-foreground);
-  background-color: var(--color-background);
+  background-color: var(--color-background-secondary);
   font-size: 16px; /* Standard root size for correct rem calculations */
 }
 

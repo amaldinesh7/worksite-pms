@@ -9,7 +9,6 @@ import { X, Check, ChevronsUpDown } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -72,13 +71,15 @@ export function MultiSelect({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
+        <button
+          type="button"
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            'w-full justify-between h-auto min-h-10 px-3 py-2 cursor-pointer',
+            'flex w-full items-center justify-between bg-background border border-neutral-200 shadow-sm rounded-lg min-h-10 px-3 py-2 text-sm cursor-pointer',
+            'focus-visible:outline-none focus-visible:ring-[3px] focus-visible:border-neutral-400 focus-visible:ring-neutral-300',
+            'disabled:cursor-not-allowed disabled:opacity-50',
             !selected.length && 'text-muted-foreground',
             className
           )}
@@ -116,7 +117,7 @@ export function MultiSelect({
             )}
           </div>
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-        </Button>
+        </button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start">
         <Command>

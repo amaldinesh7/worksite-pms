@@ -15,8 +15,12 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { Storefront, HardHat, Briefcase } from '@phosphor-icons/react';
-import { PageContent, Header } from '@/components/layout';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Header } from '@/components/layout';
+import {
+  SecondaryTabs,
+  SecondaryTabsList,
+  SecondaryTabsTrigger,
+} from '@/components/ui/custom/secondary-tabs';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { PartiesTable, PartyFormDialog, DeletePartyDialog } from '@/components/parties';
@@ -203,69 +207,61 @@ export default function PartiesPage() {
     <>
       <Header title="Parties" />
 
-      <PageContent>
-        <div className="space-y-4">
-          {/* Tabs and Table */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Tabs value={activeTab} onValueChange={handleTabChange}>
-                <TabsList className="bg-transparent">
-                  <TabsTrigger value="VENDOR" className="cursor-pointer">
-                    <Storefront size={16} weight="fill" className="mr-1.5" />
-                    Vendors{(summary?.totalVendors ?? 0) > 0 && ` (${summary?.totalVendors})`}
-                  </TabsTrigger>
-                  <TabsTrigger value="LABOUR" className="cursor-pointer">
-                    <HardHat size={16} weight="fill" className="mr-1.5" />
-                    Labours{(summary?.totalLabours ?? 0) > 0 && ` (${summary?.totalLabours})`}
-                  </TabsTrigger>
-                  <TabsTrigger value="SUBCONTRACTOR" className="cursor-pointer">
-                    <Briefcase size={16} weight="fill" className="mr-1.5" />
-                    Sub Contractors
-                    {(summary?.totalSubcontractors ?? 0) > 0 &&
-                      ` (${summary?.totalSubcontractors})`}
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
+      <main className="flex-1 overflow-hidden flex flex-col" role="main">
+        <div className="flex items-center justify-between border-b border-border px-5">
+          <SecondaryTabs value={activeTab} onValueChange={handleTabChange}>
+            <SecondaryTabsList className="border-b-0">
+              <SecondaryTabsTrigger value="VENDOR" icon={Storefront}>
+                Vendors{(summary?.totalVendors ?? 0) > 0 && ` (${summary?.totalVendors})`}
+              </SecondaryTabsTrigger>
+              <SecondaryTabsTrigger value="LABOUR" icon={HardHat}>
+                Labours{(summary?.totalLabours ?? 0) > 0 && ` (${summary?.totalLabours})`}
+              </SecondaryTabsTrigger>
+              <SecondaryTabsTrigger value="SUBCONTRACTOR" icon={Briefcase}>
+                Sub Contractors
+                {(summary?.totalSubcontractors ?? 0) > 0 && ` (${summary?.totalSubcontractors})`}
+              </SecondaryTabsTrigger>
+            </SecondaryTabsList>
+          </SecondaryTabs>
 
-              {/* Credit Filter Toggle */}
-              <div className="flex items-center gap-2">
-                <Label
-                  htmlFor="credit-filter"
-                  className={`text-sm cursor-pointer ${!showOnlyWithCredit ? 'text-foreground font-medium' : 'text-muted-foreground'}`}
-                >
-                  All
-                </Label>
-                <Switch
-                  id="credit-filter"
-                  checked={showOnlyWithCredit}
-                  onCheckedChange={handleCreditFilterChange}
-                  className="cursor-pointer"
-                />
-                <Label
-                  htmlFor="credit-filter"
-                  className={`text-sm cursor-pointer ${showOnlyWithCredit ? 'text-foreground font-medium' : 'text-muted-foreground'}`}
-                >
-                  With Credit
-                </Label>
-              </div>
-            </div>
-
-            <PartiesTable
-              parties={parties}
-              isLoading={isPartiesLoading}
-              search={search}
-              onSearchChange={handleSearchChange}
-              onAddParty={handleAddParty}
-              onViewParty={handleViewParty}
-              onEditParty={handleEditParty}
-              onDeleteParty={handleDeleteParty}
-              pagination={pagination}
-              onPageChange={handlePageChange}
-              activeTab={activeTab}
+          {/* Credit Filter Toggle */}
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor="credit-filter"
+              className={`text-sm cursor-pointer ${!showOnlyWithCredit ? 'text-foreground font-medium' : 'text-muted-foreground'}`}
+            >
+              All
+            </Label>
+            <Switch
+              id="credit-filter"
+              checked={showOnlyWithCredit}
+              onCheckedChange={handleCreditFilterChange}
+              className="cursor-pointer"
             />
+            <Label
+              htmlFor="credit-filter"
+              className={`text-sm cursor-pointer ${showOnlyWithCredit ? 'text-foreground font-medium' : 'text-muted-foreground'}`}
+            >
+              With Credit
+            </Label>
           </div>
         </div>
-      </PageContent>
+        <div className="flex-1 overflow-hidden p-5">
+          <PartiesTable
+            parties={parties}
+            isLoading={isPartiesLoading}
+            search={search}
+            onSearchChange={handleSearchChange}
+            onAddParty={handleAddParty}
+            onViewParty={handleViewParty}
+            onEditParty={handleEditParty}
+            onDeleteParty={handleDeleteParty}
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            activeTab={activeTab}
+          />
+        </div>
+      </main>
 
       {/* Form Dialog (Add/Edit) */}
       <PartyFormDialog

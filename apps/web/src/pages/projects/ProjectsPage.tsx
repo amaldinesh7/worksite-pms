@@ -277,15 +277,15 @@ export default function ProjectsPage() {
               <Button
                 variant={viewMode === 'grid' ? 'primary' : 'ghost'}
                 size="icon"
-                className="h-9 w-9 rounded-r-none cursor-pointer"
+                className="rounded-r-none cursor-pointer"
                 onClick={() => setViewMode('grid')}
               >
-                <LayoutGrid className="h-4 w-4" />
+                <LayoutGrid className="h-5 w-5" />
               </Button>
               <Button
                 variant={viewMode === 'list' ? 'primary' : 'ghost'}
                 size="icon"
-                className="h-9 w-9 rounded-l-none cursor-pointer"
+                className="rounded-l-none cursor-pointer"
                 onClick={() => setViewMode('list')}
               >
                 <List className="h-4 w-4" />

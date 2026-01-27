@@ -14,7 +14,7 @@ const SecondaryTabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      'flex h-auto w-full items-end justify-start gap-0 border-b border-border bg-transparent p-0',
+      'flex h-auto w-full items-end justify-start gap-0.5 border-b border-border bg-background-secondary p-0',
       className
     )}
     {...props}
@@ -37,7 +37,7 @@ const SecondaryTabsTrigger = React.forwardRef<
     className={cn(
       // Base styles: 44px height, 16px horizontal padding, centered content
       'relative -mb-[1px] flex h-11 items-center justify-center gap-2 cursor-pointer',
-      'bg-transparent px-4 py-3',
+      'bg-transparent px-3 py-3',
       // Typography
       'text-sm font-medium',
       // Colors: muted by default, foreground on hover/active
