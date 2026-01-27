@@ -12,7 +12,14 @@
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
-import { Plus, DotsThree, Trash, CircleNotch, FunnelIcon, PencilSimple } from '@phosphor-icons/react';
+import {
+  Plus,
+  DotsThree,
+  Trash,
+  CircleNotch,
+  FunnelIcon,
+  PencilSimple,
+} from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -139,7 +146,11 @@ export function PartyPaymentsTab({ projectId }: PartyPaymentsTabProps) {
   const [paymentToDelete, setPaymentToDelete] = useState<Payment | null>(null);
 
   // Data fetching
-  const { data: paymentsData, isLoading, isFetching } = usePartyPayments(projectId, {
+  const {
+    data: paymentsData,
+    isLoading,
+    isFetching,
+  } = usePartyPayments(projectId, {
     page,
     limit: PAGINATION_LIMIT,
     partyType: partyTypeFilter,
@@ -369,13 +380,11 @@ export function PartyPaymentsTab({ projectId }: PartyPaymentsTabProps) {
                       {getPaymentModeLabel(payment.paymentMode)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm">
-                    {payment.recordedBy?.user?.name || '-'}
-                  </TableCell>
+                  <TableCell className="text-sm">{payment.recordedBy?.user?.name || '-'}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+                        <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer">
                           <DotsThree className="h-4 w-4" weight="bold" />
                         </Button>
                       </DropdownMenuTrigger>

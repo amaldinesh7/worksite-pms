@@ -55,7 +55,6 @@ function formatCurrency(amount: number): string {
   return `₹${amount.toLocaleString()}`;
 }
 
-
 // ============================================
 // Sub Components
 // ============================================
@@ -74,8 +73,10 @@ function ProjectFinancialsCard({
   const totalPaymentsIn = stats?.totalPaymentsIn || 0;
   const balance = stats?.balance || 0;
 
-  const budgetProgress = projectAmount > 0 ? Math.min((totalPaymentsIn / projectAmount) * 100, 100) : 0;
-  const expensesProgress = projectAmount > 0 ? Math.min((totalExpenses / projectAmount) * 100, 100) : 0;
+  const budgetProgress =
+    projectAmount > 0 ? Math.min((totalPaymentsIn / projectAmount) * 100, 100) : 0;
+  const expensesProgress =
+    projectAmount > 0 ? Math.min((totalExpenses / projectAmount) * 100, 100) : 0;
 
   const pendingAmount = projectAmount - totalPaymentsIn;
   const creditAmount = balance;
@@ -99,7 +100,11 @@ function ProjectFinancialsCard({
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">Project Financials</CardTitle>
         <div className="text-right">
-          <span className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(balance)}</span>
+          <span
+            className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
+          >
+            {formatCurrency(balance)}
+          </span>
           <span className="text-sm text-muted-foreground ml-2">Balance in Hand</span>
         </div>
       </CardHeader>
@@ -113,7 +118,8 @@ function ProjectFinancialsCard({
           <Progress value={budgetProgress} className="h-2" />
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium">
-              <span className="text-green-600">{formatCurrency(totalPaymentsIn)}</span> Received / {formatCurrency(projectAmount)} Total
+              <span className="text-green-600">{formatCurrency(totalPaymentsIn)}</span> Received /{' '}
+              {formatCurrency(projectAmount)} Total
             </span>
             <span className="text-red-600">
               Pending: {formatCurrency(pendingAmount > 0 ? pendingAmount : 0)}
@@ -130,7 +136,8 @@ function ProjectFinancialsCard({
           <Progress value={expensesProgress} className="h-2 [&>div]:bg-orange-500" />
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium">
-              <span className="text-red-600">{formatCurrency(totalExpenses)}</span> Paid / {formatCurrency(projectAmount)} Total
+              <span className="text-red-600">{formatCurrency(totalExpenses)}</span> Paid /{' '}
+              {formatCurrency(projectAmount)} Total
             </span>
             <span className={creditAmount >= 0 ? 'text-green-600' : 'text-red-600'}>
               Credit: {formatCurrency(creditAmount)}
@@ -159,7 +166,7 @@ function TimelineCard({ project }: { project: Project }) {
             {isOnTrack ? 'On Track' : 'Delayed'}
           </Badge>
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+        <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer">
           <Calendar className="h-4 w-4" />
         </Button>
       </CardHeader>
@@ -190,17 +197,35 @@ function TimelineCard({ project }: { project: Project }) {
   );
 }
 
-function ProjectStagesSection({ projectId, onViewAll }: { projectId: string; onViewAll: () => void }) {
+function ProjectStagesSection({
+  projectId,
+  onViewAll,
+}: {
+  projectId: string;
+  onViewAll: () => void;
+}) {
   const { data: stages = [], isLoading } = useStagesByProject(projectId);
 
   const getStatusBadge = (status: StageStatus) => {
     switch (status) {
       case 'COMPLETED':
-        return <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>;
+        return (
+          <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">
+            Completed
+          </Badge>
+        );
       case 'IN_PROGRESS':
-        return <Badge variant="default" className="bg-blue-100 text-blue-800 hover:bg-blue-100">In Progress</Badge>;
+        return (
+          <Badge variant="default" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+            In Progress
+          </Badge>
+        );
       case 'ON_HOLD':
-        return <Badge variant="default" className="bg-orange-100 text-orange-800 hover:bg-orange-100">On Hold</Badge>;
+        return (
+          <Badge variant="default" className="bg-orange-100 text-orange-800 hover:bg-orange-100">
+            On Hold
+          </Badge>
+        );
       default:
         return <Badge variant="secondary">Scheduled</Badge>;
     }
@@ -259,7 +284,8 @@ function ProjectStagesSection({ projectId, onViewAll }: { projectId: string; onV
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm">{stage.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {format(new Date(stage.startDate), 'MMM d')} - {format(new Date(stage.endDate), 'MMM d, yyyy')}
+                    {format(new Date(stage.startDate), 'MMM d')} -{' '}
+                    {format(new Date(stage.endDate), 'MMM d, yyyy')}
                   </div>
                 </div>
                 <div className="text-right">
@@ -281,7 +307,7 @@ function ProjectDetailsCard({ project }: { project: Project }) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">Project Details</CardTitle>
-        <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+        <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer">
           <PencilSimple className="h-4 w-4" />
         </Button>
       </CardHeader>
@@ -305,7 +331,9 @@ function ProjectDetailsCard({ project }: { project: Project }) {
 
         {project.client && (
           <div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">Project Manager</div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wide">
+              Project Manager
+            </div>
             <div className="flex items-center gap-2 mt-1">
               <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
                 {project.client.name.charAt(0)}
@@ -319,13 +347,19 @@ function ProjectDetailsCard({ project }: { project: Project }) {
 
         <div>
           <div className="text-xs text-muted-foreground uppercase tracking-wide">Start Date</div>
-          <div className="font-medium mt-1">{format(new Date(project.startDate), 'MMM d, yyyy')}</div>
+          <div className="font-medium mt-1">
+            {format(new Date(project.startDate), 'MMM d, yyyy')}
+          </div>
         </div>
 
         {project.endDate && (
           <div>
-            <div className="text-xs text-muted-foreground uppercase tracking-wide">Est. Completion</div>
-            <div className="font-medium mt-1">{format(new Date(project.endDate), 'MMM d, yyyy')}</div>
+            <div className="text-xs text-muted-foreground uppercase tracking-wide">
+              Est. Completion
+            </div>
+            <div className="font-medium mt-1">
+              {format(new Date(project.endDate), 'MMM d, yyyy')}
+            </div>
           </div>
         )}
       </CardContent>
@@ -368,7 +402,12 @@ function QuickLinksCard() {
 // Main Component
 // ============================================
 
-export function ProjectOverviewTab({ project, stats, isStatsLoading, onNavigateToStages }: ProjectOverviewTabProps) {
+export function ProjectOverviewTab({
+  project,
+  stats,
+  isStatsLoading,
+  onNavigateToStages,
+}: ProjectOverviewTabProps) {
   const handleViewAllStages = () => {
     if (onNavigateToStages) {
       onNavigateToStages();

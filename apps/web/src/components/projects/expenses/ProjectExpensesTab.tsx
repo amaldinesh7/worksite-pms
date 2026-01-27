@@ -12,7 +12,15 @@
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
-import { Plus, DotsThree, PencilSimple, Trash, Eye, CircleNotch, FunnelIcon } from '@phosphor-icons/react';
+import {
+  Plus,
+  DotsThree,
+  PencilSimple,
+  Trash,
+  Eye,
+  CircleNotch,
+  FunnelIcon,
+} from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -101,7 +109,11 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
   const { data: expenseTypes = [] } = useCategoryItems('expense_type');
 
   // Data fetching with isFetching for loading overlay
-  const { data: expensesData, isLoading, isFetching } = useExpenses({
+  const {
+    data: expensesData,
+    isLoading,
+    isFetching,
+  } = useExpenses({
     projectId,
     page,
     limit: PAGINATION_LIMIT,
@@ -126,14 +138,17 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
     setIsAddModalOpen(true);
   }, []);
 
-  const handleDeleteExpense = useCallback(async (expense: Expense) => {
-    try {
-      await deleteMutation.mutateAsync(expense.id);
-      toast.success('Expense deleted successfully');
-    } catch {
-      toast.error('Failed to delete expense');
-    }
-  }, [deleteMutation]);
+  const handleDeleteExpense = useCallback(
+    async (expense: Expense) => {
+      try {
+        await deleteMutation.mutateAsync(expense.id);
+        toast.success('Expense deleted successfully');
+      } catch {
+        toast.error('Failed to delete expense');
+      }
+    },
+    [deleteMutation]
+  );
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
@@ -311,15 +326,14 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
               {expenses.map((expense) => {
                 const totalAmount = expense.rate * expense.quantity;
                 const expenseTypeName = expense.expenseType?.name ?? 'Unknown';
-                const paidAmount = expense.payments?.reduce((sum, p) => sum + Number(p.amount), 0) ?? 0;
+                const paidAmount =
+                  expense.payments?.reduce((sum, p) => sum + Number(p.amount), 0) ?? 0;
                 return (
                   <TableRow key={expense.id}>
                     <TableCell className="text-sm">
                       {format(new Date(expense.expenseDate), 'MMM d, yyyy')}
                     </TableCell>
-                    <TableCell className="text-sm font-medium">
-                      {expenseTypeName}
-                    </TableCell>
+                    <TableCell className="text-sm font-medium">{expenseTypeName}</TableCell>
                     <TableCell className="text-right font-medium">
                       {formatCurrency(totalAmount)}
                     </TableCell>
@@ -334,7 +348,7 @@ export function ProjectExpensesTab({ projectId }: ProjectExpensesTabProps) {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+                          <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer">
                             <DotsThree className="h-4 w-4" weight="bold" />
                           </Button>
                         </DropdownMenuTrigger>

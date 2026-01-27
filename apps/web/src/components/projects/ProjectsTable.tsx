@@ -160,7 +160,9 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                       )}
                     </div>
                     <div>
-                      <Typography variant="paragraph-small" className="font-medium">{project.name}</Typography>
+                      <Typography variant="paragraph-small" className="font-medium">
+                        {project.name}
+                      </Typography>
                       <Typography variant="muted" className="text-xs">
                         {project.projectType?.name || 'Unknown'}
                       </Typography>
@@ -174,7 +176,9 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                 {/* Budget */}
                 <TableCell>
                   <div>
-                    <Typography variant="paragraph-small" className="font-medium">{formatCurrency(project.amount)}</Typography>
+                    <Typography variant="paragraph-small" className="font-medium">
+                      {formatCurrency(project.amount)}
+                    </Typography>
                     {project.amount && (
                       <Typography variant="muted" className="text-xs">
                         of {formatCurrency(project.amount)}
@@ -187,7 +191,10 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                 <TableCell>
                   <div className="flex items-center gap-2 min-w-[100px]">
                     <Progress value={project.progress || 0} className="h-2 flex-1" />
-                    <Typography variant="paragraph-small" className="text-muted-foreground font-normal w-10 text-right">
+                    <Typography
+                      variant="paragraph-small"
+                      className="text-muted-foreground font-normal w-10 text-right"
+                    >
                       {project.progress || 0}%
                     </Typography>
                   </div>
@@ -200,7 +207,9 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                       <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
                         {manager.name.charAt(0).toUpperCase()}
                       </div>
-                      <Typography variant="paragraph-small" className="font-normal">{manager.name}</Typography>
+                      <Typography variant="paragraph-small" className="font-normal">
+                        {manager.name}
+                      </Typography>
                     </div>
                   ) : (
                     <Typography variant="muted">—</Typography>
@@ -211,8 +220,12 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                 <TableCell>
                   {deadline ? (
                     <div>
-                      <Typography variant="paragraph-small" className="font-normal">{deadline.date}</Typography>
-                      <Typography variant="muted" className="text-xs">{deadline.daysLeft}</Typography>
+                      <Typography variant="paragraph-small" className="font-normal">
+                        {deadline.date}
+                      </Typography>
+                      <Typography variant="muted" className="text-xs">
+                        {deadline.daysLeft}
+                      </Typography>
                     </div>
                   ) : (
                     <Typography variant="muted">—</Typography>
@@ -226,7 +239,7 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 cursor-pointer"
+                        className="h-5 w-5 cursor-pointer"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreVertical className="h-4 w-4" />

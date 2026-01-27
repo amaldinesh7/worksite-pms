@@ -13,6 +13,7 @@
 
 import { useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import type { IconProps } from '@phosphor-icons/react';
 import {
   House,
   CurrencyDollar,
@@ -24,7 +25,7 @@ import {
   Scales,
 } from '@phosphor-icons/react';
 
-import { PageContent, Header } from '@/components/layout';
+import { Header } from '@/components/layout';
 import {
   SecondaryTabs,
   SecondaryTabsList,
@@ -38,6 +39,27 @@ import { ProjectPaymentsTab } from '@/components/projects/payments';
 import { ProjectStagesTab } from '@/components/projects/stages';
 import { ProjectBOQTab } from '@/components/projects/boq';
 import { ProjectPLTab } from '@/components/projects/pl';
+
+// ============================================
+// Tab Configuration
+// ============================================
+
+interface TabConfig {
+  value: string;
+  label: string;
+  icon: React.ComponentType<IconProps>;
+}
+
+const PROJECT_TABS: TabConfig[] = [
+  { value: 'overview', label: 'Overview', icon: House },
+  { value: 'expenses', label: 'Expenses', icon: CurrencyDollar },
+  { value: 'payments', label: 'Payments', icon: Money },
+  { value: 'stages', label: 'Stages', icon: Stack },
+  { value: 'boq', label: 'Budget & BOQ', icon: Receipt },
+  { value: 'pl', label: 'P&L', icon: Scales },
+  { value: 'documents', label: 'Documents', icon: FileText },
+  { value: 'reports', label: 'Reports', icon: ChartBar },
+];
 
 // ============================================
 // Component
@@ -107,26 +129,28 @@ export default function ProjectDetailPage() {
   // Loading state
   if (isProjectLoading) {
     return (
-      <PageContent>
-        <div className="h-6 w-48 bg-neutral-100 rounded animate-pulse mb-4" />
-        <div className="h-8 w-64 bg-neutral-100 rounded animate-pulse mb-6" />
-        <div className="h-12 w-full bg-neutral-100 rounded animate-pulse mb-6" />
-        <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-8">
-            <div className="h-64 bg-neutral-100 rounded animate-pulse" />
-          </div>
-          <div className="col-span-4">
-            <div className="h-64 bg-neutral-100 rounded animate-pulse" />
+      <main className="flex-1 overflow-hidden flex flex-col" role="main">
+        <div className="p-6">
+          <div className="h-6 w-48 bg-neutral-100 rounded animate-pulse mb-4" />
+          <div className="h-8 w-64 bg-neutral-100 rounded animate-pulse mb-6" />
+          <div className="h-12 w-full bg-neutral-100 rounded animate-pulse mb-6" />
+          <div className="grid grid-cols-12 gap-6">
+            <div className="col-span-8">
+              <div className="h-64 bg-neutral-100 rounded animate-pulse" />
+            </div>
+            <div className="col-span-4">
+              <div className="h-64 bg-neutral-100 rounded animate-pulse" />
+            </div>
           </div>
         </div>
-      </PageContent>
+      </main>
     );
   }
 
   // Project not found
   if (!project) {
     return (
-      <PageContent>
+      <main className="flex-1 overflow-hidden flex flex-col" role="main">
         <div className="flex flex-col items-center justify-center h-64">
           <p className="text-neutral-500 mb-4">Project not found</p>
           <button
@@ -136,96 +160,86 @@ export default function ProjectDetailPage() {
             Go back to Projects
           </button>
         </div>
-      </PageContent>
+      </main>
     );
   }
 
   return (
     <>
       <Header
-        breadcrumbs={[
-          { label: 'Projects', href: '/projects' },
-          { label: project.name },
-        ]}
+        title="Projects"
+        breadcrumbs={
+          project.name
+            ? [{ label: 'Projects', href: '/projects' }, { label: project.name }]
+            : undefined
+        }
       />
-      <PageContent className="pt-2">
-        {/* Tabs */}
-        <SecondaryTabs value={activeTab} onValueChange={setActiveTab}>
-          <SecondaryTabsList>
-            <SecondaryTabsTrigger value="overview" icon={House}>
-              Overview
-            </SecondaryTabsTrigger>
-            <SecondaryTabsTrigger value="expenses" icon={CurrencyDollar}>
-              Expenses
-            </SecondaryTabsTrigger>
-            <SecondaryTabsTrigger value="payments" icon={Money}>
-              Payments
-            </SecondaryTabsTrigger>
-            <SecondaryTabsTrigger value="stages" icon={Stack}>
-              Stages
-            </SecondaryTabsTrigger>
-            <SecondaryTabsTrigger value="boq" icon={Receipt}>
-              Budget & BOQ
-            </SecondaryTabsTrigger>
-            <SecondaryTabsTrigger value="pl" icon={Scales}>
-              P&L
-            </SecondaryTabsTrigger>
-            <SecondaryTabsTrigger value="documents" icon={FileText}>
-              Documents
-            </SecondaryTabsTrigger>
-            <SecondaryTabsTrigger value="reports" icon={ChartBar}>
-              Reports
-            </SecondaryTabsTrigger>
+      <main className="flex-1 overflow-hidden flex flex-col" role="main">
+        <SecondaryTabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex flex-col flex-1 overflow-hidden"
+        >
+          {/* Sticky Tabs List */}
+          <SecondaryTabsList className="sticky top-0 z-10 bg-white shrink-0 px-5">
+            {PROJECT_TABS.map((tab) => (
+              <SecondaryTabsTrigger key={tab.value} value={tab.value} icon={tab.icon}>
+                {tab.label}
+              </SecondaryTabsTrigger>
+            ))}
           </SecondaryTabsList>
 
-          <SecondaryTabsContent value="overview" className="mt-6">
-            <ProjectOverviewTab
-              project={project}
-              stats={stats}
-              isStatsLoading={isStatsLoading}
-              onNavigateToStages={() => setActiveTab('stages')}
-            />
-          </SecondaryTabsContent>
+          {/* Scrollable Tab Content */}
+          <div className="flex-1 overflow-y-auto">
+            <SecondaryTabsContent value="overview" className="p-5">
+              <ProjectOverviewTab
+                project={project}
+                stats={stats}
+                isStatsLoading={isStatsLoading}
+                onNavigateToStages={() => setActiveTab('stages')}
+              />
+            </SecondaryTabsContent>
 
-          <SecondaryTabsContent value="expenses" className="mt-6">
-            <ProjectExpensesTab projectId={project.id} />
-          </SecondaryTabsContent>
+            <SecondaryTabsContent value="expenses" className="py-6 px-6">
+              <ProjectExpensesTab projectId={project.id} />
+            </SecondaryTabsContent>
 
-          <SecondaryTabsContent value="payments" className="mt-6">
-            <ProjectPaymentsTab
-              projectId={project.id}
-              initialPaymentTab={paymentTab}
-              initialMemberId={memberId}
-              onPaymentTabChange={handlePaymentTabChange}
-              onMemberIdChange={handleMemberIdChange}
-            />
-          </SecondaryTabsContent>
+            <SecondaryTabsContent value="payments" className="py-6 px-6">
+              <ProjectPaymentsTab
+                projectId={project.id}
+                initialPaymentTab={paymentTab}
+                initialMemberId={memberId}
+                onPaymentTabChange={handlePaymentTabChange}
+                onMemberIdChange={handleMemberIdChange}
+              />
+            </SecondaryTabsContent>
 
-          <SecondaryTabsContent value="stages" className="mt-6">
-            <ProjectStagesTab projectId={project.id} />
-          </SecondaryTabsContent>
+            <SecondaryTabsContent value="stages" className="py-6 px-6">
+              <ProjectStagesTab projectId={project.id} />
+            </SecondaryTabsContent>
 
-          <SecondaryTabsContent value="boq" className="mt-6">
-            <ProjectBOQTab projectId={project.id} />
-          </SecondaryTabsContent>
+            <SecondaryTabsContent value="boq" className="py-6 px-6">
+              <ProjectBOQTab projectId={project.id} />
+            </SecondaryTabsContent>
 
-          <SecondaryTabsContent value="pl" className="mt-6">
-            <ProjectPLTab projectId={project.id} />
-          </SecondaryTabsContent>
+            <SecondaryTabsContent value="pl" className="py-6 px-6">
+              <ProjectPLTab projectId={project.id} />
+            </SecondaryTabsContent>
 
-          <SecondaryTabsContent value="documents" className="mt-6">
-            <div className="flex items-center justify-center h-64 text-muted-foreground">
-              Documents tab coming soon
-            </div>
-          </SecondaryTabsContent>
+            <SecondaryTabsContent value="documents" className="py-6 px-6">
+              <div className="flex items-center justify-center h-64 text-muted-foreground">
+                Documents tab coming soon
+              </div>
+            </SecondaryTabsContent>
 
-          <SecondaryTabsContent value="reports" className="mt-6">
-            <div className="flex items-center justify-center h-64 text-muted-foreground">
-              Reports tab coming soon
-            </div>
-          </SecondaryTabsContent>
+            <SecondaryTabsContent value="reports" className="py-6 px-6">
+              <div className="flex items-center justify-center h-64 text-muted-foreground">
+                Reports tab coming soon
+              </div>
+            </SecondaryTabsContent>
+          </div>
         </SecondaryTabs>
-      </PageContent>
+      </main>
     </>
   );
 }

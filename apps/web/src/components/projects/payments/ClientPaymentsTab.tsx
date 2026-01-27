@@ -12,7 +12,14 @@
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
-import { Plus, DotsThree, Trash, CircleNotch, FunnelIcon, PencilSimple } from '@phosphor-icons/react';
+import {
+  Plus,
+  DotsThree,
+  Trash,
+  CircleNotch,
+  FunnelIcon,
+  PencilSimple,
+} from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -123,7 +130,11 @@ export function ClientPaymentsTab({ projectId }: ClientPaymentsTabProps) {
 
   // Data fetching
   const { data: summary, isLoading: isSummaryLoading } = useProjectPaymentSummary(projectId);
-  const { data: paymentsData, isLoading, isFetching } = useClientPayments(projectId, {
+  const {
+    data: paymentsData,
+    isLoading,
+    isFetching,
+  } = useClientPayments(projectId, {
     page,
     limit: PAGINATION_LIMIT,
     startDate: dateRange?.from?.toISOString(),
@@ -223,7 +234,9 @@ export function ClientPaymentsTab({ projectId }: ClientPaymentsTabProps) {
             {/* Header: Total Project Budget */}
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm text-muted-foreground">Total Project Budget</p>
-              <p className="text-2xl font-semibold">{formatCurrency(summary?.projectBudget ?? 0)}</p>
+              <p className="text-2xl font-semibold">
+                {formatCurrency(summary?.projectBudget ?? 0)}
+              </p>
             </div>
 
             {/* Progress bar with percentage labels */}
@@ -244,13 +257,19 @@ export function ClientPaymentsTab({ projectId }: ClientPaymentsTabProps) {
               {/* Payment Received */}
               <div className="flex-1 rounded-md border bg-muted/30 p-3">
                 <p className="text-xs text-muted-foreground mb-1">Payment received</p>
-                <p className="text-lg font-semibold text-green-600">{formatCurrency(summary?.totalReceived ?? 0)}</p>
+                <p className="text-lg font-semibold text-green-600">
+                  {formatCurrency(summary?.totalReceived ?? 0)}
+                </p>
               </div>
 
               {/* Pending */}
               <div className="flex-1 rounded-md border bg-muted/30 p-3">
                 <p className="text-xs text-muted-foreground mb-1">Pending</p>
-                <p className={`text-lg font-semibold ${(summary?.totalPending ?? 0) > 0 ? 'text-amber-600' : ''}`}>{formatCurrency(summary?.totalPending ?? 0)}</p>
+                <p
+                  className={`text-lg font-semibold ${(summary?.totalPending ?? 0) > 0 ? 'text-amber-600' : ''}`}
+                >
+                  {formatCurrency(summary?.totalPending ?? 0)}
+                </p>
               </div>
             </div>
           </>
@@ -379,13 +398,11 @@ export function ClientPaymentsTab({ projectId }: ClientPaymentsTabProps) {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm">{payment.referenceNumber || '-'}</TableCell>
-                  <TableCell className="text-sm">
-                    {payment.recordedBy?.user?.name || '-'}
-                  </TableCell>
+                  <TableCell className="text-sm">{payment.recordedBy?.user?.name || '-'}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+                        <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer">
                           <DotsThree className="h-4 w-4" weight="bold" />
                         </Button>
                       </DropdownMenuTrigger>

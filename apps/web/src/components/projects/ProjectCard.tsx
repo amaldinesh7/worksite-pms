@@ -52,7 +52,6 @@ function formatDate(dateString: string): string {
   });
 }
 
-
 // ============================================
 // Component
 // ============================================
@@ -92,7 +91,7 @@ export function ProjectCard({ project, onEdit, onDelete, onClick }: ProjectCardP
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 bg-card/80 hover:bg-card cursor-pointer"
+              className="h-5 w-5 bg-card/80 hover:bg-card cursor-pointer"
               onClick={(e) => e.stopPropagation()}
             >
               <MoreVertical className="h-4 w-4" />
@@ -142,7 +141,9 @@ export function ProjectCard({ project, onEdit, onDelete, onClick }: ProjectCardP
         {/* Title and Type */}
         <div className="space-y-1">
           <div className="flex items-start justify-between gap-2">
-            <Typography variant="paragraph-small" className="font-semibold line-clamp-1">{project.name}</Typography>
+            <Typography variant="paragraph-small" className="font-semibold line-clamp-1">
+              {project.name}
+            </Typography>
             <Badge variant="outline" className="shrink-0 text-xs">
               {project.projectType?.name || 'Unknown'}
             </Badge>
@@ -161,7 +162,9 @@ export function ProjectCard({ project, onEdit, onDelete, onClick }: ProjectCardP
         {/* Progress */}
         <div className="space-y-1">
           <div className="flex items-center justify-between text-xs">
-            <Typography variant="muted" className="text-xs">Progress</Typography>
+            <Typography variant="muted" className="text-xs">
+              Progress
+            </Typography>
             <Typography variant="paragraph-small">{project.progress || 0}%</Typography>
           </div>
           <Progress value={project.progress || 0} className="h-1.5" />

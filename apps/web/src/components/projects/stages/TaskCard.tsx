@@ -35,11 +35,23 @@ interface TaskCardProps {
 
 const statusConfig: Record<
   TaskStatus,
-  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; className?: string }
+  {
+    label: string;
+    variant: 'default' | 'secondary' | 'destructive' | 'outline';
+    className?: string;
+  }
 > = {
   NOT_STARTED: { label: 'To Do', variant: 'outline' },
-  IN_PROGRESS: { label: 'In Progress', variant: 'default', className: 'bg-blue-500 hover:bg-blue-600' },
-  COMPLETED: { label: 'Completed', variant: 'secondary', className: 'bg-green-500/20 text-green-700 hover:bg-green-500/30' },
+  IN_PROGRESS: {
+    label: 'In Progress',
+    variant: 'default',
+    className: 'bg-blue-500 hover:bg-blue-600',
+  },
+  COMPLETED: {
+    label: 'Completed',
+    variant: 'secondary',
+    className: 'bg-green-500/20 text-green-700 hover:bg-green-500/30',
+  },
   ON_HOLD: { label: 'On Hold', variant: 'outline', className: 'border-amber-500 text-amber-700' },
   BLOCKED: { label: 'Blocked', variant: 'destructive' },
 };
@@ -148,7 +160,7 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            className="h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
           >
             <MoreHorizontal className="h-4 w-4" />
           </Button>
