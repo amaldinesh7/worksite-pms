@@ -16,11 +16,7 @@ import { toast } from 'sonner';
 
 import { Storefront, HardHat, Briefcase } from '@phosphor-icons/react';
 import { PageContent, Header } from '@/components/layout';
-import {
-  SecondaryTabs,
-  SecondaryTabsList,
-  SecondaryTabsTrigger,
-} from '@/components/ui/custom/secondary-tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { PartiesTable, PartyFormDialog, DeletePartyDialog } from '@/components/parties';
@@ -212,25 +208,24 @@ export default function PartiesPage() {
           {/* Tabs and Table */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <SecondaryTabs value={activeTab} onValueChange={handleTabChange}>
-                <SecondaryTabsList>
-                  <SecondaryTabsTrigger value="VENDOR" icon={Storefront} className="cursor-pointer">
+              <Tabs value={activeTab} onValueChange={handleTabChange}>
+                <TabsList className="bg-transparent">
+                  <TabsTrigger value="VENDOR" className="cursor-pointer">
+                    <Storefront size={16} weight="fill" className="mr-1.5" />
                     Vendors{(summary?.totalVendors ?? 0) > 0 && ` (${summary?.totalVendors})`}
-                  </SecondaryTabsTrigger>
-                  <SecondaryTabsTrigger value="LABOUR" icon={HardHat} className="cursor-pointer">
+                  </TabsTrigger>
+                  <TabsTrigger value="LABOUR" className="cursor-pointer">
+                    <HardHat size={16} weight="fill" className="mr-1.5" />
                     Labours{(summary?.totalLabours ?? 0) > 0 && ` (${summary?.totalLabours})`}
-                  </SecondaryTabsTrigger>
-                  <SecondaryTabsTrigger
-                    value="SUBCONTRACTOR"
-                    icon={Briefcase}
-                    className="cursor-pointer"
-                  >
+                  </TabsTrigger>
+                  <TabsTrigger value="SUBCONTRACTOR" className="cursor-pointer">
+                    <Briefcase size={16} weight="fill" className="mr-1.5" />
                     Sub Contractors
                     {(summary?.totalSubcontractors ?? 0) > 0 &&
                       ` (${summary?.totalSubcontractors})`}
-                  </SecondaryTabsTrigger>
-                </SecondaryTabsList>
-              </SecondaryTabs>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
 
               {/* Credit Filter Toggle */}
               <div className="flex items-center gap-2">
