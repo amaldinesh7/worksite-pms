@@ -381,7 +381,7 @@ export const boxShadow = {
 // =============================================================================
 
 export const layout = {
-  sidebarWidth: 256, // w-64 in Tailwind
+  sidebarWidth: 232, // 232px per Figma spec
   sidebarCollapsed: 64, // w-16 in Tailwind
   headerHeight: 64,
 } as const;
