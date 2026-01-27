@@ -117,8 +117,12 @@ export function TeamMembersTable({
               {getInitials(member.name)}
             </div>
             <div>
-              <Typography variant="paragraph-small" className="font-medium">{member.name}</Typography>
-              <Typography variant="muted" className="text-xs">{member.email || '—'}</Typography>
+              <Typography variant="paragraph-small" className="font-medium">
+                {member.name}
+              </Typography>
+              <Typography variant="muted" className="text-xs">
+                {member.email || '—'}
+              </Typography>
             </div>
           </div>
         );
@@ -178,7 +182,7 @@ export function TeamMembersTable({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+              <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer">
                 <MoreVertical className="h-4 w-4" />
                 <span className="sr-only">Open menu</span>
               </Button>

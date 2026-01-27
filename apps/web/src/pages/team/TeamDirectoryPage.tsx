@@ -235,7 +235,9 @@ export default function TeamDirectoryPage() {
 
             {/* Sort By */}
             <div className="flex items-center gap-2">
-              <Typography variant="paragraph-small" as="span" className="text-muted-foreground">Sort by:</Typography>
+              <Typography variant="paragraph-small" as="span" className="text-muted-foreground">
+                Sort by:
+              </Typography>
               <Select value={sortBy} onValueChange={handleSortChange}>
                 <SelectTrigger className="w-[140px] cursor-pointer">
                   <SelectValue />
@@ -328,7 +330,7 @@ export default function TeamDirectoryPage() {
                   return (
                     <Button
                       key={pageNum}
-                      variant={page === pageNum ? 'default' : 'outline'}
+                      variant={page === pageNum ? 'primary' : 'outline'}
                       size="sm"
                       onClick={() => handlePageChange(pageNum)}
                       className="cursor-pointer w-9"
