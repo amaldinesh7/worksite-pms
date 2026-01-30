@@ -2,6 +2,7 @@
  * BOQ All Items View
  *
  * Flat table view of all BOQ items with search, filter, and sort.
+ * Note: This view is kept for potential future use but is not the primary view.
  */
 
 import { useState, useCallback } from 'react';
@@ -49,8 +50,9 @@ import {
 } from '@/components/ui/empty';
 import { TablePagination } from '@/components/ui/table-pagination';
 import { useBOQItems, useDeleteBOQItem } from '@/lib/hooks/useBOQ';
+import { useCategoryItems } from '@/lib/hooks/useCategories';
 import { BOQItemFormDialog } from './BOQItemFormDialog';
-import type { BOQItem, BOQCategory, BOQListParams } from '@/lib/api/boq';
+import type { BOQItem, BOQListParams } from '@/lib/api/boq';
 
 // ============================================
 // Types
@@ -67,39 +69,20 @@ interface BOQAllItemsViewProps {
 
 const PAGINATION_LIMIT = 10;
 
-const CATEGORY_LABELS: Record<BOQCategory, string> = {
-  MATERIAL: 'Material',
-  LABOUR: 'Labour',
-  SUB_WORK: 'Sub Work',
-  EQUIPMENT: 'Equipment',
-  OTHER: 'Other',
-};
-
-const CATEGORY_COLORS: Record<BOQCategory, string> = {
-  MATERIAL: 'bg-blue-100 text-blue-700',
-  LABOUR: 'bg-amber-100 text-amber-700',
-  SUB_WORK: 'bg-purple-100 text-purple-700',
-  EQUIPMENT: 'bg-green-100 text-green-700',
-  OTHER: 'bg-gray-100 text-gray-700',
-};
-
 // ============================================
 // Helper Functions
 // ============================================
 
-function formatCurrency(amount: number): string {
-  if (amount >= 10000000) {
-    return `₹${(amount / 10000000).toFixed(2)} Cr`;
-  }
-  if (amount >= 100000) {
-    return `₹${(amount / 100000).toFixed(2)}L`;
-  }
+/**
+ * Format currency as full amount (not short format)
+ */
+function formatFullCurrency(amount: number): string {
   return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function formatVariance(variance: number): string {
   const prefix = variance >= 0 ? '+' : '';
-  return `${prefix}${formatCurrency(variance)}`;
+  return `${prefix}${formatFullCurrency(variance)}`;
 }
 
 // ============================================
@@ -110,18 +93,21 @@ export function BOQAllItemsView({ projectId, onAddItem }: BOQAllItemsViewProps) 
   // State
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<BOQCategory | undefined>(undefined);
+  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
   const [sortBy, setSortBy] = useState<BOQListParams['sortBy']>('createdAt');
   const [sortOrder, setSortOrder] = useState<BOQListParams['sortOrder']>('desc');
   const [editingItem, setEditingItem] = useState<BOQItem | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   // Data fetching
+  const { data: boqCategories = [] } = useCategoryItems('boq_category');
+  const activeCategories = boqCategories.filter((cat) => cat.isActive !== false);
+
   const { data, isLoading, isFetching } = useBOQItems(projectId, {
     page,
     limit: PAGINATION_LIMIT,
     search: search || undefined,
-    category: categoryFilter,
+    boqCategoryItemId: categoryFilter,
     sortBy,
     sortOrder,
   });
@@ -135,7 +121,7 @@ export function BOQAllItemsView({ projectId, onAddItem }: BOQAllItemsViewProps) 
   }, []);
 
   const handleCategoryChange = useCallback((value: string) => {
-    setCategoryFilter((value as BOQCategory) || undefined);
+    setCategoryFilter(value || undefined);
     setPage(1);
   }, []);
 
@@ -204,7 +190,7 @@ export function BOQAllItemsView({ projectId, onAddItem }: BOQAllItemsViewProps) 
         {/* Category Filter */}
         <Select value={categoryFilter || ''} onValueChange={handleCategoryChange}>
           <SelectTrigger
-            className="w-[160px] cursor-pointer"
+            className="w-[180px] cursor-pointer"
             isClearable
             hasValue={!!categoryFilter}
             onClear={handleClearCategoryFilter}
@@ -212,9 +198,9 @@ export function BOQAllItemsView({ projectId, onAddItem }: BOQAllItemsViewProps) 
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-              <SelectItem key={value} value={value} className="cursor-pointer">
-                {label}
+            {activeCategories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id} className="cursor-pointer">
+                {cat.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -306,14 +292,14 @@ export function BOQAllItemsView({ projectId, onAddItem }: BOQAllItemsViewProps) 
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-20">CATEGORY</TableHead>
+                <TableHead className="w-28">CATEGORY</TableHead>
                 <TableHead>DESCRIPTION</TableHead>
                 <TableHead className="w-16">UNIT</TableHead>
                 <TableHead className="w-16 text-right">QTY</TableHead>
-                <TableHead className="w-20 text-right">RATE</TableHead>
-                <TableHead className="w-28 text-right">QUOTED TOTAL</TableHead>
-                <TableHead className="w-24 text-right">ACTUAL</TableHead>
-                <TableHead className="w-24 text-right">VARIANCE</TableHead>
+                <TableHead className="w-24 text-right">RATE</TableHead>
+                <TableHead className="w-32 text-right">QUOTED TOTAL</TableHead>
+                <TableHead className="w-28 text-right">ACTUAL</TableHead>
+                <TableHead className="w-28 text-right">VARIANCE</TableHead>
                 <TableHead className="w-12">ACTIONS</TableHead>
               </TableRow>
             </TableHeader>
@@ -328,8 +314,8 @@ export function BOQAllItemsView({ projectId, onAddItem }: BOQAllItemsViewProps) 
                 return (
                   <TableRow key={item.id}>
                     <TableCell>
-                      <Badge variant="secondary" className={CATEGORY_COLORS[item.category]}>
-                        {CATEGORY_LABELS[item.category]}
+                      <Badge variant="secondary" className="bg-muted">
+                        {item.boqCategory?.name || 'Unknown'}
                       </Badge>
                     </TableCell>
                     <TableCell className="font-medium">
@@ -342,11 +328,11 @@ export function BOQAllItemsView({ projectId, onAddItem }: BOQAllItemsViewProps) 
                     </TableCell>
                     <TableCell className="text-muted-foreground">{item.unit}</TableCell>
                     <TableCell className="text-right">{item.quantity.toLocaleString()}</TableCell>
-                    <TableCell className="text-right">₹{item.rate.toLocaleString()}</TableCell>
+                    <TableCell className="text-right">{formatFullCurrency(item.rate)}</TableCell>
                     <TableCell className="text-right font-medium">
-                      {formatCurrency(quotedTotal)}
+                      {formatFullCurrency(quotedTotal)}
                     </TableCell>
-                    <TableCell className="text-right">{formatCurrency(actualTotal)}</TableCell>
+                    <TableCell className="text-right">{formatFullCurrency(actualTotal)}</TableCell>
                     <TableCell
                       className={`text-right ${variance >= 0 ? 'text-green-600' : 'text-red-600'}`}
                     >

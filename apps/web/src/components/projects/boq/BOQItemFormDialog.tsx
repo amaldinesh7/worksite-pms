@@ -1,7 +1,7 @@
 /**
  * BOQ Item Form Dialog
  *
- * Modal for adding/editing BOQ items.
+ * Modal for adding/editing BOQ items with dynamic work categories.
  */
 
 import { useEffect } from 'react';
@@ -30,7 +30,8 @@ import {
 } from '@/components/ui/select';
 import { useCreateBOQItem, useUpdateBOQItem } from '@/lib/hooks/useBOQ';
 import { useStagesByProject } from '@/lib/hooks/useStages';
-import type { BOQItem, BOQCategory } from '@/lib/api/boq';
+import { useCategoryItems } from '@/lib/hooks/useCategories';
+import type { BOQItem } from '@/lib/api/boq';
 
 // ============================================
 // Types
@@ -41,7 +42,7 @@ interface BOQItemFormDialogProps {
   onOpenChange: (open: boolean) => void;
   projectId: string;
   item?: BOQItem | null;
-  defaultCategory?: BOQCategory;
+  defaultCategoryId?: string;
 }
 
 // ============================================
@@ -50,7 +51,7 @@ interface BOQItemFormDialogProps {
 
 const formSchema = z.object({
   code: z.string().optional(),
-  category: z.enum(['MATERIAL', 'LABOUR', 'SUB_WORK', 'EQUIPMENT', 'OTHER']),
+  boqCategoryItemId: z.string().min(1, 'Category is required'),
   description: z.string().min(1, 'Description is required'),
   unit: z.string().min(1, 'Unit is required'),
   quantity: z.coerce.number().positive('Quantity must be positive'),
@@ -65,15 +66,8 @@ type FormValues = z.infer<typeof formSchema>;
 // Constants
 // ============================================
 
-const CATEGORY_OPTIONS: { value: BOQCategory; label: string }[] = [
-  { value: 'MATERIAL', label: 'Material' },
-  { value: 'LABOUR', label: 'Labour' },
-  { value: 'SUB_WORK', label: 'Sub Work' },
-  { value: 'EQUIPMENT', label: 'Equipment' },
-  { value: 'OTHER', label: 'Other' },
-];
-
-const COMMON_UNITS = ['nos', 'sqft', 'sqm', 'cum', 'cft', 'rft', 'kg', 'MT', 'bags', 'liters', 'points', 'days', 'meters'];
+// Simplified units for construction BOQ
+const COMMON_UNITS = ['sqft', 'sqm', 'M3', 'nos', 'kg', 'MT', 'bags', 'rmt', 'LS'];
 
 // ============================================
 // Component
@@ -84,21 +78,25 @@ export function BOQItemFormDialog({
   onOpenChange,
   projectId,
   item,
-  defaultCategory = 'MATERIAL',
+  defaultCategoryId,
 }: BOQItemFormDialogProps) {
   const isEditing = !!item;
 
   // Hooks
   const { data: stages = [] } = useStagesByProject(projectId);
+  const { data: boqCategories = [] } = useCategoryItems('boq_category');
   const createMutation = useCreateBOQItem(projectId);
   const updateMutation = useUpdateBOQItem(projectId);
+
+  // Get active categories
+  const activeCategories = boqCategories.filter((cat) => cat.isActive !== false);
 
   // Form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       code: '',
-      category: defaultCategory,
+      boqCategoryItemId: defaultCategoryId || '',
       description: '',
       unit: 'nos',
       quantity: 1,
@@ -114,7 +112,7 @@ export function BOQItemFormDialog({
       if (item) {
         form.reset({
           code: item.code || '',
-          category: item.category,
+          boqCategoryItemId: item.boqCategoryItemId || item.boqCategory?.id || '',
           description: item.description,
           unit: item.unit,
           quantity: item.quantity,
@@ -123,9 +121,11 @@ export function BOQItemFormDialog({
           notes: item.notes || '',
         });
       } else {
+        // Set default category to first available if not provided
+        const defaultCat = defaultCategoryId || (activeCategories[0]?.id ?? '');
         form.reset({
           code: '',
-          category: defaultCategory,
+          boqCategoryItemId: defaultCat,
           description: '',
           unit: 'nos',
           quantity: 1,
@@ -135,7 +135,7 @@ export function BOQItemFormDialog({
         });
       }
     }
-  }, [open, item, defaultCategory, form]);
+  }, [open, item, defaultCategoryId, form, activeCategories]);
 
   // Handlers
   const handleSubmit = async (values: FormValues) => {
@@ -179,34 +179,32 @@ export function BOQItemFormDialog({
           {/* Category & Code Row */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="boqCategoryItemId">Work Category</Label>
               <Select
-                value={form.watch('category')}
-                onValueChange={(value) => form.setValue('category', value as BOQCategory)}
+                value={form.watch('boqCategoryItemId')}
+                onValueChange={(value) => form.setValue('boqCategoryItemId', value)}
               >
                 <SelectTrigger className="cursor-pointer">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORY_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className="cursor-pointer">
-                      {opt.label}
+                  {activeCategories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id} className="cursor-pointer">
+                      {cat.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {form.formState.errors.category && (
-                <p className="text-sm text-destructive">{form.formState.errors.category.message}</p>
+              {form.formState.errors.boqCategoryItemId && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.boqCategoryItemId.message}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="code">Item Code (Optional)</Label>
-              <Input
-                id="code"
-                placeholder="e.g., R2-CS-EW-1"
-                {...form.register('code')}
-              />
+              <Input id="code" placeholder="e.g., R2-CS-EW-1" {...form.register('code')} />
             </div>
           </div>
 
@@ -220,7 +218,9 @@ export function BOQItemFormDialog({
               {...form.register('description')}
             />
             {form.formState.errors.description && (
-              <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
+              <p className="text-sm text-destructive">
+                {form.formState.errors.description.message}
+              </p>
             )}
           </div>
 
@@ -264,13 +264,7 @@ export function BOQItemFormDialog({
 
             <div className="space-y-2">
               <Label htmlFor="rate">Rate (₹)</Label>
-              <Input
-                id="rate"
-                type="number"
-                step="0.01"
-                min="0"
-                {...form.register('rate')}
-              />
+              <Input id="rate" type="number" step="0.01" min="0" {...form.register('rate')} />
               {form.formState.errors.rate && (
                 <p className="text-sm text-destructive">{form.formState.errors.rate.message}</p>
               )}
@@ -281,7 +275,11 @@ export function BOQItemFormDialog({
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
             <span className="text-sm text-muted-foreground">Quoted Amount</span>
             <span className="text-lg font-semibold">
-              ₹{amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              ₹
+              {amount.toLocaleString('en-IN', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}
             </span>
           </div>
 
@@ -296,7 +294,9 @@ export function BOQItemFormDialog({
                 <SelectValue placeholder="Select stage" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none" className="cursor-pointer">No stage</SelectItem>
+                <SelectItem value="none" className="cursor-pointer">
+                  No stage
+                </SelectItem>
                 {stages.map((stage) => (
                   <SelectItem key={stage.id} value={stage.id} className="cursor-pointer">
                     {stage.name}

@@ -7,24 +7,17 @@
 import { z } from 'zod';
 
 // ============================================
-// Enums
-// ============================================
-
-export const BOQCategoryEnum = z.enum(['MATERIAL', 'LABOUR', 'SUB_WORK', 'EQUIPMENT', 'OTHER']);
-export type BOQCategoryType = z.infer<typeof BOQCategoryEnum>;
-
-// ============================================
 // Query Schemas
 // ============================================
 
 export const BOQListQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(50),
-  category: BOQCategoryEnum.optional(),
+  boqCategoryItemId: z.string().optional(),
   stageId: z.string().optional(),
   sectionId: z.string().optional(),
   search: z.string().optional(),
-  sortBy: z.enum(['description', 'category', 'amount', 'createdAt']).default('createdAt'),
+  sortBy: z.enum(['description', 'boqCategoryItemId', 'amount', 'createdAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
@@ -62,7 +55,7 @@ export const CreateBOQItemSchema = z.object({
   sectionId: z.string().optional(),
   stageId: z.string().optional(),
   code: z.string().optional(),
-  category: BOQCategoryEnum,
+  boqCategoryItemId: z.string().min(1, 'Work category is required'),
   description: z.string().min(1, 'Description is required'),
   unit: z.string().min(1, 'Unit is required'),
   quantity: z.number().positive('Quantity must be positive'),
@@ -76,7 +69,7 @@ export const UpdateBOQItemSchema = z.object({
   sectionId: z.string().nullable().optional(),
   stageId: z.string().nullable().optional(),
   code: z.string().nullable().optional(),
-  category: BOQCategoryEnum.optional(),
+  boqCategoryItemId: z.string().optional(),
   description: z.string().min(1).optional(),
   unit: z.string().min(1).optional(),
   quantity: z.number().positive().optional(),
@@ -108,7 +101,7 @@ export type UpdateBOQSectionInput = z.infer<typeof UpdateBOQSectionSchema>;
 
 export const ParsedBOQItemSchema = z.object({
   code: z.string().optional(),
-  category: BOQCategoryEnum,
+  boqCategoryItemId: z.string(),
   description: z.string(),
   unit: z.string(),
   quantity: z.number(),

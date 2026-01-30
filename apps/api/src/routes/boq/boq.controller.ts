@@ -49,13 +49,14 @@ export const listBOQItems = handle(
     reply: FastifyReply
   ) => {
     const { projectId } = request.params;
-    const { page, limit, category, stageId, sectionId, search, sortBy, sortOrder } = request.query;
+    const { page, limit, boqCategoryItemId, stageId, sectionId, search, sortBy, sortOrder } =
+      request.query;
     const skip = (page - 1) * limit;
 
     const { items, total } = await boqItemRepository.findAll(request.organizationId, projectId, {
       skip,
       take: limit,
-      category,
+      boqCategoryItemId,
       stageId,
       sectionId,
       search,
@@ -79,7 +80,7 @@ export const getBOQByCategory = handle(
     );
 
     // Transform to array format with totals
-    const categories = Object.entries(grouped).map(([category, items]) => {
+    const categories = Object.entries(grouped).map(([categoryId, { categoryName, items }]) => {
       const quotedTotal = items.reduce(
         (sum, item) => sum + item.rate.toNumber() * item.quantity.toNumber(),
         0
@@ -94,7 +95,8 @@ export const getBOQByCategory = handle(
       }, 0);
 
       return {
-        category,
+        categoryId,
+        categoryName,
         items,
         itemCount: items.length,
         quotedTotal,
@@ -410,7 +412,7 @@ export const confirmImport = handle(
       sectionId: item.sectionName ? sectionMap.get(item.sectionName) : undefined,
       stageId: item.stageId,
       code: item.code,
-      category: item.category,
+      boqCategoryItemId: item.boqCategoryItemId,
       description: item.description,
       unit: item.unit,
       quantity: item.quantity,

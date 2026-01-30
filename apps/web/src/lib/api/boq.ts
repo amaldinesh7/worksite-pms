@@ -11,7 +11,10 @@ import type { ApiPaginatedResponse, PaginatedResult, SuccessResponse } from './t
 // Types
 // ============================================
 
-export type BOQCategory = 'MATERIAL' | 'LABOUR' | 'SUB_WORK' | 'EQUIPMENT' | 'OTHER';
+export interface BOQWorkCategory {
+  id: string;
+  name: string;
+}
 
 export interface BOQSection {
   id: string;
@@ -38,7 +41,8 @@ export interface BOQItem {
   sectionId?: string;
   stageId?: string;
   code?: string;
-  category: BOQCategory;
+  boqCategoryItemId: string;
+  boqCategory?: BOQWorkCategory;
   description: string;
   unit: string;
   quantity: number;
@@ -53,6 +57,14 @@ export interface BOQItem {
   expenseLinks: BOQExpenseLink[];
 }
 
+export interface BOQCategoryBreakdownItem {
+  categoryName: string;
+  sortOrder: number;
+  quoted: number;
+  actual: number;
+  count: number;
+}
+
 export interface BOQStats {
   totalQuoted: number;
   totalActual: number;
@@ -60,15 +72,12 @@ export interface BOQStats {
   variancePercent: number;
   budgetUsage: number;
   itemCount: number;
-  categoryBreakdown: Record<BOQCategory, {
-    quoted: number;
-    actual: number;
-    count: number;
-  }>;
+  categoryBreakdown: Record<string, BOQCategoryBreakdownItem>;
 }
 
 export interface BOQCategoryGroup {
-  category: BOQCategory;
+  categoryId: string;
+  categoryName: string;
   items: BOQItem[];
   itemCount: number;
   quotedTotal: number;
@@ -88,7 +97,7 @@ export interface BOQStageGroup {
 
 export interface ParsedBOQItem {
   code?: string;
-  category: BOQCategory;
+  boqCategoryItemId: string;
   description: string;
   unit: string;
   quantity: number;
@@ -115,11 +124,11 @@ export interface ParseResult {
 export interface BOQListParams {
   page?: number;
   limit?: number;
-  category?: BOQCategory;
+  boqCategoryItemId?: string;
   stageId?: string;
   sectionId?: string;
   search?: string;
-  sortBy?: 'description' | 'category' | 'amount' | 'createdAt';
+  sortBy?: 'description' | 'boqCategoryItemId' | 'amount' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -131,7 +140,7 @@ export interface CreateBOQItemInput {
   sectionId?: string;
   stageId?: string;
   code?: string;
-  category: BOQCategory;
+  boqCategoryItemId: string;
   description: string;
   unit: string;
   quantity: number;
@@ -143,7 +152,7 @@ export interface UpdateBOQItemInput {
   sectionId?: string | null;
   stageId?: string | null;
   code?: string | null;
-  category?: BOQCategory;
+  boqCategoryItemId?: string;
   description?: string;
   unit?: string;
   quantity?: number;
@@ -176,7 +185,7 @@ export async function getBOQItems(
   const searchParams = new URLSearchParams();
   if (params.page) searchParams.set('page', String(params.page));
   if (params.limit) searchParams.set('limit', String(params.limit));
-  if (params.category) searchParams.set('category', params.category);
+  if (params.boqCategoryItemId) searchParams.set('boqCategoryItemId', params.boqCategoryItemId);
   if (params.stageId) searchParams.set('stageId', params.stageId);
   if (params.sectionId) searchParams.set('sectionId', params.sectionId);
   if (params.search) searchParams.set('search', params.search);
@@ -185,7 +194,7 @@ export async function getBOQItems(
 
   const query = searchParams.toString();
   const url = `/projects/${projectId}/boq${query ? `?${query}` : ''}`;
-  
+
   const response = await api.get<ApiPaginatedResponse<BOQItem>>(url);
   return response.data.data;
 }
@@ -214,9 +223,7 @@ export async function getBOQByStage(projectId: string): Promise<BOQStageGroup[]>
  * Get BOQ statistics for a project
  */
 export async function getBOQStats(projectId: string): Promise<BOQStats> {
-  const response = await api.get<SuccessResponse<BOQStats>>(
-    `/projects/${projectId}/boq/stats`
-  );
+  const response = await api.get<SuccessResponse<BOQStats>>(`/projects/${projectId}/boq/stats`);
   return response.data.data;
 }
 
@@ -224,23 +231,15 @@ export async function getBOQStats(projectId: string): Promise<BOQStats> {
  * Get a single BOQ item
  */
 export async function getBOQItem(projectId: string, id: string): Promise<BOQItem> {
-  const response = await api.get<SuccessResponse<BOQItem>>(
-    `/projects/${projectId}/boq/${id}`
-  );
+  const response = await api.get<SuccessResponse<BOQItem>>(`/projects/${projectId}/boq/${id}`);
   return response.data.data;
 }
 
 /**
  * Create a new BOQ item
  */
-export async function createBOQItem(
-  projectId: string,
-  data: CreateBOQItemInput
-): Promise<BOQItem> {
-  const response = await api.post<SuccessResponse<BOQItem>>(
-    `/projects/${projectId}/boq`,
-    data
-  );
+export async function createBOQItem(projectId: string, data: CreateBOQItemInput): Promise<BOQItem> {
+  const response = await api.post<SuccessResponse<BOQItem>>(`/projects/${projectId}/boq`, data);
   return response.data.data;
 }
 
@@ -344,7 +343,5 @@ export async function unlinkExpenseFromBOQ(
   boqItemId: string,
   expenseId: string
 ): Promise<void> {
-  await api.delete(
-    `/projects/${projectId}/boq/${boqItemId}/unlink-expense/${expenseId}`
-  );
+  await api.delete(`/projects/${projectId}/boq/${boqItemId}/unlink-expense/${expenseId}`);
 }

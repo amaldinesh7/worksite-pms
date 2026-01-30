@@ -3,20 +3,18 @@
  *
  * Main container for the BOQ (Bill of Quantities) tab with:
  * - Summary cards
- * - View toggle (All Items / By Category / By Stage)
+ * - Category-grouped view (dynamic work categories)
  * - Add/Import actions
+ * - Sticky total bar at bottom
  */
 
 import { useState, useCallback } from 'react';
 import { Plus, Upload } from '@phosphor-icons/react';
 
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBOQStats } from '@/lib/hooks/useBOQ';
 import { BOQSummaryCards } from './BOQSummaryCards';
-import { BOQAllItemsView } from './BOQAllItemsView';
 import { BOQCategoryView } from './BOQCategoryView';
-import { BOQStageView } from './BOQStageView';
 import { BOQItemFormDialog } from './BOQItemFormDialog';
 import { BOQImportDialog } from './BOQImportDialog';
 import { BOQImportReview } from './BOQImportReview';
@@ -30,14 +28,11 @@ interface ProjectBOQTabProps {
   projectId: string;
 }
 
-type ViewMode = 'all' | 'category' | 'stage';
-
 // ============================================
 // Component
 // ============================================
 
 export function ProjectBOQTab({ projectId }: ProjectBOQTabProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [parseResult, setParseResult] = useState<ParseResult | null>(null);
@@ -81,14 +76,8 @@ export function ProjectBOQTab({ projectId }: ProjectBOQTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header with Title and Actions */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">Project Budget & BOQ</h2>
-          <p className="text-sm text-muted-foreground">
-            Manage quoted items and track actual spending
-          </p>
-        </div>
+      {/* Actions */}
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleImport} className="cursor-pointer">
             <Upload className="mr-2 h-4 w-4" />
@@ -104,29 +93,8 @@ export function ProjectBOQTab({ projectId }: ProjectBOQTabProps) {
       {/* Summary Cards */}
       <BOQSummaryCards stats={stats} isLoading={isStatsLoading} />
 
-      {/* View Toggle */}
-      <div className="flex items-center justify-between border-b pb-4">
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-          <TabsList>
-            <TabsTrigger value="all" className="cursor-pointer">
-              All Items
-            </TabsTrigger>
-            <TabsTrigger value="category" className="cursor-pointer">
-              By Category
-            </TabsTrigger>
-            <TabsTrigger value="stage" className="cursor-pointer">
-              By Stage
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
-      {/* Content based on view mode */}
-      {viewMode === 'all' && (
-        <BOQAllItemsView projectId={projectId} onAddItem={handleAddItem} />
-      )}
-      {viewMode === 'category' && <BOQCategoryView projectId={projectId} />}
-      {viewMode === 'stage' && <BOQStageView projectId={projectId} />}
+      {/* Category-grouped BOQ View */}
+      <BOQCategoryView projectId={projectId} totalQuoted={stats?.totalQuoted} />
 
       {/* Add Item Dialog */}
       <BOQItemFormDialog
