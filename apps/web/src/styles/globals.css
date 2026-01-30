@@ -363,3 +363,22 @@ button:focus-visible,
   transition-timing-function: var(--ease-default);
   transition-duration: var(--transition-normal);
 }
+
+/* ========================================
+   FLIP ANIMATION FOR AMOUNTS
+   ======================================== */
+@keyframes flip-amount {
+  0% {
+    transform: rotateX(90deg);
+    opacity: 0;
+  }
+  100% {
+    transform: rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+.animate-flip-amount {
+  animation: flip-amount 0.25s ease-out;
+  transform-style: preserve-3d;
+}

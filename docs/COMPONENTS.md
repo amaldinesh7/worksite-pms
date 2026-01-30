@@ -1,7 +1,7 @@
 # UI Architecture
 
 > Auto-generated
-> Last generated: 2026-01-25T23:59:34.214Z
+> Last generated: 2026-01-29T21:32:23.137Z
 
 ---
 
@@ -23,14 +23,17 @@ import { colors, spacing, fontSize, tailwindTheme } from '@worksite/ui/tokens';
 
 ### Available Exports
 
-- `colors`
+- `rawColors`
+- `semanticColors`
 - `spacing`
 - `fontSize`
 - `fontWeight`
 - `fontFamily`
 - `borderRadius`
 - `boxShadow`
+- `layout`
 - `tailwindTheme`
+- `colors`
 
 ## Web Components (shadcn/ui)
 
