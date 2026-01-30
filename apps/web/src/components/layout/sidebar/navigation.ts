@@ -4,7 +4,8 @@ import {
   UsersFourIcon,
   TagIcon,
   AddressBookIcon,
-  ShieldCheckeredIcon
+  ShieldCheckeredIcon,
+  UserIcon,
 } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 
@@ -27,6 +28,7 @@ export const mainNavItems: NavItem[] = [
   { id: 'projects', label: 'Projects', icon: FolderIcon, href: '/projects' },
   { id: 'parties', label: 'Parties', icon: AddressBookIcon, href: '/parties' },
   { id: 'team', label: 'Team Directory', icon: UsersFourIcon, href: '/team' },
+  { id: 'clients', label: 'Clients', icon: UserIcon, href: '/clients' },
 ];
 
 export const settingsSection: NavSection = {
@@ -34,6 +36,11 @@ export const settingsSection: NavSection = {
   title: 'Settings',
   items: [
     { id: 'categories', label: 'Categories', icon: TagIcon, href: '/categories' },
-    { id: 'roles', label: 'Roles & Permissions', icon: ShieldCheckeredIcon, href: '/settings/roles' },
+    {
+      id: 'roles',
+      label: 'Roles & Permissions',
+      icon: ShieldCheckeredIcon,
+      href: '/settings/roles',
+    },
   ],
 };

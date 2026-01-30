@@ -6,7 +6,12 @@
 
 import { api } from './client';
 import type { AxiosResponse } from 'axios';
-import type { PaginationMeta, ApiPaginatedResponse, PaginatedResult, ApiSuccessResponse } from './types';
+import type {
+  PaginationMeta,
+  ApiPaginatedResponse,
+  PaginatedResult,
+  ApiSuccessResponse,
+} from './types';
 
 // ============================================
 // Types
@@ -91,6 +96,7 @@ export interface TaskQueryParams {
   page?: number;
   limit?: number;
   stageId?: string;
+  projectId?: string;
   status?: TaskStatus;
 }
 
@@ -117,6 +123,16 @@ export async function getTasks(params?: TaskQueryParams): Promise<PaginatedResul
 export async function getTasksByStage(stageId: string): Promise<Task[]> {
   const response: AxiosResponse<ApiSuccessResponse<Task[]>> = await api.get(
     `/tasks/stage/${stageId}`
+  );
+  return response.data.data;
+}
+
+/**
+ * Fetch tasks by project ID
+ */
+export async function getTasksByProject(projectId: string): Promise<Task[]> {
+  const response: AxiosResponse<ApiSuccessResponse<Task[]>> = await api.get(
+    `/tasks/project/${projectId}`
   );
   return response.data.data;
 }

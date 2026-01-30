@@ -11,7 +11,7 @@
  * - Analytics: (future)
  */
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import type { IconProps } from '@phosphor-icons/react';
 import {
@@ -22,8 +22,8 @@ import {
   FileText,
   ChartBar,
   Receipt,
-  Scales,
 } from '@phosphor-icons/react';
+import { toast } from 'sonner';
 
 import { Header } from '@/components/layout';
 import {
@@ -32,13 +32,15 @@ import {
   SecondaryTabsTrigger,
   SecondaryTabsContent,
 } from '@/components/ui/custom/secondary-tabs';
-import { useProject, useProjectStats } from '@/lib/hooks/useProjects';
+import { useProject, useProjectStats, useUpdateProject } from '@/lib/hooks/useProjects';
 import { ProjectOverviewTab } from '@/components/projects/overview/ProjectOverviewTab';
 import { ProjectExpensesTab } from '@/components/projects/expenses/ProjectExpensesTab';
 import { ProjectPaymentsTab } from '@/components/projects/payments';
 import { ProjectStagesTab } from '@/components/projects/stages';
 import { ProjectBOQTab } from '@/components/projects/boq';
-import { ProjectPLTab } from '@/components/projects/pl';
+import { ProjectReportsTab } from '@/components/projects/reports';
+import { ProjectFormDialog } from '@/components/projects/ProjectFormDialog';
+import type { UpdateProjectInput } from '@/lib/api/projects';
 
 // ============================================
 // Tab Configuration
@@ -55,8 +57,7 @@ const PROJECT_TABS: TabConfig[] = [
   { value: 'expenses', label: 'Expenses', icon: CurrencyDollar },
   { value: 'payments', label: 'Payments', icon: Money },
   { value: 'stages', label: 'Stages', icon: Stack },
-  { value: 'boq', label: 'Budget & BOQ', icon: Receipt },
-  { value: 'pl', label: 'P&L', icon: Scales },
+  { value: 'boq', label: 'BOQ & Estimate', icon: Receipt },
   { value: 'documents', label: 'Documents', icon: FileText },
   { value: 'reports', label: 'Reports', icon: ChartBar },
 ];
@@ -74,6 +75,9 @@ export default function ProjectDetailPage() {
   const activeTab = searchParams.get('tab') || 'overview';
   const paymentTab = searchParams.get('paymentTab') || 'client';
   const memberId = searchParams.get('memberId') || undefined;
+
+  // Edit modal state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Update URL params while preserving existing ones
   const updateSearchParams = useCallback(
@@ -123,8 +127,41 @@ export default function ProjectDetailPage() {
   );
 
   // Data fetching
-  const { data: project, isLoading: isProjectLoading } = useProject(id || '');
+  const {
+    data: project,
+    isLoading: isProjectLoading,
+    refetch: refetchProject,
+  } = useProject(id || '');
   const { data: stats, isLoading: isStatsLoading } = useProjectStats(id || '');
+
+  // Mutations
+  const updateMutation = useUpdateProject();
+
+  // Handler to refresh project data (used after client updates)
+  const handleRefreshProject = useCallback(() => {
+    refetchProject();
+  }, [refetchProject]);
+
+  // Handler to open edit dialog
+  const handleEditProject = useCallback(() => {
+    setIsEditDialogOpen(true);
+  }, []);
+
+  // Handler for project update submission
+  const handleUpdateProject = useCallback(
+    async (data: UpdateProjectInput) => {
+      if (!id) return;
+      try {
+        await updateMutation.mutateAsync({ id, data });
+        toast.success('Project updated successfully');
+        setIsEditDialogOpen(false);
+        refetchProject();
+      } catch {
+        toast.error('Failed to update project');
+      }
+    },
+    [id, updateMutation, refetchProject]
+  );
 
   // Loading state
   if (isProjectLoading) {
@@ -197,6 +234,8 @@ export default function ProjectDetailPage() {
                 stats={stats}
                 isStatsLoading={isStatsLoading}
                 onNavigateToStages={() => setActiveTab('stages')}
+                onRefreshProject={handleRefreshProject}
+                onEditProject={handleEditProject}
               />
             </SecondaryTabsContent>
 
@@ -222,10 +261,6 @@ export default function ProjectDetailPage() {
               <ProjectBOQTab projectId={project.id} />
             </SecondaryTabsContent>
 
-            <SecondaryTabsContent value="pl" className="py-6 px-6">
-              <ProjectPLTab projectId={project.id} />
-            </SecondaryTabsContent>
-
             <SecondaryTabsContent value="documents" className="py-6 px-6">
               <div className="flex items-center justify-center h-64 text-muted-foreground">
                 Documents tab coming soon
@@ -233,13 +268,20 @@ export default function ProjectDetailPage() {
             </SecondaryTabsContent>
 
             <SecondaryTabsContent value="reports" className="py-6 px-6">
-              <div className="flex items-center justify-center h-64 text-muted-foreground">
-                Reports tab coming soon
-              </div>
+              <ProjectReportsTab projectId={project.id} />
             </SecondaryTabsContent>
           </div>
         </SecondaryTabs>
       </main>
+
+      {/* Edit Project Dialog */}
+      <ProjectFormDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        project={project}
+        onSubmit={handleUpdateProject}
+        isSubmitting={updateMutation.isPending}
+      />
     </>
   );
 }

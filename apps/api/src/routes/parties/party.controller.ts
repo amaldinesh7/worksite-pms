@@ -140,10 +140,14 @@ export const getPartyProjects = handle(
       return sendNotFound(reply, 'Party');
     }
 
-    const result = await partyRepository.getPartyProjects(request.organizationId, request.params.id, {
-      skip,
-      take: limit,
-    });
+    const result = await partyRepository.getPartyProjects(
+      request.organizationId,
+      request.params.id,
+      {
+        skip,
+        take: limit,
+      }
+    );
 
     return sendSuccess(reply, {
       items: result.projects,
@@ -183,5 +187,33 @@ export const getPartyTransactions = handle(
     );
 
     return sendPaginated(reply, result.transactions, buildPagination(page, limit, result.total));
+  }
+);
+
+// ============================================
+// Get Client Projects (for CLIENT type parties)
+// ============================================
+export const getClientProjects = handle(
+  'fetch',
+  async (request: FastifyRequest<{ Params: PartyParams }>, reply: FastifyReply) => {
+    // First verify party exists and is a CLIENT
+    const party = await partyRepository.findById(request.organizationId, request.params.id);
+    if (!party) {
+      return sendNotFound(reply, 'Party');
+    }
+
+    if (party.type !== 'CLIENT') {
+      return reply.status(400).send({
+        success: false,
+        error: 'Party is not a client',
+      });
+    }
+
+    const projects = await partyRepository.getClientProjects(
+      request.organizationId,
+      request.params.id
+    );
+
+    return sendSuccess(reply, projects);
   }
 );

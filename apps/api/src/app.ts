@@ -21,6 +21,7 @@ import permissionRoutes from './routes/permissions/index';
 import roleRoutes from './routes/roles/index';
 import teamRoutes from './routes/team/index';
 import boqRoutes from './routes/boq/index';
+import overviewRoutes from './routes/overview/index';
 
 // Middleware
 import { registerAuthMiddleware } from './middleware/auth.middleware';
@@ -90,6 +91,7 @@ export async function buildApp(options: AppOptions = {}) {
       '/api/roles',
       '/api/team',
       '/api/boq',
+      '/api/overview',
     ],
   }));
 
@@ -110,6 +112,7 @@ export async function buildApp(options: AppOptions = {}) {
   await fastify.register(roleRoutes, { prefix: '/api/roles' });
   await fastify.register(teamRoutes, { prefix: '/api/team' });
   await fastify.register(boqRoutes, { prefix: '/api' });
+  await fastify.register(overviewRoutes, { prefix: '/api/overview' });
 
   // Global error handler
   fastify.setErrorHandler((error: FastifyError, request, reply) => {

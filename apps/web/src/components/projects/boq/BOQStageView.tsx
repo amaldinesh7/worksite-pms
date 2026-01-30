@@ -2,10 +2,18 @@
  * BOQ Stage View
  *
  * BOQ items grouped by project stage.
+ * Note: This view is kept for potential future use but is not the primary view.
  */
 
 import { useState, useCallback } from 'react';
-import { CaretDown, CaretRight, DotsThree, PencilSimple, Trash, Stack } from '@phosphor-icons/react';
+import {
+  CaretDown,
+  CaretRight,
+  DotsThree,
+  PencilSimple,
+  Trash,
+  Stack,
+} from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -16,14 +24,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useBOQByStage, useDeleteBOQItem } from '@/lib/hooks/useBOQ';
 import { BOQItemFormDialog } from './BOQItemFormDialog';
-import type { BOQItem, BOQCategory, BOQStageGroup } from '@/lib/api/boq';
+import type { BOQItem, BOQStageGroup } from '@/lib/api/boq';
 import { cn } from '@/lib/utils';
 
 // ============================================
@@ -35,42 +39,19 @@ interface BOQStageViewProps {
 }
 
 // ============================================
-// Constants
-// ============================================
-
-const CATEGORY_LABELS: Record<BOQCategory, string> = {
-  MATERIAL: 'Material',
-  LABOUR: 'Labour',
-  SUB_WORK: 'Sub Work',
-  EQUIPMENT: 'Equipment',
-  OTHER: 'Other',
-};
-
-const CATEGORY_COLORS: Record<BOQCategory, string> = {
-  MATERIAL: 'bg-blue-100 text-blue-700',
-  LABOUR: 'bg-amber-100 text-amber-700',
-  SUB_WORK: 'bg-purple-100 text-purple-700',
-  EQUIPMENT: 'bg-green-100 text-green-700',
-  OTHER: 'bg-gray-100 text-gray-700',
-};
-
-// ============================================
 // Helper Functions
 // ============================================
 
-function formatCurrency(amount: number): string {
-  if (amount >= 10000000) {
-    return `₹${(amount / 10000000).toFixed(2)} Cr`;
-  }
-  if (amount >= 100000) {
-    return `₹${(amount / 100000).toFixed(2)}L`;
-  }
+/**
+ * Format currency as full amount (not short format)
+ */
+function formatFullCurrency(amount: number): string {
   return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function formatVariance(variance: number): string {
   const prefix = variance >= 0 ? '+' : '';
-  return `${prefix}${formatCurrency(variance)}`;
+  return `${prefix}${formatFullCurrency(variance)}`;
 }
 
 // ============================================
@@ -87,14 +68,17 @@ function StageSection({ group, projectId, onEditItem }: StageSectionProps) {
   const [isOpen, setIsOpen] = useState(true);
   const deleteMutation = useDeleteBOQItem(projectId);
 
-  const handleDeleteItem = useCallback(async (item: BOQItem) => {
-    try {
-      await deleteMutation.mutateAsync(item.id);
-      toast.success('Item deleted');
-    } catch {
-      toast.error('Failed to delete item');
-    }
-  }, [deleteMutation]);
+  const handleDeleteItem = useCallback(
+    async (item: BOQItem) => {
+      try {
+        await deleteMutation.mutateAsync(item.id);
+        toast.success('Item deleted');
+      } catch {
+        toast.error('Failed to delete item');
+      }
+    },
+    [deleteMutation]
+  );
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-lg bg-card">
@@ -109,17 +93,16 @@ function StageSection({ group, projectId, onEditItem }: StageSectionProps) {
             )}
             <Stack className="h-5 w-5 text-muted-foreground" />
             <span className="font-medium">{group.stageName}</span>
-            <span className="text-sm text-muted-foreground">
-              {group.itemCount} items
-            </span>
+            <span className="text-sm text-muted-foreground">{group.itemCount} items</span>
           </div>
           <div className="flex items-center gap-4 text-sm">
             <span className="text-muted-foreground">
-              Quoted: <span className="font-medium text-foreground">{formatCurrency(group.quotedTotal)}</span>
+              Quoted:{' '}
+              <span className="font-medium text-foreground">
+                {formatFullCurrency(group.quotedTotal)}
+              </span>
             </span>
-            <span className={cn(
-              group.variance >= 0 ? 'text-green-600' : 'text-red-600'
-            )}>
+            <span className={cn(group.variance >= 0 ? 'text-green-600' : 'text-red-600')}>
               {formatVariance(group.variance)}
             </span>
           </div>
@@ -129,7 +112,7 @@ function StageSection({ group, projectId, onEditItem }: StageSectionProps) {
       <CollapsibleContent>
         <div className="border-t">
           {/* Table Header */}
-          <div className="grid grid-cols-[80px_1fr_80px_80px_100px_100px_100px_100px_40px] gap-2 px-4 py-2 bg-muted/50 text-xs font-medium text-muted-foreground uppercase">
+          <div className="grid grid-cols-[100px_1fr_80px_80px_120px_120px_120px_120px_40px] gap-2 px-4 py-2 bg-muted/50 text-xs font-medium text-muted-foreground uppercase">
             <div>Category</div>
             <div>Description</div>
             <div>Unit</div>
@@ -158,11 +141,11 @@ function StageSection({ group, projectId, onEditItem }: StageSectionProps) {
                 return (
                   <div
                     key={item.id}
-                    className="grid grid-cols-[80px_1fr_80px_80px_100px_100px_100px_100px_40px] gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors"
+                    className="grid grid-cols-[100px_1fr_80px_80px_120px_120px_120px_120px_40px] gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors"
                   >
                     <div>
-                      <Badge variant="secondary" className={cn('text-xs', CATEGORY_COLORS[item.category])}>
-                        {CATEGORY_LABELS[item.category]}
+                      <Badge variant="secondary" className="text-xs bg-muted">
+                        {item.boqCategory?.name || 'Unknown'}
                       </Badge>
                     </div>
                     <div>
@@ -173,13 +156,17 @@ function StageSection({ group, projectId, onEditItem }: StageSectionProps) {
                     </div>
                     <div className="text-sm text-muted-foreground">{item.unit}</div>
                     <div className="text-right text-sm">{item.quantity.toLocaleString()}</div>
-                    <div className="text-right text-sm">₹{item.rate.toLocaleString()}</div>
-                    <div className="text-right text-sm font-medium">{formatCurrency(quotedAmount)}</div>
-                    <div className="text-right text-sm">{formatCurrency(actualAmount)}</div>
-                    <div className={cn(
-                      'text-right text-sm',
-                      variance >= 0 ? 'text-green-600' : 'text-red-600'
-                    )}>
+                    <div className="text-right text-sm">{formatFullCurrency(item.rate)}</div>
+                    <div className="text-right text-sm font-medium">
+                      {formatFullCurrency(quotedAmount)}
+                    </div>
+                    <div className="text-right text-sm">{formatFullCurrency(actualAmount)}</div>
+                    <div
+                      className={cn(
+                        'text-right text-sm',
+                        variance >= 0 ? 'text-green-600' : 'text-red-600'
+                      )}
+                    >
                       {formatVariance(variance)}
                     </div>
                     <div>

@@ -55,6 +55,8 @@ export interface Project {
   client: {
     id: string;
     name: string;
+    phone?: string | null;
+    location?: string;
   } | null;
   projectAccess: ProjectMember[];
   _count: {
@@ -95,6 +97,7 @@ export interface CreateProjectInput {
   area?: string;
   projectPicture?: string;
   status?: ProjectStatus;
+  memberIds?: string[];
 }
 
 export interface UpdateProjectInput {
@@ -108,6 +111,7 @@ export interface UpdateProjectInput {
   area?: string | null;
   projectPicture?: string | null;
   status?: ProjectStatus;
+  memberIds?: string[];
 }
 
 export interface ProjectQueryParams {

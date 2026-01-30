@@ -57,7 +57,10 @@ export class PartyRepository {
   async findAll(
     organizationId: string,
     options?: PartyListOptions
-  ): Promise<{ parties: (Party & { credit: number })[]; total: number }> {
+  ): Promise<{
+    parties: (Party & { credit: number; _count?: { projectsAsClient: number } })[];
+    total: number;
+  }> {
     try {
       const where: Prisma.PartyWhereInput = {
         organizationId,
@@ -67,12 +70,18 @@ export class PartyRepository {
         ...(options?.type && { type: options.type }),
       };
 
+      // Include projectsAsClient count for CLIENT type
+      const includeProjectsCount = options?.type === 'CLIENT';
+
       // If hasCredit filter is enabled, we need to calculate credit for each party
       if (options?.hasCredit) {
         // Get all matching parties first
         const allParties = await prisma.party.findMany({
           where,
           orderBy: { name: 'asc' },
+          ...(includeProjectsCount && {
+            include: { _count: { select: { projectsAsClient: true } } },
+          }),
         });
 
         // Calculate credit for all parties in parallel (fixes N+1)
@@ -101,6 +110,9 @@ export class PartyRepository {
           skip: options?.skip,
           take: options?.take,
           orderBy: { name: 'asc' },
+          ...(includeProjectsCount && {
+            include: { _count: { select: { projectsAsClient: true } } },
+          }),
         }),
         prisma.party.count({ where }),
       ]);
@@ -468,6 +480,48 @@ export class PartyRepository {
           total,
         };
       }
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
+
+  // Get projects where this party is the client
+  async getClientProjects(
+    organizationId: string,
+    clientId: string
+  ): Promise<
+    Array<{
+      id: string;
+      name: string;
+      status: string;
+      location: string;
+      startDate: Date;
+      endDate: Date | null;
+      amount: number | null;
+    }>
+  > {
+    try {
+      const projects = await prisma.project.findMany({
+        where: {
+          organizationId,
+          clientId,
+        },
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          location: true,
+          startDate: true,
+          endDate: true,
+          amount: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+      });
+
+      return projects.map((p) => ({
+        ...p,
+        amount: p.amount?.toNumber() ?? null,
+      }));
     } catch (error) {
       throw handlePrismaError(error);
     }

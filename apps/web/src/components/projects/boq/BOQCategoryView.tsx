@@ -1,23 +1,14 @@
 /**
  * BOQ Category View
  *
- * Collapsible sections grouped by category with inline add functionality.
+ * Collapsible sections grouped by dynamic work categories with:
+ * - Full amount display (not short format)
+ * - Category totals on the right side with prominence
+ * - Sticky total bar at the bottom
  */
 
 import { useState, useCallback } from 'react';
-import {
-  CaretDown,
-  CaretRight,
-  Plus,
-  DotsThree,
-  PencilSimple,
-  Trash,
-  Package,
-  Users,
-  Wrench,
-  Gear,
-  DotsThreeCircle,
-} from '@phosphor-icons/react';
+import { CaretDown, CaretRight, Plus, DotsThree, PencilSimple, Trash } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -38,8 +29,9 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useBOQByCategory, useCreateBOQItem, useDeleteBOQItem } from '@/lib/hooks/useBOQ';
 import { useStagesByProject } from '@/lib/hooks/useStages';
+import { useCategoryItems } from '@/lib/hooks/useCategories';
 import { BOQItemFormDialog } from './BOQItemFormDialog';
-import type { BOQItem, BOQCategory, BOQCategoryGroup } from '@/lib/api/boq';
+import type { BOQItem, BOQCategoryGroup } from '@/lib/api/boq';
 import { cn } from '@/lib/utils';
 
 // ============================================
@@ -48,6 +40,7 @@ import { cn } from '@/lib/utils';
 
 interface BOQCategoryViewProps {
   projectId: string;
+  totalQuoted?: number;
 }
 
 interface InlineAddFormState {
@@ -62,30 +55,8 @@ interface InlineAddFormState {
 // Constants
 // ============================================
 
-const CATEGORY_CONFIG: Record<BOQCategory, { label: string; icon: typeof Package; color: string }> =
-  {
-    MATERIAL: { label: 'Material', icon: Package, color: 'text-blue-600' },
-    LABOUR: { label: 'Labour', icon: Users, color: 'text-amber-600' },
-    SUB_WORK: { label: 'Sub Work', icon: Wrench, color: 'text-purple-600' },
-    EQUIPMENT: { label: 'Equipment', icon: Gear, color: 'text-green-600' },
-    OTHER: { label: 'Other', icon: DotsThreeCircle, color: 'text-gray-600' },
-  };
-
-const COMMON_UNITS = [
-  'nos',
-  'sqft',
-  'sqm',
-  'cum',
-  'cft',
-  'rft',
-  'kg',
-  'MT',
-  'bags',
-  'liters',
-  'points',
-  'days',
-  'meters',
-];
+// Simplified units for construction BOQ
+const COMMON_UNITS = ['sqft', 'sqm', 'M3', 'nos', 'kg', 'MT', 'bags', 'rmt', 'LS'];
 
 const INITIAL_FORM_STATE: InlineAddFormState = {
   description: '',
@@ -99,19 +70,12 @@ const INITIAL_FORM_STATE: InlineAddFormState = {
 // Helper Functions
 // ============================================
 
-function formatCurrency(amount: number): string {
-  if (amount >= 10000000) {
-    return `₹${(amount / 10000000).toFixed(2)} Cr`;
-  }
-  if (amount >= 100000) {
-    return `₹${(amount / 100000).toFixed(2)}L`;
-  }
+/**
+ * Format currency as full amount (not short format)
+ * Example: ₹8,60,000 instead of ₹8.60L
+ */
+function formatFullCurrency(amount: number): string {
   return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
-
-function formatVariance(variance: number): string {
-  const prefix = variance >= 0 ? '+' : '';
-  return `${prefix}${formatCurrency(variance)}`;
 }
 
 // ============================================
@@ -119,20 +83,26 @@ function formatVariance(variance: number): string {
 // ============================================
 
 interface CategorySectionProps {
-  category: BOQCategory;
+  categoryId: string;
+  categoryName: string;
   group: BOQCategoryGroup | undefined;
   projectId: string;
   stages: Array<{ id: string; name: string }>;
   onEditItem: (item: BOQItem) => void;
 }
 
-function CategorySection({ category, group, projectId, stages, onEditItem }: CategorySectionProps) {
+function CategorySection({
+  categoryId,
+  categoryName,
+  group,
+  projectId,
+  stages,
+  onEditItem,
+}: CategorySectionProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [formState, setFormState] = useState<InlineAddFormState>(INITIAL_FORM_STATE);
   const [isAdding, setIsAdding] = useState(false);
 
-  const config = CATEGORY_CONFIG[category];
-  const Icon = config.icon;
   const items = group?.items ?? [];
   const itemCount = group?.itemCount ?? 0;
   const quotedTotal = group?.quotedTotal ?? 0;
@@ -161,7 +131,7 @@ function CategorySection({ category, group, projectId, stages, onEditItem }: Cat
     setIsAdding(true);
     try {
       await createMutation.mutateAsync({
-        category,
+        boqCategoryItemId: categoryId,
         description: formState.description.trim(),
         unit: formState.unit,
         quantity,
@@ -175,7 +145,7 @@ function CategorySection({ category, group, projectId, stages, onEditItem }: Cat
     } finally {
       setIsAdding(false);
     }
-  }, [category, formState, createMutation]);
+  }, [categoryId, formState, createMutation]);
 
   const handleDeleteItem = useCallback(
     async (item: BOQItem) => {
@@ -205,11 +175,12 @@ function CategorySection({ category, group, projectId, stages, onEditItem }: Cat
             ) : (
               <CaretRight className="h-4 w-4 text-muted-foreground" />
             )}
-            <Icon className={cn('h-5 w-5', config.color)} />
-            <span className="font-medium">{config.label}</span>
-            <span className="text-sm text-muted-foreground">
-              {itemCount} items • {formatCurrency(quotedTotal)} quoted
-            </span>
+            <span className="font-medium text-base">{categoryName}</span>
+            <span className="text-sm text-muted-foreground">({itemCount} items)</span>
+          </div>
+          {/* Category total on the right with prominence */}
+          <div className="text-right">
+            <div className="text-lg font-bold text-primary">{formatFullCurrency(quotedTotal)}</div>
           </div>
         </div>
       </CollapsibleTrigger>
@@ -277,8 +248,8 @@ function CategorySection({ category, group, projectId, stages, onEditItem }: Cat
                   ))}
                 </SelectContent>
               </Select>
-              <div className="w-24 text-right text-sm font-medium">
-                ₹{formAmount > 0 ? formAmount.toLocaleString() : '0.00'}
+              <div className="w-28 text-right text-sm font-medium">
+                {formatFullCurrency(formAmount)}
               </div>
               <Button
                 size="sm"
@@ -292,14 +263,13 @@ function CategorySection({ category, group, projectId, stages, onEditItem }: Cat
           </div>
 
           {/* Table Header */}
-          <div className="grid grid-cols-[1fr_80px_80px_100px_100px_100px_100px_40px] gap-2 px-4 py-2 bg-muted/50 text-xs font-medium text-muted-foreground uppercase">
+          <div className="grid grid-cols-[1fr_80px_80px_100px_140px_100px_40px] gap-2 px-4 py-2 bg-muted/50 text-xs font-medium text-muted-foreground uppercase">
             <div>Description</div>
             <div>Unit</div>
             <div className="text-right">Qty</div>
             <div className="text-right">Rate</div>
-            <div className="text-right">Quoted</div>
+            <div className="text-right">Quoted Amount</div>
             <div>Stage</div>
-            <div className="text-right">Variance</div>
             <div></div>
           </div>
 
@@ -312,15 +282,11 @@ function CategorySection({ category, group, projectId, stages, onEditItem }: Cat
             <div className="divide-y">
               {items.map((item) => {
                 const quotedAmount = item.quantity * item.rate;
-                const actualAmount = item.expenseLinks.reduce((sum, link) => {
-                  return sum + link.expense.rate * link.expense.quantity;
-                }, 0);
-                const variance = quotedAmount - actualAmount;
 
                 return (
                   <div
                     key={item.id}
-                    className="grid grid-cols-[1fr_80px_80px_100px_100px_100px_100px_40px] gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors"
+                    className="grid grid-cols-[1fr_80px_80px_100px_140px_100px_40px] gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors"
                   >
                     <div>
                       <div className="font-medium">{item.description}</div>
@@ -330,19 +296,11 @@ function CategorySection({ category, group, projectId, stages, onEditItem }: Cat
                     </div>
                     <div className="text-sm text-muted-foreground">{item.unit}</div>
                     <div className="text-right text-sm">{item.quantity.toLocaleString()}</div>
-                    <div className="text-right text-sm">₹{item.rate.toLocaleString()}</div>
-                    <div className="text-right text-sm font-medium">
-                      {formatCurrency(quotedAmount)}
+                    <div className="text-right text-sm">{formatFullCurrency(item.rate)}</div>
+                    <div className="text-right text-sm font-semibold">
+                      {formatFullCurrency(quotedAmount)}
                     </div>
                     <div className="text-sm text-muted-foreground">{item.stage?.name || '-'}</div>
-                    <div
-                      className={cn(
-                        'text-right text-sm',
-                        variance >= 0 ? 'text-green-600' : 'text-red-600'
-                      )}
-                    >
-                      {formatVariance(variance)}
-                    </div>
                     <div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -383,12 +341,13 @@ function CategorySection({ category, group, projectId, stages, onEditItem }: Cat
 // Main Component
 // ============================================
 
-export function BOQCategoryView({ projectId }: BOQCategoryViewProps) {
+export function BOQCategoryView({ projectId, totalQuoted = 0 }: BOQCategoryViewProps) {
   const [editingItem, setEditingItem] = useState<BOQItem | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const { data: categoryGroups, isLoading } = useBOQByCategory(projectId);
   const { data: stages = [] } = useStagesByProject(projectId);
+  const { data: boqCategories = [] } = useCategoryItems('boq_category');
 
   const handleEditItem = useCallback((item: BOQItem) => {
     setEditingItem(item);
@@ -400,14 +359,18 @@ export function BOQCategoryView({ projectId }: BOQCategoryViewProps) {
     setEditingItem(null);
   }, []);
 
-  // Create a map for easy lookup
+  // Create a map for easy lookup by category name
   const groupMap = (categoryGroups ?? []).reduce(
     (acc, group) => {
-      acc[group.category] = group;
+      acc[group.categoryName] = group;
       return acc;
     },
-    {} as Record<BOQCategory, BOQCategoryGroup>
+    {} as Record<string, BOQCategoryGroup>
   );
+
+  // Calculate grand total from all category groups
+  const grandTotal =
+    categoryGroups?.reduce((sum, group) => sum + (group.quotedTotal || 0), 0) || totalQuoted;
 
   if (isLoading) {
     return (
@@ -421,20 +384,50 @@ export function BOQCategoryView({ projectId }: BOQCategoryViewProps) {
     );
   }
 
-  const categories: BOQCategory[] = ['MATERIAL', 'LABOUR', 'SUB_WORK', 'EQUIPMENT', 'OTHER'];
+  // Filter categories that have items or are part of our default set
+  const activeCategories = boqCategories.filter((cat) => cat.isActive !== false);
 
   return (
-    <div className="space-y-4">
-      {categories.map((category) => (
-        <CategorySection
-          key={category}
-          category={category}
-          group={groupMap[category]}
-          projectId={projectId}
-          stages={stages}
-          onEditItem={handleEditItem}
-        />
-      ))}
+    <>
+      <div className="space-y-4">
+        {activeCategories.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <p>No BOQ categories found.</p>
+            <p className="text-sm mt-1">
+              Please ensure BOQ work categories are configured in the system.
+            </p>
+          </div>
+        ) : (
+          activeCategories.map((category) => (
+            <CategorySection
+              key={category.id}
+              categoryId={category.id}
+              categoryName={category.name}
+              group={groupMap[category.name]}
+              projectId={projectId}
+              stages={stages}
+              onEditItem={handleEditItem}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Sticky Total Bar at Bottom - positioned within content container */}
+      <div className="sticky bottom-0 bg-card border-t border rounded-lg shadow-lg mt-4 -mx-1">
+        <div className="px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="text-muted-foreground">
+              <span className="font-medium">Total BOQ Amount</span>
+              <span className="text-sm ml-2">
+                ({categoryGroups?.reduce((sum, g) => sum + (g.itemCount || 0), 0) || 0} items)
+              </span>
+            </div>
+            <div className={cn('text-2xl font-bold', 'text-primary')}>
+              {formatFullCurrency(grandTotal)}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Edit Dialog */}
       <BOQItemFormDialog
@@ -443,6 +436,6 @@ export function BOQCategoryView({ projectId }: BOQCategoryViewProps) {
         projectId={projectId}
         item={editingItem}
       />
-    </div>
+    </>
   );
 }
