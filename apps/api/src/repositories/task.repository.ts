@@ -25,6 +25,7 @@ export interface TaskListOptions {
   skip?: number;
   take?: number;
   stageId?: string;
+  projectId?: string;
   status?: TaskStatus;
 }
 
@@ -159,6 +160,7 @@ export class TaskRepository {
       const where: Prisma.TaskWhereInput = {
         organizationId,
         ...(options?.stageId && { stageId: options.stageId }),
+        ...(options?.projectId && { stage: { projectId: options.projectId } }),
         ...(options?.status && { status: options.status }),
       };
 
@@ -174,6 +176,26 @@ export class TaskRepository {
       ]);
 
       return { tasks, total };
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
+
+  async findByProject(organizationId: string, projectId: string): Promise<Task[]> {
+    try {
+      return await prisma.task.findMany({
+        where: {
+          organizationId,
+          stage: {
+            projectId,
+          },
+        },
+        include: taskInclude,
+        orderBy: [
+          { status: 'asc' }, // IN_PROGRESS first, then others
+          { createdAt: 'asc' },
+        ],
+      });
     } catch (error) {
       throw handlePrismaError(error);
     }

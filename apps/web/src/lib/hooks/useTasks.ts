@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getTasks,
   getTasksByStage,
+  getTasksByProject,
   getTask,
   createTask,
   updateTask,
@@ -31,6 +32,7 @@ export const taskKeys = {
   lists: () => [...taskKeys.all, 'list'] as const,
   list: (params?: TaskQueryParams) => [...taskKeys.lists(), params] as const,
   byStage: (stageId: string) => [...taskKeys.all, 'stage', stageId] as const,
+  byProject: (projectId: string) => [...taskKeys.all, 'project', projectId] as const,
   details: () => [...taskKeys.all, 'detail'] as const,
   detail: (id: string) => [...taskKeys.details(), id] as const,
 };
@@ -57,6 +59,17 @@ export function useTasksByStage(stageId: string) {
     queryKey: taskKeys.byStage(stageId),
     queryFn: () => getTasksByStage(stageId),
     enabled: !!stageId,
+  });
+}
+
+/**
+ * Hook to fetch tasks by project ID
+ */
+export function useTasksByProject(projectId: string) {
+  return useQuery<Task[], Error>({
+    queryKey: taskKeys.byProject(projectId),
+    queryFn: () => getTasksByProject(projectId),
+    enabled: !!projectId,
   });
 }
 

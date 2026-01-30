@@ -4,7 +4,13 @@ import { z } from 'zod';
 // Enums
 // ============================================
 
-export const TaskStatusEnum = z.enum(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD', 'BLOCKED']);
+export const TaskStatusEnum = z.enum([
+  'NOT_STARTED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'ON_HOLD',
+  'BLOCKED',
+]);
 export type TaskStatus = z.infer<typeof TaskStatusEnum>;
 
 // ============================================
@@ -38,7 +44,12 @@ export const taskQuerySchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).max(100).default(20),
   stageId: z.string().optional(),
+  projectId: z.string().optional(),
   status: TaskStatusEnum.optional(),
+});
+
+export const projectParamsSchema = z.object({
+  projectId: z.string().min(1),
 });
 
 export const taskParamsSchema = z.object({
@@ -59,3 +70,4 @@ export type UpdateTaskStatusInput = z.infer<typeof updateTaskStatusSchema>;
 export type TaskQuery = z.infer<typeof taskQuerySchema>;
 export type TaskParams = z.infer<typeof taskParamsSchema>;
 export type StageParams = z.infer<typeof stageParamsSchema>;
+export type ProjectParams = z.infer<typeof projectParamsSchema>;

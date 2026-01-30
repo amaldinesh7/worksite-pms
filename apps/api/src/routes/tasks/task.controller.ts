@@ -15,6 +15,7 @@ import type {
   TaskQuery,
   TaskParams,
   StageParams,
+  ProjectParams,
 } from './task.schema';
 
 const handle = createErrorHandler('task');
@@ -25,13 +26,14 @@ const handle = createErrorHandler('task');
 export const listTasks = handle(
   'fetch',
   async (request: FastifyRequest<{ Querystring: TaskQuery }>, reply: FastifyReply) => {
-    const { page, limit, stageId, status } = request.query;
+    const { page, limit, stageId, projectId, status } = request.query;
     const skip = (page - 1) * limit;
 
     const { tasks, total } = await taskRepository.findAll(request.organizationId, {
       skip,
       take: limit,
       stageId,
+      projectId,
       status,
     });
 
@@ -45,9 +47,21 @@ export const listTasks = handle(
 export const getTasksByStage = handle(
   'fetch',
   async (request: FastifyRequest<{ Params: StageParams }>, reply: FastifyReply) => {
-    const tasks = await taskRepository.findByStage(
+    const tasks = await taskRepository.findByStage(request.organizationId, request.params.stageId);
+
+    return sendSuccess(reply, tasks);
+  }
+);
+
+// ============================================
+// Get Tasks by Project
+// ============================================
+export const getTasksByProject = handle(
+  'fetch',
+  async (request: FastifyRequest<{ Params: ProjectParams }>, reply: FastifyReply) => {
+    const tasks = await taskRepository.findByProject(
       request.organizationId,
-      request.params.stageId
+      request.params.projectId
     );
 
     return sendSuccess(reply, tasks);
