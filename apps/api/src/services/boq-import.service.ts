@@ -8,7 +8,8 @@
 import { Readable } from 'stream';
 import ExcelJS from 'exceljs';
 import OpenAI from 'openai';
-import type { BOQCategory } from '@prisma/client';
+// BOQ Category types (matches CategoryItem for boq_category type)
+type BOQCategory = 'MATERIAL' | 'LABOUR' | 'SUB_WORK' | 'EQUIPMENT' | 'OTHER';
 
 // ============================================
 // Types
