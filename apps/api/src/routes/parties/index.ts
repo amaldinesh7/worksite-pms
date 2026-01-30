@@ -58,6 +58,12 @@ export default async function partyRoutes(fastify: FastifyInstance) {
     handler: controller.getPartyTransactions,
   });
 
+  // GET /api/parties/:id/client-projects - Get projects where this party is the client
+  app.get('/:id/client-projects', {
+    schema: { params: partyParamsSchema },
+    handler: controller.getClientProjects,
+  });
+
   // POST /api/parties - Create party
   app.post('/', {
     schema: { body: createPartySchema },
