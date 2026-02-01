@@ -46,6 +46,7 @@ import {
   useRemoveProjectMember,
 } from '@/lib/hooks/useProjects';
 import { useDebounce } from '@/lib/hooks/useDebounce';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 import type {
   Project,
   ProjectStatus,
@@ -74,6 +75,7 @@ function getStoredViewMode(): ViewMode {
 // ============================================
 
 export default function ProjectsPage() {
+  useDocumentTitle('Projects');
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 

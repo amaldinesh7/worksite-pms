@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Typography } from '@/components/ui/typography';
+import { LogoIcon } from '@/components/brand/Logo';
 import { cn } from '@/lib/utils';
 
 interface AuthCardProps {
-  icon: ReactNode;
   title: string;
   subtitle: ReactNode;
   children: ReactNode;
@@ -12,21 +12,23 @@ interface AuthCardProps {
   className?: string;
 }
 
-export function AuthCard({ icon, title, subtitle, children, footer, className }: AuthCardProps) {
+export function AuthCard({ title, subtitle, children, footer, className }: AuthCardProps) {
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-8">
       <Card className={cn('w-full max-w-md', className)}>
         <CardContent className="pt-8 pb-6 px-8 flex flex-col items-center text-center">
-          {/* Icon */}
+          {/* Worksite Logo */}
           <div className="mb-6">
-            <div className="w-16 h-16 rounded-lg bg-neutral-900 text-white flex items-center justify-center">
-              {icon}
-            </div>
+            <LogoIcon className="w-16 h-16" />
           </div>
 
           {/* Title */}
-          <Typography variant="h2" className="border-none pb-0 text-foreground">{title}</Typography>
-          <Typography variant="muted" className="mt-2">{subtitle}</Typography>
+          <Typography variant="h2" className="border-none pb-0 text-foreground">
+            {title}
+          </Typography>
+          <Typography variant="muted" className="mt-2">
+            {subtitle}
+          </Typography>
 
           {/* Content */}
           <div className="w-full mt-8">{children}</div>

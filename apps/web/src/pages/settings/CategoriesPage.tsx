@@ -19,11 +19,13 @@ import {
   useDeleteCategoryItem,
 } from '@/lib/hooks/useCategories';
 import type { CategoryType, CategoryItem } from '@/lib/api/categories';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 
 // Default category type key to select on load
 const DEFAULT_TYPE_KEY = 'labour_type';
 
 export default function CategoriesPage() {
+  useDocumentTitle('Categories');
   // State for selected category type
   const [selectedType, setSelectedType] = useState<CategoryType | null>(null);
 

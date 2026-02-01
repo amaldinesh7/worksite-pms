@@ -24,6 +24,7 @@ import { Typography } from '@/components/ui/typography';
 import { useRole, useCreateRole, useUpdateRole } from '@/lib/hooks/useRoles';
 import { usePermissionsGrouped } from '@/lib/hooks/usePermissions';
 import type { CreateRoleInput, UpdateRoleInput } from '@/lib/api/roles';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 
 // ============================================
 // Component
@@ -46,6 +47,9 @@ export default function RoleDetailPage() {
   // Queries
   const { data: role, isLoading: isLoadingRole } = useRole(isNewRole ? '' : id || '');
   const { data: permissionsGrouped, isLoading: isLoadingPermissions } = usePermissionsGrouped();
+
+  // Set page title
+  useDocumentTitle(isNewRole ? 'New Role' : role?.name);
 
   // Mutations
   const createMutation = useCreateRole();

@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Buildings } from '@phosphor-icons/react';
 
 import { useSendOtp } from '@worksite/data';
 
@@ -11,11 +10,13 @@ import { Input } from '@/components/ui/input';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { useAuthStore } from '@/stores/auth.store';
 import { Typography } from '@/components/ui/typography';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 
 // India country code - hardcoded for now, will expand later
 const COUNTRY_CODE = '+91';
 
 export default function PhoneInput() {
+  useDocumentTitle('Login');
   const navigate = useNavigate();
   const { phoneNumber, setPhoneNumber, setStep } = useAuthStore();
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +105,6 @@ export default function PhoneInput() {
 
   return (
     <AuthCard
-      icon={<Buildings className="h-7 w-7" weight="fill" />}
       title="Get Started"
       subtitle="Enter your phone number to create an account or log in."
       footer={
@@ -142,7 +142,11 @@ export default function PhoneInput() {
         </div>
 
         {/* Error Message */}
-        {error && <Typography variant="paragraph-small" className="text-red-600 mt-3 text-center">{error}</Typography>}
+        {error && (
+          <Typography variant="paragraph-small" className="text-red-600 mt-3 text-center">
+            {error}
+          </Typography>
+        )}
 
         {/* Submit Button */}
         <Button
