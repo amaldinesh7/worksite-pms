@@ -2,10 +2,10 @@
  * Projects Table Component
  *
  * Displays projects in a table format for list view.
- * Includes columns: Project, Status, Budget, Progress, Manager, Deadline, Actions
+ * Includes columns: Project, Status, Budget, Progress, Assignees, Deadline, Actions
  */
 
-import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -23,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Typography } from '@/components/ui/typography';
 import type { Project } from '@/lib/api/projects';
 
@@ -122,20 +123,21 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
     <div className="rounded-lg border overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Project</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Budget</TableHead>
-            <TableHead>Progress</TableHead>
-            <TableHead>Manager</TableHead>
-            <TableHead>Deadline</TableHead>
+          <TableRow className="bg-muted/30">
+            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Project</TableHead>
+            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</TableHead>
+            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Budget</TableHead>
+            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Progress</TableHead>
+            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Assignees</TableHead>
+            <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Deadline</TableHead>
             <TableHead className="w-[80px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {projects.map((project) => {
             const members = project.projectAccess || [];
-            const manager = members[0]?.member?.user;
+            const displayedMembers = members.slice(0, 3);
+            const remainingCount = members.length - 3;
             const deadline = formatDeadline(project.endDate);
 
             return (
@@ -201,19 +203,33 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                   </div>
                 </TableCell>
 
-                {/* Manager */}
+                {/* Assignees */}
                 <TableCell>
-                  {manager ? (
-                    <div className="flex items-center gap-2">
-                      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-                        {manager.name.charAt(0).toUpperCase()}
+                  {displayedMembers.length > 0 ? (
+                    <div className="flex items-center gap-1">
+                      <div className="flex -space-x-2">
+                        {displayedMembers.map((access) => (
+                          <Tooltip key={access.id}>
+                            <TooltipTrigger asChild>
+                              <div className="h-7 w-7 rounded-full bg-primary/10 border-2 border-background flex items-center justify-center text-xs font-medium text-primary cursor-default">
+                                {access.member?.user?.name?.charAt(0)?.toUpperCase() || '?'}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{access.member?.user?.name || 'Unknown'}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        ))}
                       </div>
-                      <Typography variant="paragraph-small" className="font-normal">
-                        {manager.name}
-                      </Typography>
+                      {remainingCount > 0 && (
+                        <span className="text-xs text-muted-foreground ml-1">+{remainingCount}</span>
+                      )}
                     </div>
                   ) : (
-                    <Typography variant="muted">—</Typography>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Users className="h-3.5 w-3.5" />
+                      <span>No assignees</span>
+                    </div>
                   )}
                 </TableCell>
 

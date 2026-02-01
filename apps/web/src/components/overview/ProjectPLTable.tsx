@@ -149,8 +149,8 @@ export function ProjectPLTable({ data, isLoading }: ProjectPLTableProps) {
       <CardContent className="p-0">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[30%]">
+            <TableRow className="bg-muted/30">
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider w-[30%]">
                 <button
                   className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
                   onClick={() => handleSort('name')}
@@ -159,7 +159,7 @@ export function ProjectPLTable({ data, isLoading }: ProjectPLTableProps) {
                   <ArrowUpDown className="h-3 w-3" />
                 </button>
               </TableHead>
-              <TableHead className="text-right">
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider text-right">
                 <button
                   className="flex items-center gap-1 ml-auto hover:text-foreground transition-colors cursor-pointer"
                   onClick={() => handleSort('budget')}
@@ -168,9 +168,9 @@ export function ProjectPLTable({ data, isLoading }: ProjectPLTableProps) {
                   <ArrowUpDown className="h-3 w-3" />
                 </button>
               </TableHead>
-              <TableHead className="text-right">Spent</TableHead>
-              <TableHead className="text-right">Remaining</TableHead>
-              <TableHead className="w-[20%]">
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider text-right">Spent</TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider text-right">Remaining</TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider w-[20%]">
                 <button
                   className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
                   onClick={() => handleSort('healthPercent')}
@@ -179,7 +179,7 @@ export function ProjectPLTable({ data, isLoading }: ProjectPLTableProps) {
                   <ArrowUpDown className="h-3 w-3" />
                 </button>
               </TableHead>
-              <TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 <button
                   className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
                   onClick={() => handleSort('status')}

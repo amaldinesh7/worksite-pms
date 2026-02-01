@@ -147,11 +147,11 @@ export function PartyTransactionsPanel({
         {/* Table */}
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead className="text-center">Actions</TableHead>
+            <TableRow className="bg-muted/30">
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Title</TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Amount</TableHead>
+              <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

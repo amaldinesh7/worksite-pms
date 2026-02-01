@@ -10,6 +10,7 @@
  * - Project Details card (with assignees)
  */
 
+import { useState } from 'react';
 import { differenceInDays, format } from 'date-fns';
 import { Calendar, CheckCircle, Clock, PencilSimple, CircleNotch, CaretDown } from '@phosphor-icons/react';
 
@@ -23,6 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { useStagesByProject } from '@/lib/hooks/useStages';
 import { useTasksByProject } from '@/lib/hooks/useTasks';
@@ -50,14 +52,26 @@ interface ProjectOverviewTabProps {
 // Helper Functions
 // ============================================
 
-function formatCurrency(amount: number): string {
-  if (amount >= 1000000) {
-    return `₹${(amount / 1000000).toFixed(2)}M`;
+function formatCurrencyShort(amount: number): string {
+  if (amount >= 10000000) {
+    return `₹${(amount / 10000000).toFixed(2)}Cr`;
+  }
+  if (amount >= 100000) {
+    return `₹${(amount / 100000).toFixed(2)}L`;
   }
   if (amount >= 1000) {
     return `₹${(amount / 1000).toFixed(0)}K`;
   }
-  return `₹${amount.toLocaleString()}`;
+  return `₹${amount.toLocaleString('en-IN')}`;
+}
+
+function formatCurrencyFull(amount: number): string {
+  return `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
+// Legacy function for other components
+function formatCurrency(amount: number): string {
+  return formatCurrencyShort(amount);
 }
 
 function getProjectStatusBadge(status: Project['status']) {
@@ -98,6 +112,8 @@ function ProjectFinancialsCard({
   stats: ProjectStats | undefined;
   isLoading: boolean;
 }) {
+  const [isFullFormat, setIsFullFormat] = useState(false);
+  
   const projectAmount = project.amount || 0;
   const totalExpenses = stats?.totalExpenses || 0;
   const totalPaymentsIn = stats?.totalPaymentsIn || 0;
@@ -110,6 +126,13 @@ function ProjectFinancialsCard({
 
   const pendingAmount = projectAmount - totalPaymentsIn;
   const creditAmount = balance;
+
+  // Toggle format function
+  const fmt = isFullFormat ? formatCurrencyFull : formatCurrencyShort;
+
+  const handleToggleFormat = () => {
+    setIsFullFormat(!isFullFormat);
+  };
 
   if (isLoading) {
     return (
@@ -129,14 +152,24 @@ function ProjectFinancialsCard({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg font-semibold">Project Financials</CardTitle>
-        <div className="text-right">
-          <span
-            className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
-          >
-            {formatCurrency(balance)}
-          </span>
-          <span className="text-sm text-muted-foreground ml-2">Balance in Hand</span>
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={handleToggleFormat}
+              className="text-right cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              <span
+                className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}
+              >
+                {fmt(balance)}
+              </span>
+              <span className="text-sm text-muted-foreground ml-2">Balance in Hand</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Click to {isFullFormat ? 'show short format' : 'show full amount'}</p>
+          </TooltipContent>
+        </Tooltip>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Budget Progress */}
@@ -148,12 +181,12 @@ function ProjectFinancialsCard({
           <Progress value={budgetProgress} className="h-2" />
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium">
-              <span className="text-green-600">{formatCurrency(totalPaymentsIn)}</span> Received /{' '}
-              {formatCurrency(projectAmount)} Total
+              <button onClick={handleToggleFormat} className="text-green-600 cursor-pointer hover:underline">{fmt(totalPaymentsIn)}</button> Received /{' '}
+              <button onClick={handleToggleFormat} className="cursor-pointer hover:underline">{fmt(projectAmount)}</button> Total
             </span>
-            <span className="text-red-600">
-              Pending: {formatCurrency(pendingAmount > 0 ? pendingAmount : 0)}
-            </span>
+            <button onClick={handleToggleFormat} className="text-red-600 cursor-pointer hover:underline">
+              Pending: {fmt(pendingAmount > 0 ? pendingAmount : 0)}
+            </button>
           </div>
         </div>
 
@@ -166,12 +199,12 @@ function ProjectFinancialsCard({
           <Progress value={expensesProgress} className="h-2 [&>div]:bg-orange-500" />
           <div className="flex items-center justify-between text-sm">
             <span className="font-medium">
-              <span className="text-red-600">{formatCurrency(totalExpenses)}</span> Paid /{' '}
-              {formatCurrency(projectAmount)} Total
+              <button onClick={handleToggleFormat} className="text-red-600 cursor-pointer hover:underline">{fmt(totalExpenses)}</button> Paid /{' '}
+              <button onClick={handleToggleFormat} className="cursor-pointer hover:underline">{fmt(projectAmount)}</button> Total
             </span>
-            <span className={creditAmount >= 0 ? 'text-green-600' : 'text-red-600'}>
-              Credit: {formatCurrency(creditAmount)}
-            </span>
+            <button onClick={handleToggleFormat} className={`cursor-pointer hover:underline ${creditAmount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              Credit: {fmt(creditAmount)}
+            </button>
           </div>
         </div>
       </CardContent>
@@ -450,13 +483,16 @@ function CurrentTasksSection({
                 {task.memberAssignments && task.memberAssignments.length > 0 && (
                   <div className="flex -space-x-2">
                     {task.memberAssignments.slice(0, 3).map((assignment) => (
-                      <div
-                        key={assignment.id}
-                        className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary border-2 border-background"
-                        title={assignment.member.user.name}
-                      >
-                        {assignment.member.user.name.charAt(0).toUpperCase()}
-                      </div>
+                      <Tooltip key={assignment.id}>
+                        <TooltipTrigger asChild>
+                          <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary border-2 border-background cursor-default">
+                            {assignment.member.user.name.charAt(0).toUpperCase()}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{assignment.member.user.name}</p>
+                        </TooltipContent>
+                      </Tooltip>
                     ))}
                     {task.memberAssignments.length > 3 && (
                       <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-xs font-medium border-2 border-background">
@@ -554,12 +590,19 @@ function ProjectDetailsCard({
           {project.projectAccess && project.projectAccess.length > 0 ? (
             <div className="flex flex-wrap gap-2 mt-2">
               {project.projectAccess.map((access) => (
-                <div key={access.id} className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
-                    {access.member.user.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="font-medium text-sm">{access.member.user.name}</div>
-                </div>
+                <Tooltip key={access.id}>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-default">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
+                        {access.member.user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="font-medium text-sm">{access.member.user.name}</div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{access.member.user.name}</p>
+                  </TooltipContent>
+                </Tooltip>
               ))}
             </div>
           ) : (

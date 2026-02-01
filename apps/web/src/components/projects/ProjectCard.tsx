@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Typography } from '@/components/ui/typography';
 import type { Project } from '@/lib/api/projects';
@@ -139,13 +140,16 @@ export function ProjectCard({ project, onEdit, onDelete, onClick }: ProjectCardP
               <>
                 <div className="flex -space-x-2">
                   {displayedMembers.map((access) => (
-                    <div
-                      key={access.id}
-                      className="h-7 w-7 rounded-full bg-primary/10 border-2 border-white flex items-center justify-center text-xs font-medium text-primary"
-                      title={access.member?.user?.name || 'Unknown'}
-                    >
-                      {access.member?.user?.name?.charAt(0)?.toUpperCase() || '?'}
-                    </div>
+                    <Tooltip key={access.id}>
+                      <TooltipTrigger asChild>
+                        <div className="h-7 w-7 rounded-full bg-primary/10 border-2 border-white flex items-center justify-center text-xs font-medium text-primary cursor-default">
+                          {access.member?.user?.name?.charAt(0)?.toUpperCase() || '?'}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{access.member?.user?.name || 'Unknown'}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   ))}
                 </div>
                 {remainingCount > 0 && (
