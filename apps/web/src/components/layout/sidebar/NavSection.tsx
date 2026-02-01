@@ -9,8 +9,8 @@ interface NavSectionProps {
 
 export function NavSection({ section, isCollapsed, onItemClick }: NavSectionProps) {
   return (
-    <div className="pt-4 border-t border-neutral-200">
-      {!isCollapsed && (
+    <div className="pt-[17px] border-t border-neutral-200">
+      {!isCollapsed && section.title && (
         <h4 className="px-3 text-xs font-medium text-neutral-500 uppercase tracking-wide mb-2">
           {section.title}
         </h4>

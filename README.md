@@ -195,6 +195,7 @@ Create `.env` in `apps/api/`:
 ```bash
 # Database
 DATABASE_URL=postgresql://myuser:mypassword@localhost:5433/worksite
+DIRECT_URL=postgresql://myuser:mypassword@localhost:5433/worksite
 
 # Storage (MinIO for local, Supabase for production)
 SUPABASE_URL=http://localhost:9000
@@ -204,6 +205,8 @@ SUPABASE_STORAGE_BUCKET=documents
 # CORS
 CORS_ORIGIN=http://localhost:5173
 ```
+
+> **Note:** For local development, `DIRECT_URL` is the same as `DATABASE_URL`. For Supabase production, `DIRECT_URL` should be the direct connection string (bypasses connection pooler) while `DATABASE_URL` uses the pooled connection.
 
 ---
 
@@ -227,7 +230,12 @@ npx prisma generate
 npx prisma migrate dev
 cd ../..
 
-# 4. (Optional) Install CodeRabbit CLI
+# 4. Setup test database (for running tests)
+# NOTE: If docker was already running, restart it to create test DB:
+docker-compose down && docker-compose up -d
+cd apps/api && pnpm db:test:setup && cd ../..
+
+# 5. (Optional) Install CodeRabbit CLI
 curl -fsSL https://cli.coderabbit.ai/install.sh | sh
 
 # 5. Verify

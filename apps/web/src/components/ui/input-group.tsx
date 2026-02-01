@@ -72,7 +72,8 @@ const sizeStyles = {
 } as const;
 
 export interface InputGroupProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'>,
+  extends
+    Omit<React.HTMLAttributes<HTMLDivElement>, 'children' | 'prefix'>,
     VariantProps<typeof inputGroupVariants> {
   /** Error state - shows red border and focus ring */
   isError?: boolean;
@@ -120,11 +121,7 @@ const InputGroup = React.forwardRef<HTMLDivElement, InputGroupProps>(
     return (
       <div
         ref={ref}
-        className={cn(
-          inputGroupVariants({ inputSize }),
-          errorClasses,
-          className
-        )}
+        className={cn(inputGroupVariants({ inputSize }), errorClasses, className)}
         {...props}
       >
         {/* Addon Left (e.g., attached button) */}
@@ -164,20 +161,23 @@ const InputGroup = React.forwardRef<HTMLDivElement, InputGroupProps>(
           {React.Children.map(children, (child) => {
             if (React.isValidElement(child)) {
               // Clone the input element and inject necessary classes
-              return React.cloneElement(child as React.ReactElement<React.InputHTMLAttributes<HTMLInputElement>>, {
-                className: cn(
-                  'flex-1 min-w-0 bg-transparent border-0',
-                  'text-foreground placeholder:text-muted-foreground',
-                  'focus:outline-none focus:ring-0',
-                  'disabled:cursor-not-allowed',
-                  styles.padding,
-                  // Adjust padding based on icons
-                  leftIcon && '!pl-2',
-                  rightIcon && '!pr-2',
-                  (child as React.ReactElement<{ className?: string }>).props.className
-                ),
-                'aria-invalid': isError || undefined,
-              });
+              return React.cloneElement(
+                child as React.ReactElement<React.InputHTMLAttributes<HTMLInputElement>>,
+                {
+                  className: cn(
+                    'flex-1 min-w-0 bg-transparent border-0',
+                    'text-foreground placeholder:text-muted-foreground',
+                    'focus:outline-none focus:ring-0',
+                    'disabled:cursor-not-allowed',
+                    styles.padding,
+                    // Adjust padding based on icons
+                    leftIcon && '!pl-2',
+                    rightIcon && '!pr-2',
+                    (child as React.ReactElement<{ className?: string }>).props.className
+                  ),
+                  'aria-invalid': isError || undefined,
+                }
+              );
             }
             return child;
           })}
@@ -210,9 +210,7 @@ const InputGroup = React.forwardRef<HTMLDivElement, InputGroupProps>(
 
         {/* Addon Right (e.g., Search button) */}
         {addonRight && (
-          <div className="flex shrink-0 items-center border-l border-gray-200">
-            {addonRight}
-          </div>
+          <div className="flex shrink-0 items-center border-l border-gray-200">{addonRight}</div>
         )}
       </div>
     );

@@ -25,7 +25,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -57,6 +56,8 @@ import { TaskFormDialog } from './TaskFormDialog';
 
 interface ProjectStagesTabProps {
   projectId: string;
+  initialStageId?: string;
+  onStageIdChange?: (stageId: string | undefined) => void;
 }
 
 type SortOption = 'latest' | 'oldest' | 'name' | 'budget';
@@ -91,13 +92,13 @@ const taskStatusConfig: Record<
 // ============================================
 
 function formatBudget(amount: number): string {
-  if (amount >= 1000000) {
-    return `$${(amount / 1000000).toFixed(1)}M`;
+  if (amount >= 10000000) {
+    return `₹${(amount / 10000000).toFixed(1)} Cr`;
   }
-  if (amount >= 1000) {
-    return `$${Math.round(amount / 1000)}K`;
+  if (amount >= 100000) {
+    return `₹${(amount / 100000).toFixed(1)}L`;
   }
-  return `$${amount}`;
+  return `₹${amount.toLocaleString('en-IN')}`;
 }
 
 function formatDuration(days: number): string {
@@ -294,11 +295,12 @@ function StageDetailView({ stageId, onBack }: StageDetailViewProps) {
   };
 
   const confirmDelete = async () => {
-    if (!deletingTask) return;
+    if (!deletingTask || !stage) return;
     try {
       await deleteTask.mutateAsync({
         id: deletingTask.id,
         stageId: stageId,
+        projectId: stage.projectId,
       });
       setDeletingTask(null);
     } catch (error) {
@@ -365,7 +367,7 @@ function StageDetailView({ stageId, onBack }: StageDetailViewProps) {
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="cursor-pointer h-8 w-8 -ml-2"
+            className="cursor-pointer h-5 w-5 -ml-2"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -450,47 +452,45 @@ function StageDetailView({ stageId, onBack }: StageDetailViewProps) {
             </div>
           </div>
 
-          <ScrollArea className="h-[calc(100vh-520px)]">
-            <div className="space-y-3 pr-4">
-              {isTasksLoading ? (
-                <>
-                  <Card className="p-4 animate-pulse">
-                    <div className="flex items-center gap-4">
-                      <div className="h-5 w-5 rounded bg-muted" />
-                      <div className="flex-1 space-y-2">
-                        <div className="h-5 bg-muted rounded w-1/3" />
-                        <div className="h-4 bg-muted rounded w-1/2" />
-                      </div>
+          <div className="space-y-3">
+            {isTasksLoading ? (
+              <>
+                <Card className="p-4 animate-pulse">
+                  <div className="flex items-center gap-4">
+                    <div className="h-5 w-5 rounded bg-muted" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-5 bg-muted rounded w-1/3" />
+                      <div className="h-4 bg-muted rounded w-1/2" />
                     </div>
-                  </Card>
-                </>
-              ) : filteredTasks.length === 0 ? (
-                <Card className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <Check className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">No tasks yet</h3>
-                  <p className="text-muted-foreground mb-6 max-w-sm">
-                    Break down this stage into individual tasks to track progress more granularly.
-                  </p>
-                  <Button onClick={handleAddTask} className="cursor-pointer">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add First Task
-                  </Button>
                 </Card>
-              ) : (
-                filteredTasks.map((task) => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    onEdit={handleEditTask}
-                    onDelete={handleDeleteTask}
-                    onStatusChange={handleStatusChange}
-                  />
-                ))
-              )}
-            </div>
-          </ScrollArea>
+              </>
+            ) : filteredTasks.length === 0 ? (
+              <Card className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <Check className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">No tasks yet</h3>
+                <p className="text-muted-foreground mb-6 max-w-sm">
+                  Break down this stage into individual tasks to track progress more granularly.
+                </p>
+                <Button onClick={handleAddTask} className="cursor-pointer">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add First Task
+                </Button>
+              </Card>
+            ) : (
+              filteredTasks.map((task) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onEdit={handleEditTask}
+                  onDelete={handleDeleteTask}
+                  onStatusChange={handleStatusChange}
+                />
+              ))
+            )}
+          </div>
         </div>
       </div>
 
@@ -697,26 +697,24 @@ function StagesListView({
           </p>
         </div>
 
-        <ScrollArea className="h-[calc(100vh-300px)]">
-          <CardContent className="px-6 py-0">
-            {filteredStages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                <p className="text-muted-foreground">No stages found matching "{searchQuery}"</p>
-              </div>
-            ) : (
-              filteredStages.map((stage, index) => (
-                <StageCard
-                  key={stage.id}
-                  stage={stage}
-                  onEdit={onEditStage}
-                  onDelete={onDeleteStage}
-                  onViewTasks={onViewTasks}
-                  isLast={index === filteredStages.length - 1}
-                />
-              ))
-            )}
-          </CardContent>
-        </ScrollArea>
+        <CardContent className="px-6 py-0">
+          {filteredStages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+              <p className="text-muted-foreground">No stages found matching "{searchQuery}"</p>
+            </div>
+          ) : (
+            filteredStages.map((stage, index) => (
+              <StageCard
+                key={stage.id}
+                stage={stage}
+                onEdit={onEditStage}
+                onDelete={onDeleteStage}
+                onViewTasks={onViewTasks}
+                isLast={index === filteredStages.length - 1}
+              />
+            ))
+          )}
+        </CardContent>
       </Card>
     </div>
   );
@@ -726,14 +724,25 @@ function StagesListView({
 // Main Component
 // ============================================
 
-export function ProjectStagesTab({ projectId }: ProjectStagesTabProps) {
-  const [selectedStageId, setSelectedStageId] = React.useState<string | null>(null);
+export function ProjectStagesTab({
+  projectId,
+  initialStageId,
+  onStageIdChange,
+}: ProjectStagesTabProps) {
+  const [selectedStageId, setSelectedStageId] = React.useState<string | null>(
+    initialStageId ?? null
+  );
   const [isFormOpen, setIsFormOpen] = React.useState(false);
   const [editingStage, setEditingStage] = React.useState<Stage | null>(null);
   const [deletingStage, setDeletingStage] = React.useState<Stage | null>(null);
 
   const { data: stages, isLoading, error } = useStagesByProject(projectId);
   const deleteStage = useDeleteStage();
+
+  // Sync selectedStageId when initialStageId changes from URL
+  React.useEffect(() => {
+    setSelectedStageId(initialStageId ?? null);
+  }, [initialStageId]);
 
   const handleAddStage = () => {
     setEditingStage(null);
@@ -751,10 +760,12 @@ export function ProjectStagesTab({ projectId }: ProjectStagesTabProps) {
 
   const handleViewTasks = (stage: Stage) => {
     setSelectedStageId(stage.id);
+    onStageIdChange?.(stage.id);
   };
 
   const handleBackToList = () => {
     setSelectedStageId(null);
+    onStageIdChange?.(undefined);
   };
 
   const confirmDelete = async () => {

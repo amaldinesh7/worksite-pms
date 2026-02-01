@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getTasks,
   getTasksByStage,
+  getTasksByProject,
   getTask,
   createTask,
   updateTask,
@@ -31,6 +32,7 @@ export const taskKeys = {
   lists: () => [...taskKeys.all, 'list'] as const,
   list: (params?: TaskQueryParams) => [...taskKeys.lists(), params] as const,
   byStage: (stageId: string) => [...taskKeys.all, 'stage', stageId] as const,
+  byProject: (projectId: string) => [...taskKeys.all, 'project', projectId] as const,
   details: () => [...taskKeys.all, 'detail'] as const,
   detail: (id: string) => [...taskKeys.details(), id] as const,
 };
@@ -57,6 +59,17 @@ export function useTasksByStage(stageId: string) {
     queryKey: taskKeys.byStage(stageId),
     queryFn: () => getTasksByStage(stageId),
     enabled: !!stageId,
+  });
+}
+
+/**
+ * Hook to fetch tasks by project ID
+ */
+export function useTasksByProject(projectId: string) {
+  return useQuery<Task[], Error>({
+    queryKey: taskKeys.byProject(projectId),
+    queryFn: () => getTasksByProject(projectId),
+    enabled: !!projectId,
   });
 }
 
@@ -89,6 +102,10 @@ export function useCreateTask() {
       // Also invalidate stage stats since task count changed
       queryClient.invalidateQueries({ queryKey: stageKeys.stats(task.stageId) });
       queryClient.invalidateQueries({ queryKey: stageKeys.detail(task.stageId) });
+      // Invalidate stages list to update completedTaskCount
+      if (task.stage?.projectId) {
+        queryClient.invalidateQueries({ queryKey: stageKeys.byProject(task.stage.projectId) });
+      }
     },
   });
 }
@@ -107,6 +124,10 @@ export function useUpdateTask() {
       queryClient.invalidateQueries({ queryKey: taskKeys.byStage(task.stageId) });
       // Invalidate stage stats if status changed
       queryClient.invalidateQueries({ queryKey: stageKeys.stats(task.stageId) });
+      // Invalidate stages list to update completedTaskCount
+      if (task.stage?.projectId) {
+        queryClient.invalidateQueries({ queryKey: stageKeys.byProject(task.stage.projectId) });
+      }
     },
   });
 }
@@ -126,6 +147,10 @@ export function useUpdateTaskStatus() {
       queryClient.invalidateQueries({ queryKey: taskKeys.byStage(task.stageId) });
       // Invalidate stage stats since task progress changed
       queryClient.invalidateQueries({ queryKey: stageKeys.stats(task.stageId) });
+      // Invalidate stages list to update completedTaskCount and progress
+      if (task.stage?.projectId) {
+        queryClient.invalidateQueries({ queryKey: stageKeys.byProject(task.stage.projectId) });
+      }
     },
   });
 }
@@ -137,13 +162,17 @@ export function useDeleteTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id }: { id: string; stageId: string }) => deleteTask(id),
-    onSuccess: (_, { stageId }) => {
+    mutationFn: ({ id }: { id: string; stageId: string; projectId?: string }) => deleteTask(id),
+    onSuccess: (_, { stageId, projectId }) => {
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
       queryClient.invalidateQueries({ queryKey: taskKeys.byStage(stageId) });
       // Invalidate stage stats since task count changed
       queryClient.invalidateQueries({ queryKey: stageKeys.stats(stageId) });
       queryClient.invalidateQueries({ queryKey: stageKeys.detail(stageId) });
+      // Invalidate stages list to update completedTaskCount
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: stageKeys.byProject(projectId) });
+      }
     },
   });
 }

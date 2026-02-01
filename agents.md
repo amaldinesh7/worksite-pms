@@ -16,25 +16,30 @@ tools:
   # ============================================
   - name: '@worksite/ui'
     version: '1.0.0'
-    context: Shared design tokens for consistent aesthetics across platforms
+    context: Design tokens - SINGLE SOURCE OF TRUTH for all styling
     rules: |
-      - Import tokens from @worksite/ui/tokens
-      - Use tailwindTheme from @worksite/ui/tokens for Tailwind config
-      - Tokens include: colors, spacing, fontSize, borderRadius, shadows
-      - Single source of truth for design system
+      - ALL design tokens defined in packages/ui/src/tokens.ts
+      - rawColors: Color palette from Figma (neutral, teal, red, etc.)
+      - semanticColors: Light/dark mode semantic mappings
+      - Web: CSS variables in globals.css derived from tokens.ts
+      - Mobile: tailwind.config.js imports tailwindTheme from tokens.ts
+      - Focus rings: ring (default), ring-primary (interactive), ring-error (error)
+      - Primary color = teal.800 (#115e59) for brand/buttons
     examples: packages/ui/src/tokens.ts
-    docs: See packages/ui/src/tokens.ts
+    docs: See .cursor/rules/tailwind-v4.mdc
 
   - name: tailwindcss
-    version: '^3.4.17'
-    context: Utility-first CSS framework for web styling
+    version: '^4.1.0'
+    context: Tailwind CSS v4.1 - CSS-first configuration
     rules: |
-      - Use for ALL web styling in apps/web
-      - Import tailwindTheme from @worksite/ui/tokens
-      - Use semantic color names: bg-primary, text-foreground
-      - Prefer Tailwind classes over inline styles
-    examples: apps/web/src/**/*
-    docs: https://tailwindcss.com
+      - Use @theme directive in CSS for theme configuration (NOT JS)
+      - Web tailwind.config.js should only have: content, plugins
+      - Define CSS variables in @layer base { :root { } }
+      - Map to utilities in @theme { --color-*: var(--*); }
+      - Focus rings: ring-ring (default), ring-ring-primary (teal), ring-ring-error (red)
+      - See .cursor/rules/tailwind-v4.mdc for full guide
+    examples: apps/web/src/styles/globals.css
+    docs: https://tailwindcss.com/docs/theme
 
   - name: nativewind
     version: '^4.1.23'
@@ -582,6 +587,17 @@ Keep track of significant changes to help AI understand project evolution.
 
 ```yaml
 updates:
+  - date: '2026-01-27'
+    change: 'Migrated to Tailwind CSS v4.1 with single source of truth'
+    details: |
+      - tokens.ts is now the SINGLE SOURCE OF TRUTH for design tokens
+      - Added rawColors (from Figma) and semanticColors (light/dark mode)
+      - Web uses CSS-first config via @theme directive in globals.css
+      - Mobile uses tailwindTheme export from tokens.ts
+      - Added focus ring variants: ring, ring-primary (teal.500), ring-error
+      - Primary color = teal.800 (#115e59) for brand, not text color
+      - Created .cursor/rules/tailwind-v4.mdc for AI context
+      - Simplified web tailwind.config.js (removed theme.extend)
   - date: '2026-01-10'
     change: 'Added shadcn/ui CLI configuration and Cursor rules'
     details: |

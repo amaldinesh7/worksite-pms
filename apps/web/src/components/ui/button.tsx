@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 /**
  * Button component variants based on Figma Design System
- * 
+ *
  * Variants: primary, secondary, outline, ghost, destructive
  * Sizes: default (36px), lg (44px), sm (32px), mini (24px)
  * Icon Sizes: icon (36x36), iconLg (40x40), iconSm (32x32), iconMini (24x24)
@@ -15,7 +15,7 @@ const buttonVariants = cva(
   // Base styles
   [
     'cursor-pointer inline-flex items-center justify-center gap-2',
-    'whitespace-nowrap font-medium rounded-lg',
+    'whitespace-nowrap font-medium rounded-sm',
     'transition-colors duration-150 ease-in-out',
     'focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-btn-focus-ring',
     'disabled:pointer-events-none disabled:opacity-50',
@@ -55,10 +55,10 @@ const buttonVariants = cva(
         sm: 'min-h-8 px-3 py-1.5 text-sm [&_svg]:size-4',
         mini: 'min-h-6 px-2 py-1 text-xs [&_svg]:size-3.5',
         // Icon-only button sizes (square)
-        icon: 'size-9 p-2 [&_svg]:size-5',         // 36x36 (default)
-        iconLg: 'size-10 p-2 [&_svg]:size-6',      // 40x40 (large)
-        iconSm: 'size-8 p-1.5 [&_svg]:size-4',     // 32x32 (small)
-        iconMini: 'size-6 p-1 [&_svg]:size-3.5',   // 24x24 (mini)
+        icon: 'size-9 p-2 [&_svg]:size-5', // 36x36 (default)
+        iconLg: 'size-10 p-2 [&_svg]:size-6', // 40x40 (large)
+        iconSm: 'size-8 p-1.5 [&_svg]:size-4', // 32x32 (small)
+        iconMini: 'size-6 p-1 [&_svg]:size-3.5', // 24x24 (mini)
       },
     },
     defaultVariants: {
@@ -69,8 +69,7 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   /** Render as child element (Radix Slot) */
   asChild?: boolean;
   /** Icon to display before the button text */
@@ -125,7 +124,11 @@ Button.displayName = 'Button';
 /**
  * Loading spinner component for button loading state
  */
-function LoadingSpinner({ size }: { size?: 'default' | 'lg' | 'sm' | 'mini' | 'icon' | 'iconLg' | 'iconSm' | 'iconMini' | null }) {
+function LoadingSpinner({
+  size,
+}: {
+  size?: 'default' | 'lg' | 'sm' | 'mini' | 'icon' | 'iconLg' | 'iconSm' | 'iconMini' | null;
+}) {
   const spinnerSize = {
     default: 'size-4',
     lg: 'size-5',
@@ -145,14 +148,7 @@ function LoadingSpinner({ size }: { size?: 'default' | 'lg' | 'sm' | 'mini' | 'i
       viewBox="0 0 24 24"
       aria-hidden="true"
     >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
         className="opacity-75"
         fill="currentColor"

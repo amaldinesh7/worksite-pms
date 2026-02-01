@@ -7,7 +7,6 @@ import {
   User,
   Lock,
   Calendar,
-  MapPin,
   Phone,
   Info,
   WarningCircle,
@@ -145,7 +144,9 @@ export const Sizes: Story = {
       </div>
       <div className="flex flex-col gap-1">
         <Input inputSize="mini" placeholder="Mini (24px)" />
-        <span className="text-xs text-muted-foreground">Mini - 24px height, 6px padding, smaller radius</span>
+        <span className="text-xs text-muted-foreground">
+          Mini - 24px height, 6px padding, smaller radius
+        </span>
       </div>
     </div>
   ),
@@ -173,11 +174,15 @@ export const States: Story = {
       </div>
       <div className="flex flex-col gap-1">
         <Input isError placeholder="Error state" />
-        <span className="text-xs text-red-500">Error - red border (click to see red focus ring)</span>
+        <span className="text-xs text-red-500">
+          Error - red border (click to see red focus ring)
+        </span>
       </div>
       <div className="flex flex-col gap-1">
         <Input disabled placeholder="Disabled state" />
-        <span className="text-xs text-muted-foreground">Disabled - 50% opacity, not interactive</span>
+        <span className="text-xs text-muted-foreground">
+          Disabled - 50% opacity, not interactive
+        </span>
       </div>
       <div className="flex flex-col gap-1">
         <Input disabled defaultValue="Disabled with value" />
@@ -214,7 +219,11 @@ export const WithIcons: Story = {
       </div>
       <div className="flex flex-col gap-3">
         <span className="text-sm font-medium">Both Icons</span>
-        <Input leftIcon={<Envelope />} rightIcon={<Check className="text-green-500" />} defaultValue="valid@email.com" />
+        <Input
+          leftIcon={<Envelope />}
+          rightIcon={<Check className="text-green-500" />}
+          defaultValue="valid@email.com"
+        />
         <Input leftIcon={<Phone />} rightIcon={<Info />} placeholder="Phone number" />
       </div>
     </div>
@@ -258,7 +267,12 @@ export const ErrorStates: Story = {
         <span className="text-xs text-red-500">Please enter a valid email</span>
       </div>
       <div className="flex flex-col gap-1">
-        <Input isError leftIcon={<Envelope />} rightIcon={<WarningCircle className="text-red-500" />} defaultValue="bad@" />
+        <Input
+          isError
+          leftIcon={<Envelope />}
+          rightIcon={<WarningCircle className="text-red-500" />}
+          defaultValue="bad@"
+        />
         <span className="text-xs text-red-500">Invalid email format</span>
       </div>
     </div>
@@ -333,7 +347,9 @@ export const PasswordToggle: Story = {
           }
           placeholder="Enter password"
         />
-        <span className="text-xs text-muted-foreground">Click the eye icon to toggle visibility</span>
+        <span className="text-xs text-muted-foreground">
+          Click the eye icon to toggle visibility
+        </span>
       </div>
     );
   },
@@ -411,7 +427,12 @@ export const CompactFilters: Story = {
   name: 'Compact Filters',
   render: () => (
     <div className="flex items-center gap-2">
-      <Input inputSize="sm" leftIcon={<MagnifyingGlass />} placeholder="Search..." className="w-48" />
+      <Input
+        inputSize="sm"
+        leftIcon={<MagnifyingGlass />}
+        placeholder="Search..."
+        className="w-48"
+      />
       <Input inputSize="sm" leftIcon={<Calendar />} placeholder="Date" className="w-32" />
       <Input inputSize="sm" leftIcon={<User />} placeholder="Assignee" className="w-32" />
     </div>
