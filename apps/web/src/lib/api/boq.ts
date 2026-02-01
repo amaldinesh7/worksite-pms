@@ -41,7 +41,7 @@ export interface BOQItem {
   sectionId?: string;
   stageId?: string;
   code?: string;
-  boqCategoryItemId: string;
+  boqCategoryItemId?: string; // Optional - items grouped by section instead
   boqCategory?: BOQWorkCategory;
   description: string;
   unit: string;
@@ -85,6 +85,16 @@ export interface BOQCategoryGroup {
   variance: number;
 }
 
+export interface BOQSectionGroup {
+  sectionId: string | null;
+  sectionName: string;
+  items: BOQItem[];
+  itemCount: number;
+  quotedTotal: number;
+  actualTotal: number;
+  variance: number;
+}
+
 export interface BOQStageGroup {
   stageId: string | null;
   stageName: string;
@@ -95,9 +105,16 @@ export interface BOQStageGroup {
   variance: number;
 }
 
+export interface FieldConfidences {
+  description: number;
+  unit: number;
+  quantity: number;
+  rate: number;
+}
+
 export interface ParsedBOQItem {
   code?: string;
-  boqCategoryItemId: string;
+  boqCategoryItemId?: string; // Optional - items grouped by section instead
   description: string;
   unit: string;
   quantity: number;
@@ -106,6 +123,7 @@ export interface ParsedBOQItem {
   stageId?: string;
   isReviewFlagged: boolean;
   flagReason?: string;
+  fieldConfidences?: FieldConfidences;
 }
 
 export interface ParseResult {
@@ -115,6 +133,9 @@ export interface ParseResult {
   totalItems: number;
   flaggedItems: number;
   errors: string[];
+  checksumMatch: boolean;
+  documentTotal?: number;
+  calculatedTotal: number;
 }
 
 // ============================================
@@ -140,7 +161,7 @@ export interface CreateBOQItemInput {
   sectionId?: string;
   stageId?: string;
   code?: string;
-  boqCategoryItemId: string;
+  boqCategoryItemId?: string; // Optional - items grouped by section instead
   description: string;
   unit: string;
   quantity: number;
@@ -164,6 +185,11 @@ export interface UpdateBOQItemInput {
 
 export interface CreateBOQSectionInput {
   name: string;
+  sortOrder?: number;
+}
+
+export interface UpdateBOQSectionInput {
+  name?: string;
   sortOrder?: number;
 }
 
@@ -201,10 +227,22 @@ export async function getBOQItems(
 
 /**
  * Get BOQ items grouped by category
+ * @deprecated Use getBOQBySection instead - items are now grouped by section
  */
 export async function getBOQByCategory(projectId: string): Promise<BOQCategoryGroup[]> {
   const response = await api.get<SuccessResponse<BOQCategoryGroup[]>>(
     `/projects/${projectId}/boq/by-category`
+  );
+  return response.data.data;
+}
+
+/**
+ * Get BOQ items grouped by section
+ * This is the preferred way to view BOQ items - sections are extracted from documents
+ */
+export async function getBOQBySection(projectId: string): Promise<BOQSectionGroup[]> {
+  const response = await api.get<SuccessResponse<BOQSectionGroup[]>>(
+    `/projects/${projectId}/boq/by-section`
   );
   return response.data.data;
 }
@@ -290,9 +328,40 @@ export async function createBOQSection(
 }
 
 /**
- * Parse uploaded BOQ file
+ * Update a BOQ section
  */
-export async function parseBOQFile(projectId: string, file: File): Promise<ParseResult> {
+export async function updateBOQSection(
+  projectId: string,
+  sectionId: string,
+  data: UpdateBOQSectionInput
+): Promise<BOQSection> {
+  const response = await api.put<SuccessResponse<BOQSection>>(
+    `/projects/${projectId}/boq-sections/${sectionId}`,
+    data
+  );
+  return response.data.data;
+}
+
+/**
+ * Delete a BOQ section
+ */
+export async function deleteBOQSection(projectId: string, sectionId: string): Promise<void> {
+  await api.delete(`/projects/${projectId}/boq-sections/${sectionId}`);
+}
+
+/**
+ * Parse uploaded BOQ file (PDF, Excel, CSV)
+ * Uses AI-powered parsing which can take 30-90 seconds for large PDFs
+ *
+ * @param projectId - The project ID
+ * @param file - The file to parse
+ * @param signal - Optional AbortSignal for cancellation
+ */
+export async function parseBOQFile(
+  projectId: string,
+  file: File,
+  signal?: AbortSignal
+): Promise<ParseResult> {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -303,6 +372,9 @@ export async function parseBOQFile(projectId: string, file: File): Promise<Parse
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      // Extended timeout for AI-powered PDF parsing (5 minutes)
+      timeout: 300000,
+      signal,
     }
   );
   return response.data.data;
@@ -344,4 +416,126 @@ export async function unlinkExpenseFromBOQ(
   expenseId: string
 ): Promise<void> {
   await api.delete(`/projects/${projectId}/boq/${boqItemId}/unlink-expense/${expenseId}`);
+}
+
+// ============================================
+// Batch Operations
+// ============================================
+
+export interface BatchItemUpdate {
+  id: string;
+  changes: Partial<UpdateBOQItemInput>;
+}
+
+export interface BatchItemCreate {
+  sectionId?: string | null;
+  stageId?: string | null;
+  code?: string | null;
+  boqCategoryItemId?: string;
+  description: string;
+  unit: string;
+  quantity: number;
+  rate: number;
+}
+
+export interface BatchSectionUpdate {
+  id: string;
+  changes: Partial<UpdateBOQSectionInput>;
+}
+
+export interface BatchSectionCreate {
+  name: string;
+  sortOrder?: number;
+}
+
+export interface BatchBOQInput {
+  itemUpdates?: BatchItemUpdate[];
+  itemCreates?: BatchItemCreate[];
+  itemDeletes?: string[];
+  sectionUpdates?: BatchSectionUpdate[];
+  sectionCreates?: BatchSectionCreate[];
+  sectionDeletes?: string[];
+}
+
+export interface BatchBOQResult {
+  itemsUpdated: number;
+  itemsCreated: number;
+  itemsDeleted: number;
+  sectionsUpdated: number;
+  sectionsCreated: number;
+  sectionsDeleted: number;
+}
+
+/**
+ * Batch update BOQ items and sections
+ * Single API call for all changes from edit mode
+ */
+export async function batchUpdateBOQ(
+  projectId: string,
+  data: BatchBOQInput
+): Promise<BatchBOQResult> {
+  const response = await api.post<SuccessResponse<BatchBOQResult>>(
+    `/projects/${projectId}/boq/batch`,
+    data
+  );
+  return response.data.data;
+}
+
+// ============================================
+// BOQ Item Images
+// ============================================
+
+export interface BOQItemImage {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  mimeType: string;
+  uploadedAt: string;
+}
+
+/**
+ * Get all images for a BOQ item
+ */
+export async function getBOQItemImages(
+  projectId: string,
+  boqItemId: string
+): Promise<BOQItemImage[]> {
+  const response = await api.get<SuccessResponse<BOQItemImage[]>>(
+    `/projects/${projectId}/boq/${boqItemId}/images`
+  );
+  return response.data.data;
+}
+
+/**
+ * Upload an image for a BOQ item
+ */
+export async function uploadBOQItemImage(
+  projectId: string,
+  boqItemId: string,
+  file: File
+): Promise<BOQItemImage> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await api.post<SuccessResponse<BOQItemImage>>(
+    `/projects/${projectId}/boq/${boqItemId}/images`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return response.data.data;
+}
+
+/**
+ * Delete an image from a BOQ item
+ */
+export async function deleteBOQItemImage(
+  projectId: string,
+  boqItemId: string,
+  imageId: string
+): Promise<void> {
+  await api.delete(`/projects/${projectId}/boq/${boqItemId}/images/${imageId}`);
 }
