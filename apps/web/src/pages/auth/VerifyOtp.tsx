@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck } from '@phosphor-icons/react';
 
 import { useSendOtp, useVerifyOtp } from '@worksite/data';
 
@@ -11,12 +10,14 @@ import { AuthCard } from '@/components/auth/AuthCard';
 import { OtpInput, OTP_LENGTH } from '@/components/auth/OtpInput';
 import { useAuthStore } from '@/stores/auth.store';
 import { Typography } from '@/components/ui/typography';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 
 const RESEND_COOLDOWN = 30;
 // India country code - hardcoded for now
 const COUNTRY_CODE = '+91';
 
 export default function VerifyOtp() {
+  useDocumentTitle('Verify OTP');
   const navigate = useNavigate();
   const { phoneNumber, loginSuccess, setStep } = useAuthStore();
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
@@ -51,7 +52,11 @@ export default function VerifyOtp() {
 
     setError(null);
 
-    const result = await verifyOtpMutation.mutateAsync({ phone: phoneNumber, code, countryCode: COUNTRY_CODE });
+    const result = await verifyOtpMutation.mutateAsync({
+      phone: phoneNumber,
+      code,
+      countryCode: COUNTRY_CODE,
+    });
 
     if (result.success && result.data) {
       // Store user, organization, role, and token
@@ -78,7 +83,10 @@ export default function VerifyOtp() {
   const handleResendOtp = async () => {
     if (resendTimer > 0) return;
 
-    const result = await sendOtpMutation.mutateAsync({ phone: phoneNumber, countryCode: COUNTRY_CODE });
+    const result = await sendOtpMutation.mutateAsync({
+      phone: phoneNumber,
+      countryCode: COUNTRY_CODE,
+    });
 
     if (result.success) {
       setResendTimer(RESEND_COOLDOWN);
@@ -109,7 +117,6 @@ export default function VerifyOtp() {
 
   return (
     <AuthCard
-      icon={<ShieldCheck className="h-7 w-7" weight="fill" />}
       title="Verify Your Number"
       subtitle={
         <>
@@ -126,14 +133,20 @@ export default function VerifyOtp() {
       <form onSubmit={handleSubmit}>
         {/* OTP Input */}
         <div className="text-left">
-          <Typography variant="paragraph-small-medium" as="label" className="text-foreground">Verification Code</Typography>
+          <Typography variant="paragraph-small-medium" as="label" className="text-foreground">
+            Verification Code
+          </Typography>
           <div className="mt-2">
             <OtpInput value={otp} onChange={setOtp} error={!!error} disabled={isLoading} />
           </div>
         </div>
 
         {/* Error Message */}
-        {error && <Typography variant="paragraph-small" className="text-red-600 mt-3 text-center">{error}</Typography>}
+        {error && (
+          <Typography variant="paragraph-small" className="text-red-600 mt-3 text-center">
+            {error}
+          </Typography>
+        )}
 
         {/* Submit Button */}
         <Button type="submit" disabled={isLoading} className="w-full mt-6" size="lg">

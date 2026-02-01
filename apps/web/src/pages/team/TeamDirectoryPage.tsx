@@ -44,6 +44,7 @@ import { useRoles } from '@/lib/hooks/useRoles';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import type { TeamMember, CreateTeamMemberInput, UpdateTeamMemberInput } from '@/lib/api/team';
 import { Typography } from '@/components/ui/typography';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 
 // ============================================
 // Constants
@@ -56,6 +57,7 @@ const PAGINATION_LIMIT = 10;
 // ============================================
 
 export default function TeamDirectoryPage() {
+  useDocumentTitle('Team');
   const [searchParams, setSearchParams] = useSearchParams();
 
   // URL state

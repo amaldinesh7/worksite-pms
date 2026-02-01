@@ -33,6 +33,7 @@ import {
   SecondaryTabsContent,
 } from '@/components/ui/custom/secondary-tabs';
 import { useProject, useProjectStats, useUpdateProject } from '@/lib/hooks/useProjects';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 import { ProjectOverviewTab } from '@/components/projects/overview/ProjectOverviewTab';
 import { ProjectExpensesTab } from '@/components/projects/expenses/ProjectExpensesTab';
 import { ProjectPaymentsTab } from '@/components/projects/payments';
@@ -159,6 +160,9 @@ export default function ProjectDetailPage() {
     refetch: refetchProject,
   } = useProject(id || '');
   const { data: stats, isLoading: isStatsLoading } = useProjectStats(id || '');
+
+  // Set page title to project name
+  useDocumentTitle(project?.name);
 
   // Mutations
   const updateMutation = useUpdateProject();

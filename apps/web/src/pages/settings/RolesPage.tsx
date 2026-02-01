@@ -28,12 +28,14 @@ import { DeleteRoleDialog } from '@/components/roles/DeleteRoleDialog';
 import { useRoles, useDeleteRole } from '@/lib/hooks/useRoles';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import type { Role } from '@/lib/api/roles';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 
 // ============================================
 // Component
 // ============================================
 
 export default function RolesPage() {
+  useDocumentTitle('Roles');
   const navigate = useNavigate();
 
   // Search state

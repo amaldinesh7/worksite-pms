@@ -9,6 +9,7 @@ import { PageContent } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Typography } from '@/components/ui/typography';
 import { useOverview } from '@/lib/hooks/useOverview';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 import {
   KPICards,
   ProjectStatsChart,
@@ -19,6 +20,7 @@ import {
 } from '@/components/overview';
 
 export function OverviewPage() {
+  useDocumentTitle('Overview');
   const { data, isLoading, isRefetching, refetch } = useOverview();
 
   // Default data for loading states
