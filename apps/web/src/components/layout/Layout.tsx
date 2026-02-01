@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Sidebar } from './Sidebar';
+import { FloatingImportStatus } from '@/components/imports/FloatingImportStatus';
 
 /* ========================================
    TYPE DEFINITIONS
@@ -23,6 +24,9 @@ export function Layout({ children, className }: LayoutProps) {
 
       {/* Main Content Area - naturally fills remaining space */}
       <div className="flex-1 flex flex-col overflow-hidden">{children}</div>
+
+      {/* Floating Import Status Bar */}
+      <FloatingImportStatus />
     </div>
   );
 }

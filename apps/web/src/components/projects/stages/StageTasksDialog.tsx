@@ -6,15 +6,10 @@
 
 import * as React from 'react';
 import { format } from 'date-fns';
-import { Plus, CalendarDays, DollarSign, Percent, ListTodo } from 'lucide-react';
+import { Plus, CalendarDays, IndianRupee, Percent, ListTodo } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -49,7 +44,10 @@ interface StageTasksDialogProps {
 // Status Badge Config
 // ============================================
 
-const statusConfig: Record<StageStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+const statusConfig: Record<
+  StageStatus,
+  { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }
+> = {
   SCHEDULED: { label: 'Scheduled', variant: 'outline' },
   IN_PROGRESS: { label: 'In Progress', variant: 'default' },
   COMPLETED: { label: 'Completed', variant: 'secondary' },
@@ -159,6 +157,7 @@ export function StageTasksDialog({ isOpen, onClose, stage }: StageTasksDialogPro
       await deleteTask.mutateAsync({
         id: deletingTask.id,
         stageId: deletingTask.stageId,
+        projectId: stage.projectId,
       });
       setDeletingTask(null);
     } catch (error) {
@@ -199,7 +198,7 @@ export function StageTasksDialog({ isOpen, onClose, stage }: StageTasksDialogPro
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <IndianRupee className="h-4 w-4 text-muted-foreground" />
               <div className="text-sm">
                 <p className="text-muted-foreground">Budget</p>
                 <p className="font-medium">{formatCurrency(Number(stage.budgetAmount))}</p>

@@ -75,6 +75,7 @@ export default function ProjectDetailPage() {
   const activeTab = searchParams.get('tab') || 'overview';
   const paymentTab = searchParams.get('paymentTab') || 'client';
   const memberId = searchParams.get('memberId') || undefined;
+  const stageId = searchParams.get('stageId') || undefined;
 
   // Edit modal state
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -97,12 +98,37 @@ export default function ProjectDetailPage() {
 
   const setActiveTab = useCallback(
     (tab: string) => {
-      // When changing main tabs, clear payment-specific params if leaving payments
+      // Combine all updates into a single call to avoid race conditions
+      const updates: Record<string, string | undefined> = { tab };
+
+      // Clear payment-specific params when not on payments tab
       if (tab !== 'payments') {
-        updateSearchParams({ tab, paymentTab: undefined, memberId: undefined });
-      } else {
-        updateSearchParams({ tab });
+        updates.paymentTab = undefined;
+        updates.memberId = undefined;
       }
+
+      // Clear stageId when leaving stages tab
+      if (tab !== 'stages') {
+        updates.stageId = undefined;
+      }
+
+      updateSearchParams(updates);
+    },
+    [updateSearchParams]
+  );
+
+  // Handler for stage click from overview - navigates to specific stage detail
+  const handleStageClick = useCallback(
+    (clickedStageId: string) => {
+      updateSearchParams({ tab: 'stages', stageId: clickedStageId });
+    },
+    [updateSearchParams]
+  );
+
+  // Handler for stage ID changes from ProjectStagesTab
+  const handleStageIdChange = useCallback(
+    (newStageId: string | undefined) => {
+      updateSearchParams({ stageId: newStageId });
     },
     [updateSearchParams]
   );
@@ -234,6 +260,7 @@ export default function ProjectDetailPage() {
                 stats={stats}
                 isStatsLoading={isStatsLoading}
                 onNavigateToStages={() => setActiveTab('stages')}
+                onStageClick={handleStageClick}
                 onRefreshProject={handleRefreshProject}
                 onEditProject={handleEditProject}
               />
@@ -254,11 +281,15 @@ export default function ProjectDetailPage() {
             </SecondaryTabsContent>
 
             <SecondaryTabsContent value="stages" className="py-6 px-6">
-              <ProjectStagesTab projectId={project.id} />
+              <ProjectStagesTab
+                projectId={project.id}
+                initialStageId={stageId}
+                onStageIdChange={handleStageIdChange}
+              />
             </SecondaryTabsContent>
 
             <SecondaryTabsContent value="boq" className="py-6 px-6">
-              <ProjectBOQTab projectId={project.id} />
+              <ProjectBOQTab projectId={project.id} projectName={project.name} />
             </SecondaryTabsContent>
 
             <SecondaryTabsContent value="documents" className="py-6 px-6">

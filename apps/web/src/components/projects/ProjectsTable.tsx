@@ -128,7 +128,7 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
             <TableHead>Progress</TableHead>
             <TableHead>Manager</TableHead>
             <TableHead>Deadline</TableHead>
-            <TableHead className="w-[80px]">Actions</TableHead>
+            <TableHead className="w-[80px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -238,8 +238,8 @@ export function ProjectsTable({ projects, onEdit, onDelete, onClick }: ProjectsT
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
-                        size="icon"
-                        className="h-5 w-5 cursor-pointer"
+                        size="iconSm"
+                        className="cursor-pointer"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreVertical className="h-4 w-4" />

@@ -176,8 +176,8 @@ export function PartiesTable({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="iconSm" className="h-5 w-5 cursor-pointer">
-                <MoreVertical />
+              <Button variant="ghost" size="iconSm" className="cursor-pointer">
+                <MoreVertical className="h-4 w-4" />
                 <span className="sr-only">Open menu</span>
               </Button>
             </DropdownMenuTrigger>

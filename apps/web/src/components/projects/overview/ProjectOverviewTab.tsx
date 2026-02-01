@@ -33,6 +33,7 @@ interface ProjectOverviewTabProps {
   stats: ProjectStats | undefined;
   isStatsLoading: boolean;
   onNavigateToStages?: () => void;
+  onStageClick?: (stageId: string) => void;
   onRefreshProject?: () => void;
   onEditProject?: () => void;
 }
@@ -221,9 +222,11 @@ function TimelineCard({ project }: { project: Project }) {
 function ProjectStagesSection({
   projectId,
   onViewAll,
+  onStageClick,
 }: {
   projectId: string;
   onViewAll: () => void;
+  onStageClick?: (stageId: string) => void;
 }) {
   const { data: stages = [], isLoading } = useStagesByProject(projectId);
 
@@ -299,7 +302,8 @@ function ProjectStagesSection({
             {stages.slice(0, 5).map((stage: Stage) => (
               <div
                 key={stage.id}
-                className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                onClick={() => onStageClick?.(stage.id)}
               >
                 {getStatusIcon(stage.status)}
                 <div className="flex-1 min-w-0">
@@ -537,6 +541,7 @@ export function ProjectOverviewTab({
   stats,
   isStatsLoading,
   onNavigateToStages,
+  onStageClick,
   onRefreshProject,
   onEditProject,
 }: ProjectOverviewTabProps) {
@@ -557,7 +562,11 @@ export function ProjectOverviewTab({
         <CurrentTasksSection projectId={project.id} onViewAll={handleViewAllStages} />
 
         {/* Project Stages */}
-        <ProjectStagesSection projectId={project.id} onViewAll={handleViewAllStages} />
+        <ProjectStagesSection
+          projectId={project.id}
+          onViewAll={handleViewAllStages}
+          onStageClick={onStageClick}
+        />
       </div>
 
       {/* Right Column - Sidebar */}

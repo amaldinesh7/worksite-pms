@@ -42,15 +42,15 @@ import {
   useCreateProject,
   useUpdateProject,
   useDeleteProject,
+  useAddProjectMember,
+  useRemoveProjectMember,
 } from '@/lib/hooks/useProjects';
 import { useDebounce } from '@/lib/hooks/useDebounce';
-import {
-  addProjectMember,
-  removeProjectMember,
-  type Project,
-  type ProjectStatus,
-  type CreateProjectInput,
-  type UpdateProjectInput,
+import type {
+  Project,
+  ProjectStatus,
+  CreateProjectInput,
+  UpdateProjectInput,
 } from '@/lib/api/projects';
 import { Typography } from '@/components/ui/typography';
 
@@ -128,6 +128,8 @@ export default function ProjectsPage() {
   const createMutation = useCreateProject();
   const updateMutation = useUpdateProject();
   const deleteMutation = useDeleteProject();
+  const addMemberMutation = useAddProjectMember();
+  const removeMemberMutation = useRemoveProjectMember();
 
   // Handlers
   const handleStatusChange = useCallback((value: string) => {
@@ -177,13 +179,17 @@ export default function ProjectsPage() {
             const membersToAdd = memberIds.filter((id) => !existingMemberIds.includes(id));
             const membersToRemove = existingMemberIds.filter((id) => !memberIds.includes(id));
 
-            // Add new members
+            // Add new members using mutation hook
             await Promise.all(
-              membersToAdd.map((memberId) => addProjectMember(selectedProject.id, memberId))
+              membersToAdd.map((memberId) =>
+                addMemberMutation.mutateAsync({ projectId: selectedProject.id, memberId })
+              )
             );
-            // Remove old members
+            // Remove old members using mutation hook
             await Promise.all(
-              membersToRemove.map((memberId) => removeProjectMember(selectedProject.id, memberId))
+              membersToRemove.map((memberId) =>
+                removeMemberMutation.mutateAsync({ projectId: selectedProject.id, memberId })
+              )
             );
           }
 
@@ -192,10 +198,12 @@ export default function ProjectsPage() {
           // Create project
           const newProject = await createMutation.mutateAsync(projectData as CreateProjectInput);
 
-          // Add members to the new project
+          // Add members to the new project using mutation hook
           if (memberIds && memberIds.length > 0) {
             await Promise.all(
-              memberIds.map((memberId) => addProjectMember(newProject.id, memberId))
+              memberIds.map((memberId) =>
+                addMemberMutation.mutateAsync({ projectId: newProject.id, memberId })
+              )
             );
           }
 
@@ -207,7 +215,7 @@ export default function ProjectsPage() {
         toast.error(selectedProject ? 'Failed to update project' : 'Failed to create project');
       }
     },
-    [selectedProject, createMutation, updateMutation]
+    [selectedProject, createMutation, updateMutation, addMemberMutation, removeMemberMutation]
   );
 
   const handleDeleteConfirm = useCallback(async () => {
