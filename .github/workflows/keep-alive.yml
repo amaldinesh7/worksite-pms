@@ -1,0 +1,19 @@
+# Keep Render free tier service alive
+# Pings the health endpoint every 14 minutes to prevent spin-down
+
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Run every 14 minutes (Render spins down after 15 min)
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Beta API
+        run: |
+          curl -f https://worksite-api-beta.onrender.com/health || exit 1
+          echo "Beta API is alive!"

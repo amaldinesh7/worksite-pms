@@ -1,7 +1,7 @@
 # Database Schema
 
 > Auto-generated from `apps/api/prisma/schema.prisma`
-> Last generated: 2026-01-29T21:32:23.134Z
+> Last generated: 2026-01-31T05:19:16.717Z
 
 ---
 
@@ -26,6 +26,7 @@
 | `memberAdvances` | `MemberAdvance[]`      | -                    |
 | `boqSections`    | `BOQSection[]`         | -                    |
 | `boqItems`       | `BOQItem[]`            | -                    |
+| `importJobs`     | `ImportJob[]`          | -                    |
 
 ### User
 
@@ -39,6 +40,7 @@
 | `createdAt`     | `DateTime`             | @default(now())      |
 | `memberships`   | `OrganizationMember[]` | -                    |
 | `refreshTokens` | `RefreshToken[]`       | -                    |
+| `importJobs`    | `ImportJob[]`          | -                    |
 
 ### Role
 
@@ -192,6 +194,7 @@
 | `memberAdvances`    | `MemberAdvance[]` | -                                                                        |
 | `boqSections`       | `BOQSection[]`    | -                                                                        |
 | `boqItems`          | `BOQItem[]`       | -                                                                        |
+| `importJobs`        | `ImportJob[]`     | -                                                                        |
 
 ### Stage
 
@@ -429,30 +432,30 @@
 
 ### BOQItem
 
-| Field               | Type               | Attributes                                                               |
-| ------------------- | ------------------ | ------------------------------------------------------------------------ |
-| `id`                | `String`           | @id @default(cuid())                                                     |
-| `organizationId`    | `String`           | -                                                                        |
-| `projectId`         | `String`           | -                                                                        |
-| `sectionId`         | `String?`          | -                                                                        |
-| `stageId`           | `String?`          | -                                                                        |
-| `boqCategoryItemId` | `String`           | // References CategoryItem for work type (Earth Works, PCC Work, etc.)   |
-| `code`              | `String?`          | // e.g., "R2-CS-EW-1"                                                    |
-| `description`       | `String`           | -                                                                        |
-| `unit`              | `String`           | -                                                                        |
-| `quantity`          | `Decimal`          | @db.Decimal(15, 4)                                                       |
-| `rate`              | `Decimal`          | @db.Decimal(15, 2)                                                       |
-| `notes`             | `String?`          | @db.Text                                                                 |
-| `isReviewFlagged`   | `Boolean`          | @default(false)                                                          |
-| `flagReason`        | `String?`          | -                                                                        |
-| `createdAt`         | `DateTime`         | @default(now())                                                          |
-| `updatedAt`         | `DateTime`         | @updatedAt                                                               |
-| `organization`      | `Organization`     | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
-| `project`           | `Project`          | @relation(fields: [projectId], references: [id], onDelete: Cascade)      |
-| `section`           | `BOQSection?`      | @relation(fields: [sectionId], references: [id], onDelete: SetNull)      |
-| `stage`             | `Stage?`           | @relation(fields: [stageId], references: [id], onDelete: SetNull)        |
-| `boqCategory`       | `CategoryItem`     | @relation("BOQCategory", fields: [boqCategoryItemId], references: [id])  |
-| `expenseLinks`      | `BOQExpenseLink[]` | -                                                                        |
+| Field               | Type               | Attributes                                                                                 |
+| ------------------- | ------------------ | ------------------------------------------------------------------------------------------ |
+| `id`                | `String`           | @id @default(cuid())                                                                       |
+| `organizationId`    | `String`           | -                                                                                          |
+| `projectId`         | `String`           | -                                                                                          |
+| `sectionId`         | `String?`          | -                                                                                          |
+| `stageId`           | `String?`          | -                                                                                          |
+| `boqCategoryItemId` | `String?`          | // Optional - legacy field for backward compatibility                                      |
+| `code`              | `String?`          | // e.g., "R2-CS-EW-1"                                                                      |
+| `description`       | `String`           | -                                                                                          |
+| `unit`              | `String`           | -                                                                                          |
+| `quantity`          | `Decimal`          | @db.Decimal(15, 4)                                                                         |
+| `rate`              | `Decimal`          | @db.Decimal(15, 2)                                                                         |
+| `notes`             | `String?`          | @db.Text                                                                                   |
+| `isReviewFlagged`   | `Boolean`          | @default(false)                                                                            |
+| `flagReason`        | `String?`          | -                                                                                          |
+| `createdAt`         | `DateTime`         | @default(now())                                                                            |
+| `updatedAt`         | `DateTime`         | @updatedAt                                                                                 |
+| `organization`      | `Organization`     | @relation(fields: [organizationId], references: [id], onDelete: Cascade)                   |
+| `project`           | `Project`          | @relation(fields: [projectId], references: [id], onDelete: Cascade)                        |
+| `section`           | `BOQSection?`      | @relation(fields: [sectionId], references: [id], onDelete: SetNull)                        |
+| `stage`             | `Stage?`           | @relation(fields: [stageId], references: [id], onDelete: SetNull)                          |
+| `boqCategory`       | `CategoryItem?`    | @relation("BOQCategory", fields: [boqCategoryItemId], references: [id], onDelete: SetNull) |
+| `expenseLinks`      | `BOQExpenseLink[]` | -                                                                                          |
 
 ### BOQExpenseLink
 
@@ -464,3 +467,29 @@
 | `createdAt` | `DateTime` | @default(now())                                                     |
 | `boqItem`   | `BOQItem`  | @relation(fields: [boqItemId], references: [id], onDelete: Cascade) |
 | `expense`   | `Expense`  | @relation(fields: [expenseId], references: [id], onDelete: Cascade) |
+
+### ImportJob
+
+| Field            | Type              | Attributes                                                               |
+| ---------------- | ----------------- | ------------------------------------------------------------------------ |
+| `id`             | `String`          | @id @default(cuid())                                                     |
+| `organizationId` | `String`          | -                                                                        |
+| `projectId`      | `String`          | -                                                                        |
+| `userId`         | `String`          | -                                                                        |
+| `status`         | `ImportJobStatus` | @default(PENDING)                                                        |
+| `progress`       | `Int`             | @default(0) // 0-100                                                     |
+| `fileName`       | `String`          | -                                                                        |
+| `fileSize`       | `Int`             | -                                                                        |
+| `fileType`       | `String`          | // xlsx, csv, pdf                                                        |
+| `fileUrl`        | `String?`         | // Supabase storage URL                                                  |
+| `itemsFound`     | `Int?`            | -                                                                        |
+| `itemsSaved`     | `Int?`            | -                                                                        |
+| `errors`         | `String[]`        | @default([])                                                             |
+| `result`         | `Json?`           | // Parsed result for review                                              |
+| `startedAt`      | `DateTime?`       | -                                                                        |
+| `completedAt`    | `DateTime?`       | -                                                                        |
+| `createdAt`      | `DateTime`        | @default(now())                                                          |
+| `updatedAt`      | `DateTime`        | @updatedAt                                                               |
+| `organization`   | `Organization`    | @relation(fields: [organizationId], references: [id], onDelete: Cascade) |
+| `project`        | `Project`         | @relation(fields: [projectId], references: [id], onDelete: Cascade)      |
+| `user`           | `User`            | @relation(fields: [userId], references: [id], onDelete: Cascade)         |
