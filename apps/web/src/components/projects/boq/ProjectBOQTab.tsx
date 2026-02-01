@@ -2,23 +2,15 @@
  * Project BOQ Tab
  *
  * Main container for the BOQ (Bill of Quantities) tab with:
+ * - Excel-like BOQ Builder for editing
+ * - Import/Export functionality
  * - Summary cards
- * - Category-grouped view (dynamic work categories)
- * - Add/Import actions
- * - Sticky total bar at bottom
  */
 
 import { useState, useCallback } from 'react';
-import { Plus, Upload } from '@phosphor-icons/react';
 
-import { Button } from '@/components/ui/button';
-import { useBOQStats } from '@/lib/hooks/useBOQ';
-import { BOQSummaryCards } from './BOQSummaryCards';
-import { BOQCategoryView } from './BOQCategoryView';
-import { BOQItemFormDialog } from './BOQItemFormDialog';
-import { BOQImportDialog } from './BOQImportDialog';
-import { BOQImportReview } from './BOQImportReview';
-import type { ParseResult } from '@/lib/api/boq';
+import { BOQBuilderContainer } from './builder';
+import { BOQImportView } from './BOQImportView';
 
 // ============================================
 // Types
@@ -26,89 +18,45 @@ import type { ParseResult } from '@/lib/api/boq';
 
 interface ProjectBOQTabProps {
   projectId: string;
+  projectName?: string;
 }
 
 // ============================================
 // Component
 // ============================================
 
-export function ProjectBOQTab({ projectId }: ProjectBOQTabProps) {
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [parseResult, setParseResult] = useState<ParseResult | null>(null);
-
-  // Data fetching
-  const { data: stats, isLoading: isStatsLoading } = useBOQStats(projectId);
+export function ProjectBOQTab({ projectId, projectName }: ProjectBOQTabProps) {
+  const [isShowingImport, setIsShowingImport] = useState(false);
 
   // Handlers
-  const handleAddItem = useCallback(() => {
-    setIsAddDialogOpen(true);
-  }, []);
-
   const handleImport = useCallback(() => {
-    setIsImportDialogOpen(true);
+    setIsShowingImport(true);
   }, []);
 
-  const handleParseComplete = useCallback((result: ParseResult) => {
-    setParseResult(result);
+  const handleImportBack = useCallback(() => {
+    setIsShowingImport(false);
   }, []);
 
-  const handleImportReviewBack = useCallback(() => {
-    setParseResult(null);
-    setIsImportDialogOpen(true);
+  const handleExport = useCallback(() => {
+    // TODO: Implement export functionality
+    console.log('Export BOQ');
   }, []);
 
-  const handleImportComplete = useCallback(() => {
-    setParseResult(null);
-  }, []);
-
-  // Show import review screen if we have parse results
-  if (parseResult) {
+  // Show Import View when importing
+  if (isShowingImport) {
     return (
-      <BOQImportReview
-        projectId={projectId}
-        parseResult={parseResult}
-        onBack={handleImportReviewBack}
-        onComplete={handleImportComplete}
-      />
+      <BOQImportView projectId={projectId} projectName={projectName} onBack={handleImportBack} />
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Actions */}
-      <div className="flex items-center justify-end">
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleImport} className="cursor-pointer">
-            <Upload className="mr-2 h-4 w-4" />
-            Import BOQ
-          </Button>
-          <Button onClick={handleAddItem} className="cursor-pointer">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Budget Item
-          </Button>
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <BOQSummaryCards stats={stats} isLoading={isStatsLoading} />
-
-      {/* Category-grouped BOQ View */}
-      <BOQCategoryView projectId={projectId} totalQuoted={stats?.totalQuoted} />
-
-      {/* Add Item Dialog */}
-      <BOQItemFormDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
+      {/* BOQ Builder - Excel-like editor */}
+      <BOQBuilderContainer
         projectId={projectId}
-      />
-
-      {/* Import Dialog */}
-      <BOQImportDialog
-        open={isImportDialogOpen}
-        onOpenChange={setIsImportDialogOpen}
-        projectId={projectId}
-        onParseComplete={handleParseComplete}
+        projectName={projectName}
+        onImport={handleImport}
+        onExport={handleExport}
       />
     </div>
   );

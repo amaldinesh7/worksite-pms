@@ -1,7 +1,8 @@
 /**
  * BOQ Item Form Dialog
  *
- * Modal for adding/editing BOQ items with dynamic work categories.
+ * Modal for adding/editing BOQ items with section selection.
+ * Category field has been removed - items are grouped by section instead.
  */
 
 import { useEffect } from 'react';
@@ -28,9 +29,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useCreateBOQItem, useUpdateBOQItem } from '@/lib/hooks/useBOQ';
+import { useCreateBOQItem, useUpdateBOQItem, useBOQSections } from '@/lib/hooks/useBOQ';
 import { useStagesByProject } from '@/lib/hooks/useStages';
-import { useCategoryItems } from '@/lib/hooks/useCategories';
 import type { BOQItem } from '@/lib/api/boq';
 
 // ============================================
@@ -42,7 +42,7 @@ interface BOQItemFormDialogProps {
   onOpenChange: (open: boolean) => void;
   projectId: string;
   item?: BOQItem | null;
-  defaultCategoryId?: string;
+  defaultSectionId?: string;
 }
 
 // ============================================
@@ -51,7 +51,7 @@ interface BOQItemFormDialogProps {
 
 const formSchema = z.object({
   code: z.string().optional(),
-  boqCategoryItemId: z.string().min(1, 'Category is required'),
+  sectionId: z.string().optional(),
   description: z.string().min(1, 'Description is required'),
   unit: z.string().min(1, 'Unit is required'),
   quantity: z.coerce.number().positive('Quantity must be positive'),
@@ -78,25 +78,22 @@ export function BOQItemFormDialog({
   onOpenChange,
   projectId,
   item,
-  defaultCategoryId,
+  defaultSectionId,
 }: BOQItemFormDialogProps) {
   const isEditing = !!item;
 
   // Hooks
   const { data: stages = [] } = useStagesByProject(projectId);
-  const { data: boqCategories = [] } = useCategoryItems('boq_category');
+  const { data: sections = [] } = useBOQSections(projectId);
   const createMutation = useCreateBOQItem(projectId);
   const updateMutation = useUpdateBOQItem(projectId);
-
-  // Get active categories
-  const activeCategories = boqCategories.filter((cat) => cat.isActive !== false);
 
   // Form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       code: '',
-      boqCategoryItemId: defaultCategoryId || '',
+      sectionId: defaultSectionId || '',
       description: '',
       unit: 'nos',
       quantity: 1,
@@ -112,7 +109,7 @@ export function BOQItemFormDialog({
       if (item) {
         form.reset({
           code: item.code || '',
-          boqCategoryItemId: item.boqCategoryItemId || item.boqCategory?.id || '',
+          sectionId: item.sectionId || '',
           description: item.description,
           unit: item.unit,
           quantity: item.quantity,
@@ -121,11 +118,11 @@ export function BOQItemFormDialog({
           notes: item.notes || '',
         });
       } else {
-        // Set default category to first available if not provided
-        const defaultCat = defaultCategoryId || (activeCategories[0]?.id ?? '');
+        // Set default section if provided
+        const defaultSec = defaultSectionId || (sections[0]?.id ?? '');
         form.reset({
           code: '',
-          boqCategoryItemId: defaultCat,
+          sectionId: defaultSec,
           description: '',
           unit: 'nos',
           quantity: 1,
@@ -135,13 +132,14 @@ export function BOQItemFormDialog({
         });
       }
     }
-  }, [open, item, defaultCategoryId, form, activeCategories]);
+  }, [open, item, defaultSectionId, form, sections]);
 
   // Handlers
   const handleSubmit = async (values: FormValues) => {
     try {
       const data = {
         ...values,
+        sectionId: values.sectionId || undefined,
         stageId: values.stageId || undefined,
         notes: values.notes || undefined,
         code: values.code || undefined,
@@ -176,30 +174,28 @@ export function BOQItemFormDialog({
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-          {/* Category & Code Row */}
+          {/* Section & Code Row */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="boqCategoryItemId">Work Category</Label>
+              <Label htmlFor="sectionId">Section</Label>
               <Select
-                value={form.watch('boqCategoryItemId')}
-                onValueChange={(value) => form.setValue('boqCategoryItemId', value)}
+                value={form.watch('sectionId') || 'none'}
+                onValueChange={(value) => form.setValue('sectionId', value === 'none' ? '' : value)}
               >
                 <SelectTrigger className="cursor-pointer">
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder="Select section" />
                 </SelectTrigger>
                 <SelectContent>
-                  {activeCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id} className="cursor-pointer">
-                      {cat.name}
+                  <SelectItem value="none" className="cursor-pointer">
+                    No section
+                  </SelectItem>
+                  {sections.map((section) => (
+                    <SelectItem key={section.id} value={section.id} className="cursor-pointer">
+                      {section.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {form.formState.errors.boqCategoryItemId && (
-                <p className="text-sm text-destructive">
-                  {form.formState.errors.boqCategoryItemId.message}
-                </p>
-              )}
             </div>
 
             <div className="space-y-2">
