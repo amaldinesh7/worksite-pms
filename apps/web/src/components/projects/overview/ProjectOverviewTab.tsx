@@ -11,16 +11,24 @@
  */
 
 import { differenceInDays, format } from 'date-fns';
-import { Calendar, CheckCircle, Clock, PencilSimple, CircleNotch } from '@phosphor-icons/react';
+import { Calendar, CheckCircle, Clock, PencilSimple, CircleNotch, CaretDown } from '@phosphor-icons/react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 import { useStagesByProject } from '@/lib/hooks/useStages';
 import { useTasksByProject } from '@/lib/hooks/useTasks';
+import { useUpdateProject } from '@/lib/hooks/useProjects';
 import { ClientCard } from './ClientCard';
-import type { Project, ProjectStats } from '@/lib/api/projects';
+import type { Project, ProjectStats, ProjectStatus } from '@/lib/api/projects';
 import type { Stage, StageStatus } from '@/lib/api/stages';
 import type { Task, TaskStatus } from '@/lib/api/tasks';
 
@@ -467,7 +475,24 @@ function CurrentTasksSection({
   );
 }
 
-function ProjectDetailsCard({ project, onEdit }: { project: Project; onEdit?: () => void }) {
+// Status options for the dropdown
+const PROJECT_STATUS_OPTIONS: { value: ProjectStatus; label: string; color: string }[] = [
+  { value: 'ACTIVE', label: 'In Progress', color: 'bg-blue-100 text-blue-800' },
+  { value: 'ON_HOLD', label: 'On Hold', color: 'bg-amber-100 text-amber-800' },
+  { value: 'COMPLETED', label: 'Completed', color: 'bg-green-100 text-green-800' },
+];
+
+function ProjectDetailsCard({
+  project,
+  onEdit,
+  onStatusChange,
+  isStatusUpdating,
+}: {
+  project: Project;
+  onEdit?: () => void;
+  onStatusChange?: (status: ProjectStatus) => void;
+  isStatusUpdating?: boolean;
+}) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -479,7 +504,39 @@ function ProjectDetailsCard({ project, onEdit }: { project: Project; onEdit?: ()
       <CardContent className="space-y-4">
         <div>
           <div className="text-xs text-muted-foreground uppercase tracking-wide">Status</div>
-          <div className="mt-1">{getProjectStatusBadge(project.status)}</div>
+          <div className="mt-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="flex items-center gap-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md"
+                  disabled={isStatusUpdating}
+                >
+                  {getProjectStatusBadge(project.status)}
+                  <CaretDown className="h-3 w-3 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                {PROJECT_STATUS_OPTIONS.map((option) => (
+                  <DropdownMenuItem
+                    key={option.value}
+                    className="cursor-pointer"
+                    onClick={() => onStatusChange?.(option.value)}
+                    disabled={project.status === option.value}
+                  >
+                    <Badge
+                      variant="default"
+                      className={`${option.color} hover:${option.color}`}
+                    >
+                      {option.label}
+                    </Badge>
+                    {project.status === option.value && (
+                      <CheckCircle className="ml-auto h-4 w-4 text-primary" weight="fill" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         <div>
@@ -545,9 +602,26 @@ export function ProjectOverviewTab({
   onRefreshProject,
   onEditProject,
 }: ProjectOverviewTabProps) {
+  const updateProjectMutation = useUpdateProject();
+
   const handleViewAllStages = () => {
     if (onNavigateToStages) {
       onNavigateToStages();
+    }
+  };
+
+  const handleStatusChange = async (newStatus: ProjectStatus) => {
+    if (newStatus === project.status) return;
+
+    try {
+      await updateProjectMutation.mutateAsync({
+        id: project.id,
+        data: { status: newStatus },
+      });
+      toast.success(`Project status updated to ${getStatusLabel(newStatus)}`);
+      onRefreshProject?.();
+    } catch {
+      toast.error('Failed to update project status');
     }
   };
 
@@ -578,8 +652,27 @@ export function ProjectOverviewTab({
         <ClientCard project={project} onClientUpdated={onRefreshProject} />
 
         {/* Project Details */}
-        <ProjectDetailsCard project={project} onEdit={onEditProject} />
+        <ProjectDetailsCard
+          project={project}
+          onEdit={onEditProject}
+          onStatusChange={handleStatusChange}
+          isStatusUpdating={updateProjectMutation.isPending}
+        />
       </div>
     </div>
   );
+}
+
+// Helper to get status label for toast message
+function getStatusLabel(status: ProjectStatus): string {
+  switch (status) {
+    case 'ACTIVE':
+      return 'In Progress';
+    case 'ON_HOLD':
+      return 'On Hold';
+    case 'COMPLETED':
+      return 'Completed';
+    default:
+      return status;
+  }
 }
