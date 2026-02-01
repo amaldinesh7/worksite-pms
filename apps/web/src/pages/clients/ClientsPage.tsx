@@ -29,6 +29,7 @@ import { ClientsTable, ClientFormDialog } from '@/components/clients';
 import { useClients, useUpdateClient } from '@/lib/hooks/useClients';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import type { Client, UpdateClientInput } from '@/lib/api/clients';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 
 // ============================================
 // Constants
@@ -41,6 +42,7 @@ const PAGINATION_LIMIT = 10;
 // ============================================
 
 export default function ClientsPage() {
+  useDocumentTitle('Clients');
   // Local state
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState('');

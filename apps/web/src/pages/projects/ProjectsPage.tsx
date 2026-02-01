@@ -42,10 +42,9 @@ import {
   useCreateProject,
   useUpdateProject,
   useDeleteProject,
-  useAddProjectMember,
-  useRemoveProjectMember,
 } from '@/lib/hooks/useProjects';
 import { useDebounce } from '@/lib/hooks/useDebounce';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 import type {
   Project,
   ProjectStatus,
@@ -74,6 +73,7 @@ function getStoredViewMode(): ViewMode {
 // ============================================
 
 export default function ProjectsPage() {
+  useDocumentTitle('Projects');
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -128,8 +128,6 @@ export default function ProjectsPage() {
   const createMutation = useCreateProject();
   const updateMutation = useUpdateProject();
   const deleteMutation = useDeleteProject();
-  const addMemberMutation = useAddProjectMember();
-  const removeMemberMutation = useRemoveProjectMember();
 
   // Handlers
   const handleStatusChange = useCallback((value: string) => {
@@ -163,49 +161,18 @@ export default function ProjectsPage() {
   const handleFormSubmit = useCallback(
     async (data: CreateProjectInput | UpdateProjectInput) => {
       try {
-        // Extract memberIds from data (they're handled separately via API)
-        const { memberIds, ...projectData } = data;
-
         if (selectedProject) {
-          // Update project
+          // Update project - pass memberIds to backend for atomic handling
+          // This avoids stale state issues with selectedProject.projectAccess
           await updateMutation.mutateAsync({
             id: selectedProject.id,
-            data: projectData as UpdateProjectInput,
+            data: data as UpdateProjectInput,
           });
-
-          // Handle member changes for update
-          if (memberIds) {
-            const existingMemberIds = selectedProject.projectAccess?.map((a) => a.memberId) || [];
-            const membersToAdd = memberIds.filter((id) => !existingMemberIds.includes(id));
-            const membersToRemove = existingMemberIds.filter((id) => !memberIds.includes(id));
-
-            // Add new members using mutation hook
-            await Promise.all(
-              membersToAdd.map((memberId) =>
-                addMemberMutation.mutateAsync({ projectId: selectedProject.id, memberId })
-              )
-            );
-            // Remove old members using mutation hook
-            await Promise.all(
-              membersToRemove.map((memberId) =>
-                removeMemberMutation.mutateAsync({ projectId: selectedProject.id, memberId })
-              )
-            );
-          }
 
           toast.success('Project updated successfully');
         } else {
-          // Create project
-          const newProject = await createMutation.mutateAsync(projectData as CreateProjectInput);
-
-          // Add members to the new project using mutation hook
-          if (memberIds && memberIds.length > 0) {
-            await Promise.all(
-              memberIds.map((memberId) =>
-                addMemberMutation.mutateAsync({ projectId: newProject.id, memberId })
-              )
-            );
-          }
+          // Create project - pass memberIds to backend for atomic handling
+          await createMutation.mutateAsync(data as CreateProjectInput);
 
           toast.success('Project created successfully');
         }
@@ -215,7 +182,7 @@ export default function ProjectsPage() {
         toast.error(selectedProject ? 'Failed to update project' : 'Failed to create project');
       }
     },
-    [selectedProject, createMutation, updateMutation, addMemberMutation, removeMemberMutation]
+    [selectedProject, createMutation, updateMutation]
   );
 
   const handleDeleteConfirm = useCallback(async () => {

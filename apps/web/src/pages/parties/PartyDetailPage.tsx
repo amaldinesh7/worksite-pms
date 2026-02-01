@@ -15,6 +15,7 @@ import { PageContent, Header } from '@/components/layout';
 import { PartyProjectsList, PartyTransactionsPanel } from '@/components/parties';
 import { useParty, usePartyProjects, usePartyTransactions } from '@/lib/hooks/useParties';
 import type { PartyType } from '@/lib/api/parties';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 
 // ============================================
 // Helpers
@@ -62,6 +63,9 @@ export default function PartyDetailPage() {
       limit: 5,
     }
   );
+
+  // Set page title to party name
+  useDocumentTitle(party?.name);
 
   // Handlers
   const handleSelectProject = useCallback((projectId: string | null) => {
@@ -155,7 +159,6 @@ export default function PartyDetailPage() {
     <>
       <Header breadcrumbs={breadcrumbItems} />
       <PageContent className="overflow-hidden min-h-0 pt-4">
-
         {/* 2-Column Layout */}
 
         {/* 2-Column Layout */}

@@ -32,6 +32,7 @@ import {
   useDeleteParty,
 } from '@/lib/hooks/useParties';
 import type { Party, PartyType, CreatePartyInput, UpdatePartyInput } from '@/lib/api/parties';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 
 const PAGINATION_LIMIT = 9;
 
@@ -46,6 +47,7 @@ type TabValue = PartyType;
 // ============================================
 
 export default function PartiesPage() {
+  useDocumentTitle('Parties');
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 

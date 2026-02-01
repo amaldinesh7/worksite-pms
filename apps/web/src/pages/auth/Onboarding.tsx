@@ -26,6 +26,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Typography } from '@/components/ui/typography';
 import { useAuthStore } from '@/stores/auth.store';
 import { completeOnboarding } from '@/lib/api/auth';
+import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle';
 
 // ============================================
 // Schema
@@ -55,6 +56,7 @@ const ORGANIZATION_TYPES = [
 // ============================================
 
 export default function Onboarding() {
+  useDocumentTitle('Setup');
   const navigate = useNavigate();
   const { setOrganization, updateUser, user } = useAuthStore();
 
@@ -121,7 +123,9 @@ export default function Onboarding() {
                 aria-invalid={!!errors.userName}
               />
               {errors.userName && (
-                <Typography variant="paragraph-small" className="text-destructive">{errors.userName.message}</Typography>
+                <Typography variant="paragraph-small" className="text-destructive">
+                  {errors.userName.message}
+                </Typography>
               )}
             </div>
 
@@ -138,7 +142,9 @@ export default function Onboarding() {
                 aria-invalid={!!errors.organizationName}
               />
               {errors.organizationName && (
-                <Typography variant="paragraph-small" className="text-destructive">{errors.organizationName.message}</Typography>
+                <Typography variant="paragraph-small" className="text-destructive">
+                  {errors.organizationName.message}
+                </Typography>
               )}
             </div>
 
