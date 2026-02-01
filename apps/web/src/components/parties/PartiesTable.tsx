@@ -236,9 +236,9 @@ export function PartiesTable({
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="bg-muted/30">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-sm font-medium text-primary">
+                  <TableHead key={header.id} className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}

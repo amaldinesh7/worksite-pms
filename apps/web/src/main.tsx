@@ -8,6 +8,7 @@ import { request } from './lib/api';
 
 import App from './App';
 import { ThemeProvider } from '@/components/theme-provider';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import './index.css';
 import './styles/globals.css';
 
@@ -31,8 +32,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <App />
-        <Toaster position="bottom-right" richColors closeButton />
+        <TooltipProvider delayDuration={300}>
+          <App />
+          <Toaster position="bottom-right" richColors closeButton />
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </React.StrictMode>

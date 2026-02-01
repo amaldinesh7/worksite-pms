@@ -155,9 +155,9 @@ export function ClientsTable({ clients, onEditClient }: ClientsTableProps) {
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className="bg-muted/50">
+            <TableRow key={headerGroup.id} className="bg-muted/30">
               {headerGroup.headers.map((header) => (
-                <TableHead key={header.id} className="text-xs font-medium text-muted-foreground">
+                <TableHead key={header.id} className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   {header.isPlaceholder
                     ? null
                     : flexRender(header.column.columnDef.header, header.getContext())}

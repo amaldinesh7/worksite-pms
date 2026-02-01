@@ -652,19 +652,19 @@ export function BOQImportView({ projectId, projectName, onBack }: BOQImportViewP
               <div className="max-h-[500px] overflow-auto">
                 <Table>
                   <TableHeader className="sticky top-0 bg-background">
-                    <TableRow>
-                      <TableHead className="w-12">
+                    <TableRow className="bg-muted/30">
+                      <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider w-12">
                         <Checkbox
                           checked={selectedItems.size === parsedResult.items.length}
                           onCheckedChange={toggleAll}
                         />
                       </TableHead>
-                      <TableHead className="w-20">Code</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="w-20">Unit</TableHead>
-                      <TableHead className="w-24 text-right">Qty</TableHead>
-                      <TableHead className="w-28 text-right">Rate</TableHead>
-                      <TableHead className="w-32 text-right">Amount</TableHead>
+                      <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider w-20">Code</TableHead>
+                      <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</TableHead>
+                      <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider w-20">Unit</TableHead>
+                      <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider w-24 text-right">Qty</TableHead>
+                      <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider w-28 text-right">Rate</TableHead>
+                      <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider w-32 text-right">Amount</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

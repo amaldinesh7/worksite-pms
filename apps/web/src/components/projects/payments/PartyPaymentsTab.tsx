@@ -14,12 +14,12 @@ import { format } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import {
   Plus,
-  DotsThree,
   Trash,
   CircleNotch,
   FunnelIcon,
   PencilSimple,
 } from '@phosphor-icons/react';
+import { MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -350,14 +350,14 @@ export function PartyPaymentsTab({ projectId }: PartyPaymentsTabProps) {
           )}
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>DATE</TableHead>
-                <TableHead className="text-right">AMOUNT</TableHead>
-                <TableHead>PARTY</TableHead>
-                <TableHead>TYPE</TableHead>
-                <TableHead>PAYMENT MODE</TableHead>
-                <TableHead>RECORDED BY</TableHead>
-                <TableHead className="w-12">ACTIONS</TableHead>
+              <TableRow className="bg-muted/30">
+                <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">DATE</TableHead>
+                <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider text-right">AMOUNT</TableHead>
+                <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">PARTY</TableHead>
+                <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">TYPE</TableHead>
+                <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">PAYMENT MODE</TableHead>
+                <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider">RECORDED BY</TableHead>
+                <TableHead className="text-xs font-medium text-muted-foreground uppercase tracking-wider w-12">ACTIONS</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -385,7 +385,7 @@ export function PartyPaymentsTab({ projectId }: PartyPaymentsTabProps) {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer">
-                          <DotsThree className="h-4 w-4" weight="bold" />
+                          <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
