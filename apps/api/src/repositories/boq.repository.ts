@@ -19,7 +19,7 @@ export interface CreateBOQItemData {
   sectionId?: string;
   stageId?: string;
   code?: string;
-  boqCategoryItemId: string;
+  boqCategoryItemId?: string; // Optional - items grouped by section instead
   description: string;
   unit: string;
   quantity: number;
@@ -228,7 +228,7 @@ export class BOQItemRepository {
       // Group by category ID and name
       const grouped = items.reduce(
         (acc, item) => {
-          const categoryId = item.boqCategoryItemId;
+          const categoryId = item.boqCategoryItemId ?? 'uncategorized';
           const categoryName = item.boqCategory?.name || 'Uncategorized';
           if (!acc[categoryId]) {
             acc[categoryId] = { categoryName, items: [] };
@@ -268,6 +268,42 @@ export class BOQItemRepository {
           return acc;
         },
         {} as Record<string, { stageName: string; items: typeof items }>
+      );
+
+      return grouped;
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
+
+  /**
+   * Get BOQ items grouped by section
+   * This is the preferred way to group BOQ items - sections are extracted from documents
+   */
+  async findBySection(organizationId: string, projectId: string) {
+    try {
+      const items = await prisma.bOQItem.findMany({
+        where: { organizationId, projectId },
+        include: boqItemInclude,
+        orderBy: [
+          { section: { sortOrder: 'asc' } },
+          { section: { name: 'asc' } },
+          { description: 'asc' },
+        ],
+      });
+
+      // Group by section (null section = "Other")
+      const grouped = items.reduce(
+        (acc, item) => {
+          const sectionKey = item.sectionId || 'other';
+          const sectionName = item.section?.name || 'Other';
+          if (!acc[sectionKey]) {
+            acc[sectionKey] = { sectionName, items: [] };
+          }
+          acc[sectionKey].items.push(item);
+          return acc;
+        },
+        {} as Record<string, { sectionName: string; items: typeof items }>
       );
 
       return grouped;
@@ -317,6 +353,29 @@ export class BOQItemRepository {
   }
 
   /**
+   * Update multiple BOQ items by section ID
+   * Used when deleting a section to move items to unassigned
+   */
+  async updateManyBySectionId(
+    organizationId: string,
+    projectId: string,
+    sectionId: string,
+    data: Partial<UpdateBOQItemData>
+  ) {
+    try {
+      return await prisma.bOQItem.updateMany({
+        where: { organizationId, projectId, sectionId },
+        data: {
+          ...(data.sectionId !== undefined && { sectionId: data.sectionId }),
+          ...(data.stageId !== undefined && { stageId: data.stageId }),
+        },
+      });
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
+
+  /**
    * Get BOQ statistics for a project
    */
   async getStats(organizationId: string, projectId: string) {
@@ -353,7 +412,7 @@ export class BOQItemRepository {
         totalActual += actualAmount;
 
         // Update category breakdown
-        const categoryId = item.boqCategoryItemId;
+        const categoryId = item.boqCategoryItemId ?? 'uncategorized';
         const categoryName = item.boqCategory?.name || 'Uncategorized';
         const sortOrder = item.boqCategory?.sortOrder ?? 999;
         if (!categoryBreakdownMap[categoryId]) {

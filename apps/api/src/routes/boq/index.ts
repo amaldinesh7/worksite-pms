@@ -12,6 +12,7 @@ import {
   ProjectParamsSchema,
   BOQItemParamsSchema,
   BOQSectionParamsSchema,
+  BOQItemImageParamsSchema,
   CreateBOQItemSchema,
   UpdateBOQItemSchema,
   CreateBOQSectionSchema,
@@ -19,11 +20,13 @@ import {
   ConfirmImportSchema,
   LinkExpenseSchema,
   UnlinkExpenseParamsSchema,
+  BatchBOQSchema,
 } from './boq.schema';
 import {
   listBOQItems,
   getBOQByCategory,
   getBOQByStage,
+  getBOQBySection,
   getBOQStats,
   getBOQItem,
   createBOQItem,
@@ -37,6 +40,10 @@ import {
   confirmImport,
   linkExpense,
   unlinkExpense,
+  batchUpdate,
+  uploadBOQItemImage,
+  getBOQItemImages,
+  deleteBOQItemImage,
 } from './boq.controller';
 
 export default async function boqRoutes(fastify: FastifyInstance) {
@@ -81,6 +88,17 @@ export default async function boqRoutes(fastify: FastifyInstance) {
       },
     },
     getBOQByStage
+  );
+
+  // Get BOQ items grouped by section (preferred view)
+  app.get(
+    '/projects/:projectId/boq/by-section',
+    {
+      schema: {
+        params: ProjectParamsSchema,
+      },
+    },
+    getBOQBySection
   );
 
   // Get BOQ statistics
@@ -194,12 +212,18 @@ export default async function boqRoutes(fastify: FastifyInstance) {
   // Import
   // ============================================
 
-  // Parse uploaded file
+  // Parse uploaded file (PDF, Excel, CSV)
+  // Extended timeout for AI-powered PDF parsing (can take 30-90 seconds)
   app.post(
     '/projects/:projectId/boq/import/parse',
     {
       schema: {
         params: ProjectParamsSchema,
+      },
+      config: {
+        // Fastify route-level timeout (3 minutes for large PDFs)
+        // This overrides the default server timeout for this specific route
+        timeout: 180000,
       },
     },
     parseFile
@@ -215,6 +239,22 @@ export default async function boqRoutes(fastify: FastifyInstance) {
       },
     },
     confirmImport
+  );
+
+  // ============================================
+  // Batch Operations
+  // ============================================
+
+  // Batch update BOQ items and sections
+  app.post(
+    '/projects/:projectId/boq/batch',
+    {
+      schema: {
+        params: ProjectParamsSchema,
+        body: BatchBOQSchema,
+      },
+    },
+    batchUpdate
   );
 
   // ============================================
@@ -242,5 +282,42 @@ export default async function boqRoutes(fastify: FastifyInstance) {
       },
     },
     unlinkExpense
+  );
+
+  // ============================================
+  // BOQ Item Images
+  // ============================================
+
+  // Get all images for a BOQ item
+  app.get(
+    '/projects/:projectId/boq/:id/images',
+    {
+      schema: {
+        params: BOQItemParamsSchema,
+      },
+    },
+    getBOQItemImages
+  );
+
+  // Upload image for a BOQ item
+  app.post(
+    '/projects/:projectId/boq/:id/images',
+    {
+      schema: {
+        params: BOQItemParamsSchema,
+      },
+    },
+    uploadBOQItemImage
+  );
+
+  // Delete image from a BOQ item
+  app.delete(
+    '/projects/:projectId/boq/:id/images/:imageId',
+    {
+      schema: {
+        params: BOQItemImageParamsSchema,
+      },
+    },
+    deleteBOQItemImage
   );
 }

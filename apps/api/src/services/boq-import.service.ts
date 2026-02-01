@@ -3,36 +3,64 @@
  *
  * Handles parsing of BOQ files (Excel, CSV, PDF) and converting them
  * to structured BOQ items for import.
+ *
+ * Uses AI (OpenAI GPT-4o) for:
+ * - PDF parsing via direct vision API (no third-party PDF libraries)
+ * - Excel/CSV content extraction and structure analysis
+ * - Section extraction from document structure
+ *
+ * Uses deterministic code for:
+ * - Number parsing (data integrity)
+ * - Validation and confidence scoring
+ *
+ * File Size Limit: 10MB maximum for direct AI processing
  */
 
 import { Readable } from 'stream';
 import ExcelJS from 'exceljs';
-import OpenAI from 'openai';
-// BOQ Category types (matches CategoryItem for boq_category type)
-type BOQCategory = 'MATERIAL' | 'LABOUR' | 'SUB_WORK' | 'EQUIPMENT' | 'OTHER';
+import {
+  getAIParser,
+  parseFinancialNumber,
+  getValidator,
+  type MappedBOQItem,
+} from './boq-extraction';
 
 // ============================================
-// Types
+// Constants
 // ============================================
+
+// Maximum file size for AI processing (10MB)
+export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export interface ParsedBOQItem {
   code?: string;
-  category: BOQCategory;
+  boqCategoryItemId?: string; // Optional - items grouped by section instead
   description: string;
   unit: string;
   quantity: number;
   rate: number;
   sectionName?: string;
+  stageId?: string;
   isReviewFlagged: boolean;
   flagReason?: string;
+  fieldConfidences?: {
+    description: number;
+    unit: number;
+    quantity: number;
+    rate: number;
+  };
 }
 
 export interface ParseResult {
+  fileName: string;
   items: ParsedBOQItem[];
   sections: string[];
   totalItems: number;
   flaggedItems: number;
   errors: string[];
+  checksumMatch: boolean;
+  documentTotal?: number;
+  calculatedTotal: number;
 }
 
 interface RawRowData {
@@ -62,53 +90,159 @@ const COLUMN_MAPPINGS = {
   section: ['section', 'category', 'work type', 'head', 'heading', 'group'],
 };
 
-// Category detection keywords
-const CATEGORY_KEYWORDS: Record<BOQCategory, string[]> = {
-  MATERIAL: [
-    'material',
-    'cement',
-    'steel',
-    'brick',
-    'sand',
-    'aggregate',
-    'tile',
-    'paint',
-    'pipe',
-    'wire',
-    'fitting',
-  ],
-  LABOUR: [
-    'labour',
-    'labor',
-    'mason',
-    'carpenter',
-    'plumber',
-    'electrician',
-    'worker',
-    'manpower',
-    'wages',
-  ],
-  SUB_WORK: ['sub work', 'subwork', 'sub-work', 'contract', 'subcontract', 'turnkey'],
-  EQUIPMENT: [
-    'equipment',
-    'machinery',
-    'machine',
-    'tool',
-    'rental',
-    'hire',
-    'crane',
-    'mixer',
-    'scaffolding',
-  ],
-  OTHER: ['other', 'misc', 'miscellaneous', 'general', 'overhead'],
-};
+// ============================================
+// Main Parse Function (AI-Powered)
+// ============================================
+
+/**
+ * Parse any document (PDF, Excel, CSV) using AI
+ *
+ * PDFs are sent directly to OpenAI GPT-4o Responses API (no third-party PDF libraries)
+ * Excel/CSV files are converted to JSON and then parsed by AI
+ *
+ * Items are grouped by sections extracted from the document (no category mapping)
+ */
+export async function parseDocument(buffer: Buffer, fileName: string): Promise<ParseResult> {
+  const extension = fileName.toLowerCase().split('.').pop();
+  const aiParser = getAIParser();
+  const startTime = Date.now();
+
+  console.log(
+    `[BOQImport] Starting parse for: ${fileName} (${extension}), size: ${buffer.length} bytes`
+  );
+
+  try {
+    // For PDF files: Send directly to OpenAI Responses API
+    if (extension === 'pdf') {
+      console.log(`[BOQImport] Processing PDF file via OpenAI Responses API...`);
+
+      const result = await aiParser.parseDocumentWithPDF(
+        buffer,
+        fileName,
+        [], // No category mapping needed
+        parseFinancialNumber
+      );
+
+      const elapsed = Date.now() - startTime;
+      console.log(`[BOQImport] PDF parsing completed in ${elapsed}ms`);
+      console.log(
+        `[BOQImport] Extracted ${result.items.length} items, ${result.errors.length} errors`
+      );
+
+      // Transform to ParsedBOQItem format (no category fields)
+      const items: ParsedBOQItem[] = result.items.map((item: MappedBOQItem) => ({
+        code: item.code,
+        description: item.description,
+        unit: item.unit,
+        quantity: item.quantity,
+        rate: item.rate,
+        sectionName: item.sectionName,
+        isReviewFlagged: item.isReviewRequired,
+        flagReason: item.reviewReason,
+        fieldConfidences: item.fieldConfidences,
+      }));
+
+      return {
+        fileName,
+        items,
+        sections: result.sections,
+        totalItems: items.length,
+        flaggedItems: items.filter((i) => i.isReviewFlagged).length,
+        errors: result.errors,
+        checksumMatch: result.checksumMatch,
+        documentTotal: result.documentTotal,
+        calculatedTotal: result.calculatedTotal,
+      };
+    }
+
+    // For Excel/CSV files: Send directly as file to AI (like PDF)
+    if (extension === 'xlsx' || extension === 'xls' || extension === 'csv') {
+      console.log(`[BOQImport] Sending Excel/CSV file directly to AI...`);
+
+      const result = await aiParser.parseDocumentWithExcel(
+        buffer,
+        fileName,
+        extension === 'csv',
+        [], // No category mapping needed
+        parseFinancialNumber
+      );
+
+      const elapsed = Date.now() - startTime;
+      console.log(`[BOQImport] Excel/CSV parsing completed in ${elapsed}ms`);
+      console.log(
+        `[BOQImport] Extracted ${result.items.length} items, ${result.errors.length} errors`
+      );
+
+      // Transform to ParsedBOQItem format (no category fields)
+      const items: ParsedBOQItem[] = result.items.map((item: MappedBOQItem) => ({
+        code: item.code,
+        description: item.description,
+        unit: item.unit,
+        quantity: item.quantity,
+        rate: item.rate,
+        sectionName: item.sectionName,
+        isReviewFlagged: item.isReviewRequired,
+        flagReason: item.reviewReason,
+        fieldConfidences: item.fieldConfidences,
+      }));
+
+      // Validate results
+      const validator = getValidator();
+      validator.validateItems(result.items, result.documentTotal);
+
+      return {
+        fileName,
+        items,
+        sections: result.sections,
+        totalItems: items.length,
+        flaggedItems: items.filter((i) => i.isReviewFlagged).length,
+        errors: result.errors,
+        checksumMatch: result.checksumMatch,
+        documentTotal: result.documentTotal,
+        calculatedTotal: result.calculatedTotal,
+      };
+    }
+
+    // Unsupported file type
+    console.error(`[BOQImport] Unsupported file type: ${extension}`);
+    return {
+      fileName,
+      items: [],
+      sections: [],
+      totalItems: 0,
+      flaggedItems: 0,
+      errors: [`Unsupported file type: ${extension}`],
+      checksumMatch: true,
+      calculatedTotal: 0,
+    };
+  } catch (error) {
+    const elapsed = Date.now() - startTime;
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    const stack = error instanceof Error ? error.stack : '';
+
+    console.error(`[BOQImport] FATAL ERROR after ${elapsed}ms: ${message}`);
+    console.error(`[BOQImport] Stack trace: ${stack}`);
+
+    return {
+      fileName,
+      items: [],
+      sections: [],
+      totalItems: 0,
+      flaggedItems: 0,
+      errors: [message],
+      checksumMatch: true,
+      calculatedTotal: 0,
+    };
+  }
+}
 
 // ============================================
-// Excel/CSV Parser
+// Legacy Excel/CSV Parser (Non-AI Fallback)
 // ============================================
 
 /**
  * Parse an Excel or CSV file buffer into BOQ items
+ * This is the legacy parser - use parseDocument for AI-powered parsing
  */
 export async function parseExcelBuffer(buffer: Buffer, fileName: string): Promise<ParseResult> {
   const errors: string[] = [];
@@ -116,13 +250,10 @@ export async function parseExcelBuffer(buffer: Buffer, fileName: string): Promis
   const sectionsSet = new Set<string>();
 
   try {
-    // Read workbook using ExcelJS
     const workbook = new ExcelJS.Workbook();
-
-    // Determine file type and load accordingly
     const isCSV = fileName.toLowerCase().endsWith('.csv');
+
     if (isCSV) {
-      // For CSV files, convert buffer to readable stream and parse
       const csvStream = Readable.from(buffer);
       await workbook.csv.read(csvStream);
     } else {
@@ -130,29 +261,28 @@ export async function parseExcelBuffer(buffer: Buffer, fileName: string): Promis
       await workbook.xlsx.load(buffer);
     }
 
-    // Get first sheet
     const worksheet = workbook.worksheets[0];
     if (!worksheet) {
       return {
+        fileName,
         items: [],
         sections: [],
         totalItems: 0,
         flaggedItems: 0,
         errors: ['No sheets found in file'],
+        checksumMatch: true,
+        calculatedTotal: 0,
       };
     }
 
-    // Convert worksheet to JSON-like format
     const rawData: RawRowData[] = [];
     let headers: string[] = [];
 
     worksheet.eachRow((row: ExcelJS.Row, rowNumber: number) => {
       if (rowNumber === 1) {
-        // First row is headers
         const values = row.values as ExcelJS.CellValue[];
         headers = values.slice(1).map((val: ExcelJS.CellValue) => String(val ?? '').trim());
       } else {
-        // Data rows
         const rowData: RawRowData = {};
         const values = row.values as ExcelJS.CellValue[];
         values.slice(1).forEach((val: ExcelJS.CellValue, index: number) => {
@@ -166,47 +296,53 @@ export async function parseExcelBuffer(buffer: Buffer, fileName: string): Promis
 
     if (rawData.length === 0) {
       return {
+        fileName,
         items: [],
         sections: [],
         totalItems: 0,
         flaggedItems: 0,
         errors: ['No data found in file'],
+        checksumMatch: true,
+        calculatedTotal: 0,
       };
     }
 
-    // Detect column mappings from headers
     const columnMap = detectColumnMappings(headers);
 
     if (!columnMap.description) {
       errors.push('Could not detect description column');
-      return { items: [], sections: [], totalItems: 0, flaggedItems: 0, errors };
+      return {
+        fileName,
+        items: [],
+        sections: [],
+        totalItems: 0,
+        flaggedItems: 0,
+        errors,
+        checksumMatch: true,
+        calculatedTotal: 0,
+      };
     }
 
-    // Parse each row
     let currentSection = '';
 
     for (let i = 0; i < rawData.length; i++) {
       const row = rawData[i];
-      const rowNum = i + 2; // Excel row number (1-indexed + header)
+      const rowNum = i + 2;
 
-      // Check if this is a section header row (has description but no quantity/rate)
       const description = getColumnValue(row, columnMap.description);
       const quantity = parseNumber(getColumnValue(row, columnMap.quantity));
       const rate = parseNumber(getColumnValue(row, columnMap.rate));
       const amount = parseNumber(getColumnValue(row, columnMap.amount));
 
-      // Skip empty rows
       if (!description || description.toString().trim() === '') {
         continue;
       }
 
-      // Detect section headers (rows with description but no numeric values)
       if (
         (quantity === 0 || isNaN(quantity)) &&
         (rate === 0 || isNaN(rate)) &&
         (amount === 0 || isNaN(amount))
       ) {
-        // Check if it looks like a section header
         const descStr = description.toString().toUpperCase();
         if (descStr.length < 100 && !descStr.includes('TOTAL')) {
           currentSection = description.toString().trim();
@@ -215,7 +351,6 @@ export async function parseExcelBuffer(buffer: Buffer, fileName: string): Promis
         }
       }
 
-      // Parse as BOQ item
       const item = parseRowToItem(row, columnMap, currentSection, rowNum, errors);
       if (item) {
         items.push(item);
@@ -223,23 +358,37 @@ export async function parseExcelBuffer(buffer: Buffer, fileName: string): Promis
     }
 
     const flaggedItems = items.filter((item) => item.isReviewFlagged).length;
+    const calculatedTotal = items.reduce((sum, item) => sum + item.quantity * item.rate, 0);
 
     return {
+      fileName,
       items,
       sections: Array.from(sectionsSet),
       totalItems: items.length,
       flaggedItems,
       errors,
+      checksumMatch: true,
+      calculatedTotal,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error parsing file';
-    return { items: [], sections: [], totalItems: 0, flaggedItems: 0, errors: [message] };
+    return {
+      fileName,
+      items: [],
+      sections: [],
+      totalItems: 0,
+      flaggedItems: 0,
+      errors: [message],
+      checksumMatch: true,
+      calculatedTotal: 0,
+    };
   }
 }
 
-/**
- * Detect column mappings from headers
- */
+// ============================================
+// Helper Functions
+// ============================================
+
 function detectColumnMappings(headers: string[]): Record<string, string | undefined> {
   const map: Record<string, string | undefined> = {};
   const normalizedHeaders = headers.map((h) => h.toLowerCase().trim());
@@ -257,33 +406,21 @@ function detectColumnMappings(headers: string[]): Record<string, string | undefi
   return map;
 }
 
-/**
- * Get value from row using column mapping
- */
 function getColumnValue(row: RawRowData, column: string | undefined): ExcelJS.CellValue {
   if (!column) return undefined;
   return row[column];
 }
 
-/**
- * Parse a number from various formats
- */
 function parseNumber(value: ExcelJS.CellValue): number {
   if (value === undefined || value === null || value === '') return 0;
   if (typeof value === 'number') return value;
 
-  // Handle ExcelJS cell value types
   const strValue = String(value);
-
-  // Remove currency symbols, commas, spaces
   const cleaned = strValue.replace(/[₹$,\s]/g, '').trim();
   const num = parseFloat(cleaned);
   return isNaN(num) ? 0 : num;
 }
 
-/**
- * Parse a row into a BOQ item
- */
 function parseRowToItem(
   row: RawRowData,
   columnMap: Record<string, string | undefined>,
@@ -303,20 +440,14 @@ function parseRowToItem(
   let rate = parseNumber(getColumnValue(row, columnMap.rate));
   const amount = parseNumber(getColumnValue(row, columnMap.amount));
 
-  // If we have amount but not rate, calculate rate
   if (amount > 0 && rate === 0 && quantity > 0) {
     rate = amount / quantity;
   }
 
-  // If we have amount but not quantity, and rate exists, calculate quantity
   if (amount > 0 && quantity === 0 && rate > 0) {
     quantity = amount / rate;
   }
 
-  // Detect category from description and section
-  const category = detectCategory(description, currentSection);
-
-  // Flag items that need review
   let isReviewFlagged = false;
   let flagReason: string | undefined;
 
@@ -327,7 +458,6 @@ function parseRowToItem(
     isReviewFlagged = true;
     flagReason = 'Rate and amount are both zero or missing';
   } else if (!unit || unit === 'nos') {
-    // Only flag if unit seems important
     const descLower = description.toLowerCase();
     if (
       descLower.includes('sq') ||
@@ -342,7 +472,6 @@ function parseRowToItem(
 
   return {
     code: code || undefined,
-    category,
     description,
     unit,
     quantity: quantity || 1,
@@ -353,143 +482,13 @@ function parseRowToItem(
   };
 }
 
-/**
- * Detect BOQ category from description and section name
- */
-function detectCategory(description: string, section: string): BOQCategory {
-  const text = `${description} ${section}`.toLowerCase();
-
-  for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    for (const keyword of keywords) {
-      if (text.includes(keyword)) {
-        return category as BOQCategory;
-      }
-    }
-  }
-
-  return 'MATERIAL'; // Default to material
-}
-
-// ============================================
-// PDF Parser (AI-powered)
-// ============================================
-
-/**
- * Parse a PDF file using OpenAI GPT-4
- */
-export async function parsePDFWithAI(pdfText: string, openaiApiKey: string): Promise<ParseResult> {
-  const errors: string[] = [];
-
-  try {
-    const openai = new OpenAI({ apiKey: openaiApiKey });
-
-    const systemPrompt = `You are a construction BOQ (Bill of Quantities) parser. Extract line items from the provided BOQ document text.
-
-For each item, extract:
-- code: Item code/number if present
-- description: Full description of the work/material
-- unit: Unit of measurement (sqft, cum, kg, nos, etc.)
-- quantity: Numeric quantity
-- rate: Unit rate/price
-- sectionName: The section/category this item belongs to (e.g., "EARTHWORK", "CONCRETE WORK")
-- category: One of MATERIAL, LABOUR, SUB_WORK, EQUIPMENT, or OTHER
-
-Rules:
-1. Skip header rows, totals, and subtotals
-2. If quantity or rate is missing, set to 0 and flag for review
-3. Detect the section from context (usually bold headers or uppercase text)
-4. Be conservative - if unsure about a value, flag for review
-
-Return a JSON object with:
-{
-  "items": [...],
-  "sections": ["section1", "section2", ...],
-  "errors": ["any parsing issues"]
-}`;
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Parse this BOQ document:\n\n${pdfText.substring(0, 15000)}` }, // Limit text length
-      ],
-      response_format: { type: 'json_object' },
-      temperature: 0.1, // Low temperature for consistent parsing
-    });
-
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      return {
-        items: [],
-        sections: [],
-        totalItems: 0,
-        flaggedItems: 0,
-        errors: ['No response from AI'],
-      };
-    }
-
-    const parsed = JSON.parse(content) as {
-      items: Array<{
-        code?: string;
-        description: string;
-        unit: string;
-        quantity: number;
-        rate: number;
-        sectionName?: string;
-        category: string;
-        isReviewFlagged?: boolean;
-        flagReason?: string;
-      }>;
-      sections: string[];
-      errors?: string[];
-    };
-
-    // Validate and transform items
-    const items: ParsedBOQItem[] = parsed.items.map((item) => ({
-      code: item.code,
-      category: validateCategory(item.category),
-      description: item.description || '',
-      unit: item.unit || 'nos',
-      quantity: item.quantity || 0,
-      rate: item.rate || 0,
-      sectionName: item.sectionName,
-      isReviewFlagged: item.isReviewFlagged || item.quantity <= 0 || item.rate <= 0,
-      flagReason:
-        item.flagReason ||
-        (item.quantity <= 0 || item.rate <= 0 ? 'AI flagged for review' : undefined),
-    }));
-
-    const flaggedItems = items.filter((item) => item.isReviewFlagged).length;
-
-    return {
-      items,
-      sections: parsed.sections || [],
-      totalItems: items.length,
-      flaggedItems,
-      errors: [...errors, ...(parsed.errors || [])],
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error parsing PDF';
-    return { items: [], sections: [], totalItems: 0, flaggedItems: 0, errors: [message] };
-  }
-}
-
-/**
- * Validate category string to enum
- */
-function validateCategory(category: string): BOQCategory {
-  const upper = category?.toUpperCase() || '';
-  if (['MATERIAL', 'LABOUR', 'SUB_WORK', 'EQUIPMENT', 'OTHER'].includes(upper)) {
-    return upper as BOQCategory;
-  }
-  return 'MATERIAL';
-}
-
 // ============================================
 // Export
 // ============================================
 
 export const boqImportService = {
+  parseDocument,
   parseExcelBuffer,
-  parsePDFWithAI,
+  parseFinancialNumber,
+  MAX_FILE_SIZE,
 };

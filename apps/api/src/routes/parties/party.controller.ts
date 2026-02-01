@@ -6,6 +6,7 @@ import {
   sendPaginated,
   sendNotFound,
   sendNoContent,
+  sendError,
   buildPagination,
 } from '../../lib/response.utils';
 import type {
@@ -203,10 +204,7 @@ export const getClientProjects = handle(
     }
 
     if (party.type !== 'CLIENT') {
-      return reply.status(400).send({
-        success: false,
-        error: 'Party is not a client',
-      });
+      return sendError(reply, 400, 'Party is not a client', 'INVALID_PARTY_TYPE');
     }
 
     const projects = await partyRepository.getClientProjects(

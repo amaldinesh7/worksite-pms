@@ -104,15 +104,27 @@ export class OverviewRepository {
       ]);
 
       // Calculate outstanding receivables (project budget - payments IN)
+      // Filter to non-completed projects for receivables calculation
+      const activeProjectIds = projects.filter((p) => p.status !== 'COMPLETED').map((p) => p.id);
+
+      // Batch fetch all IN payments grouped by projectId (single query instead of N+1)
+      const paymentsGrouped = await prisma.payment.groupBy({
+        by: ['projectId'],
+        where: { organizationId, type: 'IN', projectId: { in: activeProjectIds } },
+        _sum: { amount: true },
+      });
+
+      // Build paymentsMap: Map<projectId, summedAmount>
+      const paymentsMap = new Map(
+        paymentsGrouped.map((p) => [p.projectId, p._sum.amount?.toNumber() || 0])
+      );
+
+      // Compute totalReceivables in memory
       let totalReceivables = 0;
       for (const project of projects) {
         if (project.status === 'COMPLETED') continue;
         const budget = project.amount?.toNumber() || 0;
-        const paymentsIn = await prisma.payment.aggregate({
-          where: { organizationId, projectId: project.id, type: 'IN' },
-          _sum: { amount: true },
-        });
-        const received = paymentsIn._sum.amount?.toNumber() || 0;
+        const received = paymentsMap.get(project.id) || 0;
         totalReceivables += Math.max(0, budget - received);
       }
 
@@ -336,37 +348,59 @@ export class OverviewRepository {
         select: { id: true, name: true, type: true },
       });
 
+      if (parties.length === 0) return [];
+
+      const partyIds = parties.map((p) => p.id);
+
+      // Batch fetch all expenses for these parties (single query instead of N+1)
+      const allExpenses = await prisma.expense.findMany({
+        where: { organizationId, partyId: { in: partyIds } },
+        select: { partyId: true, rate: true, quantity: true, expenseDate: true },
+      });
+
+      // Batch fetch payment sums grouped by partyId (single query instead of N+1)
+      const paymentsGrouped = await prisma.payment.groupBy({
+        by: ['partyId'],
+        where: { organizationId, partyId: { in: partyIds } },
+        _sum: { amount: true },
+      });
+
+      // Build expensesMap: Map<partyId, { total: number, oldestDate: Date }>
+      const expensesMap = new Map<string, { total: number; oldestDate: Date }>();
+      for (const expense of allExpenses) {
+        const partyId = expense.partyId;
+        if (!partyId) continue;
+        const amount = expense.rate.toNumber() * expense.quantity.toNumber();
+        const existing = expensesMap.get(partyId);
+        if (existing) {
+          existing.total += amount;
+          if (expense.expenseDate < existing.oldestDate) {
+            existing.oldestDate = expense.expenseDate;
+          }
+        } else {
+          expensesMap.set(partyId, { total: amount, oldestDate: expense.expenseDate });
+        }
+      }
+
+      // Build paymentsMap: Map<partyId, summedAmount>
+      const paymentsMap = new Map(
+        paymentsGrouped.map((p) => [p.partyId, p._sum.amount?.toNumber() || 0])
+      );
+
+      // Compute outstanding items in memory
       const outstandingItems: OutstandingItem[] = [];
-
       for (const party of parties) {
-        // Calculate expenses
-        const expenses = await prisma.expense.findMany({
-          where: { organizationId, partyId: party.id },
-          select: { rate: true, quantity: true, expenseDate: true },
-          orderBy: { expenseDate: 'asc' },
-        });
+        const expenseData = expensesMap.get(party.id);
+        if (!expenseData) continue;
 
-        if (expenses.length === 0) continue;
-
-        const totalExpenses = expenses.reduce(
-          (sum, e) => sum + e.rate.toNumber() * e.quantity.toNumber(),
-          0
-        );
-
-        // Calculate payments
-        const paymentsSum = await prisma.payment.aggregate({
-          where: { organizationId, partyId: party.id },
-          _sum: { amount: true },
-        });
-        const totalPayments = paymentsSum._sum.amount?.toNumber() || 0;
-
+        const totalExpenses = expenseData.total;
+        const totalPayments = paymentsMap.get(party.id) || 0;
         const outstanding = totalExpenses - totalPayments;
+
         if (outstanding <= 0) continue;
 
-        // Calculate age from oldest expense
-        const oldestExpense = expenses[0];
         const ageDays = Math.floor(
-          (Date.now() - oldestExpense.expenseDate.getTime()) / (1000 * 60 * 60 * 24)
+          (Date.now() - expenseData.oldestDate.getTime()) / (1000 * 60 * 60 * 24)
         );
 
         outstandingItems.push({

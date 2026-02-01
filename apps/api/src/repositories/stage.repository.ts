@@ -61,6 +61,25 @@ const stageInclude = {
   },
 } as const;
 
+// Include object with task counts by status (for list views that need progress)
+const stageIncludeWithTaskStats = {
+  ...stageInclude,
+  tasks: {
+    select: {
+      status: true,
+    },
+  },
+} as const;
+
+// Helper to compute completed task count from stage data
+function computeTaskProgress(stage: { tasks?: { status: string }[] }) {
+  if (!stage.tasks || stage.tasks.length === 0) {
+    return { completedTaskCount: 0 };
+  }
+  const completedTaskCount = stage.tasks.filter((t) => t.status === 'COMPLETED').length;
+  return { completedTaskCount };
+}
+
 export class StageRepository {
   async create(organizationId: string, data: CreateStageData): Promise<Stage> {
     try {
@@ -193,25 +212,31 @@ export class StageRepository {
     }
   }
 
-  async findByProject(organizationId: string, projectId: string): Promise<Stage[]> {
+  async findByProject(organizationId: string, projectId: string) {
     try {
-      return await prisma.stage.findMany({
+      const stages = await prisma.stage.findMany({
         where: {
           organizationId,
           projectId,
         },
-        include: stageInclude,
+        include: stageIncludeWithTaskStats,
         orderBy: { startDate: 'asc' },
+      });
+
+      // Transform to include completedTaskCount and remove raw tasks array
+      return stages.map((stage) => {
+        const { tasks, ...rest } = stage;
+        return {
+          ...rest,
+          ...computeTaskProgress({ tasks }),
+        };
       });
     } catch (error) {
       throw handlePrismaError(error);
     }
   }
 
-  async findAll(
-    organizationId: string,
-    options?: StageListOptions
-  ): Promise<{ stages: Stage[]; total: number }> {
+  async findAll(organizationId: string, options?: StageListOptions) {
     try {
       const where: Prisma.StageWhereInput = {
         organizationId,
@@ -219,16 +244,25 @@ export class StageRepository {
         ...(options?.status && { status: options.status }),
       };
 
-      const [stages, total] = await Promise.all([
+      const [stagesRaw, total] = await Promise.all([
         prisma.stage.findMany({
           where,
           skip: options?.skip,
           take: options?.take,
-          include: stageInclude,
+          include: stageIncludeWithTaskStats,
           orderBy: { startDate: 'asc' },
         }),
         prisma.stage.count({ where }),
       ]);
+
+      // Transform to include completedTaskCount and remove raw tasks array
+      const stages = stagesRaw.map((stage) => {
+        const { tasks, ...rest } = stage;
+        return {
+          ...rest,
+          ...computeTaskProgress({ tasks }),
+        };
+      });
 
       return { stages, total };
     } catch (error) {
@@ -396,8 +430,7 @@ export class StageRepository {
       const percentUsed = budgetAmount > 0 ? (totalExpenses / budgetAmount) * 100 : 0;
 
       const taskCount = taskStats.reduce((sum, s) => sum + s._count, 0);
-      const completedTaskCount =
-        taskStats.find((s) => s.status === 'COMPLETED')?._count || 0;
+      const completedTaskCount = taskStats.find((s) => s.status === 'COMPLETED')?._count || 0;
       const taskProgress = taskCount > 0 ? (completedTaskCount / taskCount) * 100 : 0;
 
       return {

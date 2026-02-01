@@ -22,12 +22,18 @@ import roleRoutes from './routes/roles/index';
 import teamRoutes from './routes/team/index';
 import boqRoutes from './routes/boq/index';
 import overviewRoutes from './routes/overview/index';
+import importRoutes from './routes/imports/index';
 
 // Middleware
 import { registerAuthMiddleware } from './middleware/auth.middleware';
 
 // Prisma
 import { disconnectPrisma } from './lib/prisma';
+
+// Job Queue & WebSocket
+import { initJobQueue, stopJobQueue } from './lib/job-queue';
+import { registerWebSocketRoutes } from './lib/websocket';
+import { startImportWorker, stopImportWorker } from './services/import-worker.service';
 
 export interface AppOptions {
   logger?: boolean;
@@ -60,7 +66,7 @@ export async function buildApp(options: AppOptions = {}) {
   // Multipart for file uploads (documents, BOQ import, etc.)
   await fastify.register(multipart, {
     limits: {
-      fileSize: 50 * 1024 * 1024, // 50MB max file size
+      fileSize: 10 * 1024 * 1024, // 10MB max file size
     },
   });
 
@@ -92,6 +98,8 @@ export async function buildApp(options: AppOptions = {}) {
       '/api/team',
       '/api/boq',
       '/api/overview',
+      '/api/imports',
+      '/api/ws/imports',
     ],
   }));
 
@@ -113,6 +121,16 @@ export async function buildApp(options: AppOptions = {}) {
   await fastify.register(teamRoutes, { prefix: '/api/team' });
   await fastify.register(boqRoutes, { prefix: '/api' });
   await fastify.register(overviewRoutes, { prefix: '/api/overview' });
+  await fastify.register(importRoutes, { prefix: '/api' });
+
+  // Register WebSocket routes for real-time import updates
+  await registerWebSocketRoutes(fastify);
+
+  // Initialize job queue for async import processing
+  await initJobQueue();
+
+  // Start import worker to process queued jobs
+  await startImportWorker();
 
   // Global error handler
   fastify.setErrorHandler((error: FastifyError, request, reply) => {
@@ -142,6 +160,8 @@ export async function buildApp(options: AppOptions = {}) {
 
   // Graceful shutdown
   app.addHook('onClose', async () => {
+    await stopImportWorker();
+    await stopJobQueue();
     await disconnectPrisma();
   });
 
