@@ -185,7 +185,8 @@ export default function ProjectDetailPage() {
         await updateMutation.mutateAsync({ id, data });
         toast.success('Project updated successfully');
         setIsEditDialogOpen(false);
-        refetchProject();
+        // Await refetch to ensure UI shows updated data immediately
+        await refetchProject();
       } catch {
         toast.error('Failed to update project');
       }
