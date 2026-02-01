@@ -21,6 +21,7 @@ export const createProjectSchema = z.object({
   area: z.string().optional(),
   projectPicture: z.string().optional(),
   status: projectStatusEnum.optional().default('ACTIVE'),
+  memberIds: z.array(z.string()).optional(),
 });
 
 export const updateProjectSchema = createProjectSchema.partial();

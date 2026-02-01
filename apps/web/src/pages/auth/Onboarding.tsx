@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Typography } from '@/components/ui/typography';
 import { useAuthStore } from '@/stores/auth.store';
 import { completeOnboarding } from '@/lib/api/auth';
 
@@ -120,7 +121,7 @@ export default function Onboarding() {
                 aria-invalid={!!errors.userName}
               />
               {errors.userName && (
-                <p className="text-sm text-destructive">{errors.userName.message}</p>
+                <Typography variant="paragraph-small" className="text-destructive">{errors.userName.message}</Typography>
               )}
             </div>
 
@@ -137,7 +138,7 @@ export default function Onboarding() {
                 aria-invalid={!!errors.organizationName}
               />
               {errors.organizationName && (
-                <p className="text-sm text-destructive">{errors.organizationName.message}</p>
+                <Typography variant="paragraph-small" className="text-destructive">{errors.organizationName.message}</Typography>
               )}
             </div>
 

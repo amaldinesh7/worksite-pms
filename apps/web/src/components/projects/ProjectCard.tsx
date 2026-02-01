@@ -5,7 +5,7 @@
  * Includes a 3-dot menu for edit/delete actions.
  */
 
-import { Building2, MoreVertical, Pencil, Trash2, Calendar, Users } from 'lucide-react';
+import { Building2, MoreVertical, Pencil, Trash2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { TypographySmall, TypographyMuted } from '@/components/ui/typography';
+import { Typography } from '@/components/ui/typography';
 import type { Project } from '@/lib/api/projects';
 
 // ============================================
@@ -29,29 +29,6 @@ interface ProjectCardProps {
   onDelete: (project: Project) => void;
   onClick?: (project: Project) => void;
 }
-
-// ============================================
-// Helpers
-// ============================================
-
-function formatCurrency(amount: number | null): string {
-  if (amount === null) return '—';
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-IN', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
 
 // ============================================
 // Component
@@ -91,11 +68,11 @@ export function ProjectCard({ project, onEdit, onDelete, onClick }: ProjectCardP
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 bg-card/80 hover:bg-card cursor-pointer"
+              size="iconMini"
+              className="bg-card/80 hover:bg-card cursor-pointer"
               onClick={(e) => e.stopPropagation()}
             >
-              <MoreVertical className="h-4 w-4" />
+              <MoreVertical />
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
@@ -139,30 +116,18 @@ export function ProjectCard({ project, onEdit, onDelete, onClick }: ProjectCardP
 
       {/* Card Content */}
       <div className="p-4 space-y-3">
-        {/* Title and Type */}
-        <div className="space-y-1">
-          <div className="flex items-start justify-between gap-2">
-            <TypographySmall className="font-semibold line-clamp-1">{project.name}</TypographySmall>
-            <Badge variant="outline" className="shrink-0 text-xs">
-              {project.projectType?.name || 'Unknown'}
-            </Badge>
-          </div>
-        </div>
-
-        {/* Budget and Start Date */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Budget: {formatCurrency(project.amount)}</span>
-          <span className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            Started: {formatDate(project.startDate)}
-          </span>
-        </div>
+        {/* Title */}
+        <Typography variant="paragraph-small" className="font-semibold line-clamp-1">
+          {project.name}
+        </Typography>
 
         {/* Progress */}
         <div className="space-y-1">
           <div className="flex items-center justify-between text-xs">
-            <TypographyMuted className="text-xs">Progress</TypographyMuted>
-            <TypographySmall>{project.progress || 0}%</TypographySmall>
+            <Typography variant="muted" className="text-xs">
+              Progress
+            </Typography>
+            <Typography variant="paragraph-small">{project.progress || 0}%</Typography>
           </div>
           <Progress value={project.progress || 0} className="h-1.5" />
         </div>

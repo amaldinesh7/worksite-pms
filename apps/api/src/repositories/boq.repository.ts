@@ -6,7 +6,7 @@
  */
 
 import { Decimal } from '@prisma/client/runtime/library';
-import type { BOQCategory, Prisma } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { handlePrismaError } from '../lib/database-errors';
 
@@ -19,7 +19,7 @@ export interface CreateBOQItemData {
   sectionId?: string;
   stageId?: string;
   code?: string;
-  category: BOQCategory;
+  boqCategoryItemId?: string; // Optional - items grouped by section instead
   description: string;
   unit: string;
   quantity: number;
@@ -33,7 +33,7 @@ export interface UpdateBOQItemData {
   sectionId?: string | null;
   stageId?: string | null;
   code?: string | null;
-  category?: BOQCategory;
+  boqCategoryItemId?: string;
   description?: string;
   unit?: string;
   quantity?: number;
@@ -52,11 +52,11 @@ export interface CreateBOQSectionData {
 export interface BOQListOptions {
   skip?: number;
   take?: number;
-  category?: BOQCategory;
+  boqCategoryItemId?: string;
   stageId?: string;
   sectionId?: string;
   search?: string;
-  sortBy?: 'description' | 'category' | 'amount' | 'createdAt';
+  sortBy?: 'description' | 'boqCategoryItemId' | 'amount' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -64,6 +64,7 @@ export interface BOQListOptions {
 const boqItemInclude = {
   section: { select: { id: true, name: true } },
   stage: { select: { id: true, name: true } },
+  boqCategory: { select: { id: true, name: true } },
   expenseLinks: {
     include: {
       expense: {
@@ -96,7 +97,7 @@ export class BOQItemRepository {
           sectionId: data.sectionId,
           stageId: data.stageId,
           code: data.code,
-          category: data.category,
+          boqCategoryItemId: data.boqCategoryItemId,
           description: data.description,
           unit: data.unit,
           quantity: new Decimal(data.quantity),
@@ -123,7 +124,7 @@ export class BOQItemRepository {
         sectionId: item.sectionId,
         stageId: item.stageId,
         code: item.code,
-        category: item.category,
+        boqCategoryItemId: item.boqCategoryItemId,
         description: item.description,
         unit: item.unit,
         quantity: new Decimal(item.quantity),
@@ -162,7 +163,7 @@ export class BOQItemRepository {
       const {
         skip = 0,
         take = 50,
-        category,
+        boqCategoryItemId,
         stageId,
         sectionId,
         search,
@@ -173,7 +174,7 @@ export class BOQItemRepository {
       const where: Prisma.BOQItemWhereInput = {
         organizationId,
         projectId,
-        ...(category && { category }),
+        ...(boqCategoryItemId && { boqCategoryItemId }),
         ...(stageId && { stageId }),
         ...(sectionId && { sectionId }),
         ...(search && {
@@ -189,6 +190,9 @@ export class BOQItemRepository {
       if (sortBy === 'amount') {
         // Sort by calculated amount (rate * quantity) - we'll sort by rate as proxy
         orderBy = { rate: sortOrder };
+      } else if (sortBy === 'boqCategoryItemId') {
+        // Sort by category name
+        orderBy = { boqCategory: { name: sortOrder } };
       } else {
         orderBy = { [sortBy]: sortOrder };
       }
@@ -218,20 +222,21 @@ export class BOQItemRepository {
       const items = await prisma.bOQItem.findMany({
         where: { organizationId, projectId },
         include: boqItemInclude,
-        orderBy: [{ category: 'asc' }, { description: 'asc' }],
+        orderBy: [{ boqCategory: { name: 'asc' } }, { description: 'asc' }],
       });
 
-      // Group by category
+      // Group by category ID and name
       const grouped = items.reduce(
         (acc, item) => {
-          const cat = item.category;
-          if (!acc[cat]) {
-            acc[cat] = [];
+          const categoryId = item.boqCategoryItemId ?? 'uncategorized';
+          const categoryName = item.boqCategory?.name || 'Uncategorized';
+          if (!acc[categoryId]) {
+            acc[categoryId] = { categoryName, items: [] };
           }
-          acc[cat].push(item);
+          acc[categoryId].items.push(item);
           return acc;
         },
-        {} as Record<BOQCategory, typeof items>
+        {} as Record<string, { categoryName: string; items: typeof items }>
       );
 
       return grouped;
@@ -272,6 +277,42 @@ export class BOQItemRepository {
   }
 
   /**
+   * Get BOQ items grouped by section
+   * This is the preferred way to group BOQ items - sections are extracted from documents
+   */
+  async findBySection(organizationId: string, projectId: string) {
+    try {
+      const items = await prisma.bOQItem.findMany({
+        where: { organizationId, projectId },
+        include: boqItemInclude,
+        orderBy: [
+          { section: { sortOrder: 'asc' } },
+          { section: { name: 'asc' } },
+          { description: 'asc' },
+        ],
+      });
+
+      // Group by section (null section = "Other")
+      const grouped = items.reduce(
+        (acc, item) => {
+          const sectionKey = item.sectionId || 'other';
+          const sectionName = item.section?.name || 'Other';
+          if (!acc[sectionKey]) {
+            acc[sectionKey] = { sectionName, items: [] };
+          }
+          acc[sectionKey].items.push(item);
+          return acc;
+        },
+        {} as Record<string, { sectionName: string; items: typeof items }>
+      );
+
+      return grouped;
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
+
+  /**
    * Update a BOQ item
    */
   async update(organizationId: string, id: string, data: UpdateBOQItemData) {
@@ -282,7 +323,7 @@ export class BOQItemRepository {
           ...(data.sectionId !== undefined && { sectionId: data.sectionId }),
           ...(data.stageId !== undefined && { stageId: data.stageId }),
           ...(data.code !== undefined && { code: data.code }),
-          ...(data.category && { category: data.category }),
+          ...(data.boqCategoryItemId && { boqCategoryItemId: data.boqCategoryItemId }),
           ...(data.description && { description: data.description }),
           ...(data.unit && { unit: data.unit }),
           ...(data.quantity !== undefined && { quantity: new Decimal(data.quantity) }),
@@ -312,6 +353,29 @@ export class BOQItemRepository {
   }
 
   /**
+   * Update multiple BOQ items by section ID
+   * Used when deleting a section to move items to unassigned
+   */
+  async updateManyBySectionId(
+    organizationId: string,
+    projectId: string,
+    sectionId: string,
+    data: Partial<UpdateBOQItemData>
+  ) {
+    try {
+      return await prisma.bOQItem.updateMany({
+        where: { organizationId, projectId, sectionId },
+        data: {
+          ...(data.sectionId !== undefined && { sectionId: data.sectionId }),
+          ...(data.stageId !== undefined && { stageId: data.stageId }),
+        },
+      });
+    } catch (error) {
+      throw handlePrismaError(error);
+    }
+  }
+
+  /**
    * Get BOQ statistics for a project
    */
   async getStats(organizationId: string, projectId: string) {
@@ -319,6 +383,7 @@ export class BOQItemRepository {
       const items = await prisma.bOQItem.findMany({
         where: { organizationId, projectId },
         include: {
+          boqCategory: { select: { id: true, name: true, sortOrder: true } },
           expenseLinks: {
             include: {
               expense: {
@@ -331,16 +396,10 @@ export class BOQItemRepository {
 
       let totalQuoted = 0;
       let totalActual = 0;
-      const categoryBreakdown: Record<
-        BOQCategory,
-        { quoted: number; actual: number; count: number }
-      > = {
-        MATERIAL: { quoted: 0, actual: 0, count: 0 },
-        LABOUR: { quoted: 0, actual: 0, count: 0 },
-        SUB_WORK: { quoted: 0, actual: 0, count: 0 },
-        EQUIPMENT: { quoted: 0, actual: 0, count: 0 },
-        OTHER: { quoted: 0, actual: 0, count: 0 },
-      };
+      const categoryBreakdownMap: Record<
+        string,
+        { categoryName: string; sortOrder: number; quoted: number; actual: number; count: number }
+      > = {};
 
       for (const item of items) {
         const quotedAmount = item.rate.toNumber() * item.quantity.toNumber();
@@ -353,9 +412,33 @@ export class BOQItemRepository {
         totalActual += actualAmount;
 
         // Update category breakdown
-        categoryBreakdown[item.category].quoted += quotedAmount;
-        categoryBreakdown[item.category].actual += actualAmount;
-        categoryBreakdown[item.category].count += 1;
+        const categoryId = item.boqCategoryItemId ?? 'uncategorized';
+        const categoryName = item.boqCategory?.name || 'Uncategorized';
+        const sortOrder = item.boqCategory?.sortOrder ?? 999;
+        if (!categoryBreakdownMap[categoryId]) {
+          categoryBreakdownMap[categoryId] = {
+            categoryName,
+            sortOrder,
+            quoted: 0,
+            actual: 0,
+            count: 0,
+          };
+        }
+        categoryBreakdownMap[categoryId].quoted += quotedAmount;
+        categoryBreakdownMap[categoryId].actual += actualAmount;
+        categoryBreakdownMap[categoryId].count += 1;
+      }
+
+      // Sort categories by sortOrder and convert to ordered object
+      const sortedEntries = Object.entries(categoryBreakdownMap).sort(
+        ([, a], [, b]) => a.sortOrder - b.sortOrder
+      );
+      const categoryBreakdown: Record<
+        string,
+        { categoryName: string; sortOrder: number; quoted: number; actual: number; count: number }
+      > = {};
+      for (const [key, value] of sortedEntries) {
+        categoryBreakdown[key] = value;
       }
 
       const variance = totalQuoted - totalActual;

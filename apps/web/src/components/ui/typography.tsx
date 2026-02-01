@@ -1,149 +1,155 @@
 import { cn } from "@/lib/utils";
-import React, { forwardRef } from 'react';
+import React from 'react';
 
 // ============================================================================
-// TYPOGRAPHY COMPONENTS
-// Based on shadcn/ui typography patterns
+// TYPOGRAPHY COMPONENT
+// Single polymorphic component with variant prop
+// Based on Figma Design System - WorkSite PMS
 // ============================================================================
 
-export const TypographyH1 = forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
-    ({ className, ...props }, ref) => {
-        return (
-            <h1
-                ref={ref}
-                className={cn(
-                    "scroll-m-20 text-4xl font-extrabold  lg:text-5xl font-heading",
-                    className
-                )}
-                {...props}
-            />
-        );
-    }
-);
-TypographyH1.displayName = "TypographyH1";
+/**
+ * Available typography variants matching Figma design tokens
+ */
+export type TypographyVariant =
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'h4'
+  | 'paragraph'
+  | 'paragraph-medium'
+  | 'paragraph-bold'
+  | 'paragraph-small'
+  | 'paragraph-small-medium'
+  | 'paragraph-mini'
+  | 'paragraph-mini-medium'
+  | 'paragraph-mini-bold'
+  | 'monospace'
+  | 'lead'
+  | 'muted'
+  | 'blockquote';
 
-export const TypographyH2 = forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
-    ({ className, ...props }, ref) => {
-        return (
-            <h2
-                ref={ref}
-                className={cn(
-                    "scroll-m-20 border-b pb-2 text-3xl font-semibold first:mt-0 font-heading",
-                    className
-                )}
-                {...props}
-            />
-        );
-    }
-);
-TypographyH2.displayName = "TypographyH2";
+/**
+ * Variant styles mapped from Figma design tokens
+ * Font: Figtree (headings & body), Geist (monospace)
+ * 
+ * Uses explicit pixel values for font-size to guarantee exact Figma specs
+ * regardless of root font-size or rem calculations.
+ */
+const variantStyles: Record<TypographyVariant, string> = {
+  // Headings - Figtree, weight 600 (semibold)
+  h1: 'scroll-m-20 text-[48px] font-semibold leading-[48px] tracking-[-1.5px] font-heading',
+  h2: 'scroll-m-20 text-[30px] font-semibold leading-[30px] tracking-[-1px] font-heading',
+  h3: 'scroll-m-20 text-[24px] font-semibold leading-[28.8px] tracking-[-1px] font-heading',
+  h4: 'scroll-m-20 text-[20px] font-semibold leading-[24px] tracking-normal font-heading',
 
-export const TypographyH3 = forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
-    ({ className, ...props }, ref) => {
-        return (
-            <h3
-                ref={ref}
-                className={cn(
-                    "scroll-m-20 text-2xl font-semibold font-heading",
-                    className
-                )}
-                {...props}
-            />
-        );
-    }
-);
-TypographyH3.displayName = "TypographyH3";
+  // Paragraph Regular - 16px / 24px line-height
+  paragraph: 'text-[16px] font-normal leading-[24px] tracking-normal font-body',
+  'paragraph-medium': 'text-[16px] font-medium leading-[24px] tracking-normal font-body',
+  'paragraph-bold': 'text-[16px] font-semibold leading-[24px] tracking-normal font-body',
 
-export const TypographyH4 = forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
-    ({ className, ...props }, ref) => {
-        return (
-            <h4
-                ref={ref}
-                className={cn(
-                    "scroll-m-20 text-xl font-semibold  font-heading",
-                    className
-                )}
-                {...props}
-            />
-        );
-    }
-);
-TypographyH4.displayName = "TypographyH4";
+  // Paragraph Small - 14px / 20px line-height
+  'paragraph-small': 'text-[14px] font-normal leading-[20px] tracking-normal font-body',
+  'paragraph-small-medium': 'text-[14px] font-medium leading-[20px] tracking-normal font-body',
 
-export const TypographyP = forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
-    ({ className, ...props }, ref) => {
-        return (
-            <p
-                ref={ref}
-                className={cn("leading-7 [&:not(:first-child)]:mt-6 font-body", className)}
-                {...props}
-            />
-        );
-    }
-);
-TypographyP.displayName = "TypographyP";
+  // Paragraph Mini - 12px / 16px line-height
+  'paragraph-mini': 'text-[12px] font-normal leading-[16px] tracking-normal font-body',
+  'paragraph-mini-medium': 'text-[12px] font-medium leading-[16px] tracking-normal font-body',
+  'paragraph-mini-bold': 'text-[12px] font-semibold leading-[16px] tracking-normal font-body',
 
-export const TypographyBlockquote = forwardRef<HTMLQuoteElement, React.HTMLAttributes<HTMLQuoteElement>>(
-    ({ className, ...props }, ref) => {
-        return (
-            <blockquote
-                ref={ref}
-                className={cn("mt-6 border-l-2 pl-6 italic font-body", className)}
-                {...props}
-            />
-        );
-    }
-);
-TypographyBlockquote.displayName = "TypographyBlockquote";
+  // Monospace - Geist font, 16px / 24px line-height
+  monospace: 'text-[16px] font-normal leading-[24px] tracking-normal font-mono',
 
-export const TypographyLead = forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
-    ({ className, ...props }, ref) => {
-        return (
-            <p
-                ref={ref}
-                className={cn("text-xl text-muted-foreground font-body", className)}
-                {...props}
-            />
-        );
-    }
-);
-TypographyLead.displayName = "TypographyLead";
+  // Utility variants
+  lead: 'text-[20px] leading-[28px] text-muted-foreground font-body',
+  muted: 'text-[14px] leading-[20px] text-muted-foreground font-body',
+  blockquote: 'mt-6 border-l-2 pl-6 italic text-[16px] leading-[24px] font-body',
+};
 
-export const TypographyLarge = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-    ({ className, ...props }, ref) => {
-        return (
-            <div
-                ref={ref}
-                className={cn("text-lg font-semibold font-body", className)}
-                {...props}
-            />
-        );
-    }
-);
-TypographyLarge.displayName = "TypographyLarge";
+/**
+ * Default HTML element for each variant
+ */
+const defaultElements: Record<TypographyVariant, React.ElementType> = {
+  h1: 'h1',
+  h2: 'h2',
+  h3: 'h3',
+  h4: 'h4',
+  paragraph: 'p',
+  'paragraph-medium': 'p',
+  'paragraph-bold': 'p',
+  'paragraph-small': 'p',
+  'paragraph-small-medium': 'p',
+  'paragraph-mini': 'p',
+  'paragraph-mini-medium': 'p',
+  'paragraph-mini-bold': 'p',
+  monospace: 'code',
+  lead: 'p',
+  muted: 'p',
+  blockquote: 'blockquote',
+};
 
-export const TypographySmall = forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(
-    ({ className, ...props }, ref) => {
-        return (
-            <small
-                ref={ref}
-                className={cn("text-sm font-medium leading-none font-body", className)}
-                {...props}
-            />
-        );
-    }
-);
-TypographySmall.displayName = "TypographySmall";
+/**
+ * Typography component props
+ */
+export interface TypographyProps extends React.HTMLAttributes<HTMLElement> {
+  /** The typography variant to apply */
+  variant: TypographyVariant;
+  /** Override the default HTML element */
+  as?: React.ElementType;
+  /** Content to render */
+  children?: React.ReactNode;
+}
 
-export const TypographyMuted = forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
-    ({ className, ...props }, ref) => {
-        return (
-            <p
-                ref={ref}
-                className={cn("text-sm text-muted-foreground font-body", className)}
-                {...props}
-            />
-        );
-    }
-);
-TypographyMuted.displayName = "TypographyMuted";
+/**
+ * Typography Component
+ *
+ * A polymorphic typography component that renders text with consistent styling
+ * based on the Figma design system.
+ *
+ * @example
+ * // Basic usage - renders as default element for variant
+ * <Typography variant="h1">Page Title</Typography>
+ *
+ * @example
+ * // Polymorphic - render as different element
+ * <Typography variant="paragraph-small" as="span">Badge text</Typography>
+ *
+ * @example
+ * // With additional className
+ * <Typography variant="muted" className="mt-2">Helper text</Typography>
+ */
+export function Typography({
+  variant,
+  as,
+  className,
+  children,
+  ...props
+}: TypographyProps) {
+  const Component = as || defaultElements[variant];
+
+  return (
+    <Component
+      className={cn(variantStyles[variant], className)}
+      {...props}
+    >
+      {children}
+    </Component>
+  );
+}
+
+Typography.displayName = 'Typography';
+
+// ============================================================================
+// CONVENIENCE EXPORTS
+// ============================================================================
+
+/**
+ * Get typography classes for a variant (useful for applying to other components)
+ */
+export function getTypographyClasses(variant: TypographyVariant): string {
+  return variantStyles[variant];
+}
+
+/**
+ * All available variants (useful for documentation/storybook)
+ */
+export const typographyVariants = Object.keys(variantStyles) as TypographyVariant[];

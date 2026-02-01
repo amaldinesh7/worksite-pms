@@ -1,12 +1,12 @@
 # External Services
 
 > Auto-generated from `apps/api/src/services/registry.ts`
-> Last generated: 2026-01-25T23:59:34.069Z
+> Last generated: 2026-01-31T05:19:16.715Z
 
 ---
 
 ### PostgreSQL
+
 - **Purpose**: Primary database for persistent data storage
 - **Status**: `active`
 - **Docs**: https://www.postgresql.org/docs/
-

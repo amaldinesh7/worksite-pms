@@ -9,6 +9,7 @@ import {
   taskQuerySchema,
   taskParamsSchema,
   stageParamsSchema,
+  projectParamsSchema,
 } from './task.schema';
 
 export default async function taskRoutes(fastify: FastifyInstance) {
@@ -27,6 +28,12 @@ export default async function taskRoutes(fastify: FastifyInstance) {
   app.get('/stage/:stageId', {
     schema: { params: stageParamsSchema },
     handler: controller.getTasksByStage,
+  });
+
+  // GET /api/tasks/project/:projectId - Get tasks by project
+  app.get('/project/:projectId', {
+    schema: { params: projectParamsSchema },
+    handler: controller.getTasksByProject,
   });
 
   // GET /api/tasks/:id - Get task by ID

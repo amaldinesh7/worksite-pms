@@ -71,13 +71,13 @@ const statusConfig: Record<
 // ============================================
 
 function formatBudget(amount: number): string {
-  if (amount >= 1000000) {
-    return `$${(amount / 1000000).toFixed(1)}M`;
+  if (amount >= 10000000) {
+    return `₹${(amount / 10000000).toFixed(1)} Cr`;
   }
-  if (amount >= 1000) {
-    return `$${Math.round(amount / 1000)}K`;
+  if (amount >= 100000) {
+    return `₹${(amount / 100000).toFixed(1)}L`;
   }
-  return `$${amount}`;
+  return `₹${amount.toLocaleString('en-IN')}`;
 }
 
 function formatDuration(days: number): string {
@@ -105,8 +105,7 @@ export function StageCard({
   const endDate = new Date(stage.endDate);
   const duration = differenceInDays(endDate, startDate);
   const taskCount = stage._count?.tasks || 0;
-  // Note: completedTasks is not available in the API, calculate from memberAssignments or use 0
-  const completedTaskCount = 0;
+  const completedTaskCount = stage.completedTaskCount ?? 0;
 
   // Calculate days remaining for in-progress stages
   const today = new Date();
@@ -118,9 +117,7 @@ export function StageCard({
       ? 100
       : taskCount > 0
         ? Math.round((completedTaskCount / taskCount) * 100)
-        : stage.status === 'IN_PROGRESS'
-          ? 50
-          : 0;
+        : 0;
 
   // Get first assigned member name
   const firstMember = stage.memberAssignments[0];

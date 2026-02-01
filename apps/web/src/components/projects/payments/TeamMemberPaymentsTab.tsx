@@ -10,7 +10,15 @@
 
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
-import { Plus, DotsThree, Trash, CircleNotch, FunnelIcon, User, PencilSimple } from '@phosphor-icons/react';
+import {
+  Plus,
+  DotsThree,
+  Trash,
+  CircleNotch,
+  FunnelIcon,
+  User,
+  PencilSimple,
+} from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -136,7 +144,11 @@ export function TeamMemberPaymentsTab({
   );
 
   // Fetch advances with optional member filter
-  const { data: advancesData, isLoading, isFetching } = useMemberAdvances({
+  const {
+    data: advancesData,
+    isLoading,
+    isFetching,
+  } = useMemberAdvances({
     projectId,
     memberId: selectedMemberId || undefined,
     page,
@@ -181,12 +193,15 @@ export function TeamMemberPaymentsTab({
     setPage(newPage);
   }, []);
 
-  const handleMemberChange = useCallback((value: string) => {
-    const newValue = value || '';
-    setSelectedMemberId(newValue);
-    setPage(1);
-    onMemberIdChange?.(newValue || undefined);
-  }, [onMemberIdChange]);
+  const handleMemberChange = useCallback(
+    (value: string) => {
+      const newValue = value || '';
+      setSelectedMemberId(newValue);
+      setPage(1);
+      onMemberIdChange?.(newValue || undefined);
+    },
+    [onMemberIdChange]
+  );
 
   const handleClearMemberFilter = useCallback(() => {
     setSelectedMemberId('');
@@ -306,150 +321,150 @@ export function TeamMemberPaymentsTab({
             </EmptyContent>
           </Empty>
         ) : (
-            <div className="flex gap-4">
-          <div className="relative rounded-lg border overflow-hidden bg-card flex-1">
-            {/* Loading overlay for refetch */}
-            {isFetching && !isLoading && (
-              <div className="absolute inset-0 bg-background/60 z-10 flex items-center justify-center">
-                <CircleNotch className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            )}
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>DATE</TableHead>
-                  <TableHead className="text-right">AMOUNT</TableHead>
-                  <TableHead>MEMBER</TableHead>
-                  <TableHead>PURPOSE</TableHead>
-                  <TableHead>PAYMENT MODE</TableHead>
-                  <TableHead className="w-12">ACTIONS</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {advances.map((advance) => (
-                  <TableRow key={advance.id}>
-                    <TableCell className="text-sm">
-                      {format(new Date(advance.advanceDate), 'MMM d, yyyy')}
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-red-600">
-                      {formatCurrency(Number(advance.amount))}
-                    </TableCell>
-                    <TableCell className="text-sm font-medium">
-                      {advance.member?.user?.name || '-'}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
-                      {advance.purpose}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getPaymentModeBadgeVariant(advance.paymentMode)}>
-                        {getPaymentModeLabel(advance.paymentMode)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
-                            <DotsThree className="h-4 w-4" weight="bold" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => handleEditAdvance(advance)}
-                            className="cursor-pointer"
-                          >
-                            <PencilSimple className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleDeleteClick(advance)}
-                            className="cursor-pointer text-destructive focus:text-destructive"
-                          >
-                            <Trash className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+          <div className="flex gap-4">
+            <div className="relative rounded-lg border overflow-hidden bg-card flex-1">
+              {/* Loading overlay for refetch */}
+              {isFetching && !isLoading && (
+                <div className="absolute inset-0 bg-background/60 z-10 flex items-center justify-center">
+                  <CircleNotch className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              )}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>DATE</TableHead>
+                    <TableHead className="text-right">AMOUNT</TableHead>
+                    <TableHead>MEMBER</TableHead>
+                    <TableHead>PURPOSE</TableHead>
+                    <TableHead>PAYMENT MODE</TableHead>
+                    <TableHead className="w-12">ACTIONS</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {advances.map((advance) => (
+                    <TableRow key={advance.id}>
+                      <TableCell className="text-sm">
+                        {format(new Date(advance.advanceDate), 'MMM d, yyyy')}
+                      </TableCell>
+                      <TableCell className="text-right font-medium text-red-600">
+                        {formatCurrency(Number(advance.amount))}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium">
+                        {advance.member?.user?.name || '-'}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                        {advance.purpose}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getPaymentModeBadgeVariant(advance.paymentMode)}>
+                          {getPaymentModeLabel(advance.paymentMode)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer">
+                              <DotsThree className="h-4 w-4" weight="bold" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleEditAdvance(advance)}
+                              className="cursor-pointer"
+                            >
+                              <PencilSimple className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteClick(advance)}
+                              className="cursor-pointer text-destructive focus:text-destructive"
+                            >
+                              <Trash className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
 
-            {/* Pagination */}
-            {pagination.total > 0 && (
-              <TablePagination
-                page={page}
-                pages={pagination.pages}
-                total={pagination.total}
-                limit={PAGINATION_LIMIT}
-                onPageChange={handlePageChange}
-                itemLabel="advances"
-                className="border-t"
-              />
-            )}
-          </div>
-          {/* Right Sidebar - Member Summary */}
-      {selectedMemberId && (
-        <div className="w-64 shrink-0">
-          <div className="rounded-lg border bg-card p-4 space-y-4 sticky top-4">
-            {/* Member Info */}
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                <User className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="font-medium">{memberSummary?.memberName || 'Loading...'}</p>
-                <p className="text-sm text-muted-foreground">{memberSummary?.memberRole || ''}</p>
-              </div>
+              {/* Pagination */}
+              {pagination.total > 0 && (
+                <TablePagination
+                  page={page}
+                  pages={pagination.pages}
+                  total={pagination.total}
+                  limit={PAGINATION_LIMIT}
+                  onPageChange={handlePageChange}
+                  itemLabel="advances"
+                  className="border-t"
+                />
+              )}
             </div>
+            {/* Right Sidebar - Member Summary */}
+            {selectedMemberId && (
+              <div className="w-64 shrink-0">
+                <div className="rounded-lg border bg-card p-4 space-y-4 sticky top-4">
+                  {/* Member Info */}
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                      <User className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{memberSummary?.memberName || 'Loading...'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {memberSummary?.memberRole || ''}
+                      </p>
+                    </div>
+                  </div>
 
-            <div className="border-t pt-4 space-y-3">
-              {/* Advance Given */}
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Advance Given</span>
-                {isSummaryLoading ? (
-                  <div className="h-5 w-16 bg-muted animate-pulse rounded" />
-                ) : (
-                  <span className="font-medium text-red-600">
-                    {formatCurrency(memberSummary?.totalAdvanceGiven ?? 0)}
-                  </span>
-                )}
-              </div>
+                  <div className="border-t pt-4 space-y-3">
+                    {/* Advance Given */}
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Advance Given</span>
+                      {isSummaryLoading ? (
+                        <div className="h-5 w-16 bg-muted animate-pulse rounded" />
+                      ) : (
+                        <span className="font-medium text-red-600">
+                          {formatCurrency(memberSummary?.totalAdvanceGiven ?? 0)}
+                        </span>
+                      )}
+                    </div>
 
-              {/* Expenses Logged */}
-              <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Expenses Logged</span>
-                {isSummaryLoading ? (
-                  <div className="h-5 w-16 bg-muted animate-pulse rounded" />
-                ) : (
-                  <span className="font-medium text-red-600">
-                    {formatCurrency(memberSummary?.expensesLogged ?? 0)}
-                  </span>
-                )}
-              </div>
+                    {/* Expenses Logged */}
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Expenses Logged</span>
+                      {isSummaryLoading ? (
+                        <div className="h-5 w-16 bg-muted animate-pulse rounded" />
+                      ) : (
+                        <span className="font-medium text-red-600">
+                          {formatCurrency(memberSummary?.expensesLogged ?? 0)}
+                        </span>
+                      )}
+                    </div>
 
-              <div className="border-t pt-3">
-                {/* Balance */}
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Balance</span>
-                  {isSummaryLoading ? (
-                    <div className="h-5 w-16 bg-muted animate-pulse rounded" />
-                  ) : (
-                    <span className="font-semibold text-orange-600">
-                      {formatCurrency(memberSummary?.balance ?? 0)}
-                    </span>
-                  )}
+                    <div className="border-t pt-3">
+                      {/* Balance */}
+                      <div className="flex justify-between">
+                        <span className="text-sm font-medium">Balance</span>
+                        {isSummaryLoading ? (
+                          <div className="h-5 w-16 bg-muted animate-pulse rounded" />
+                        ) : (
+                          <span className="font-semibold text-orange-600">
+                            {formatCurrency(memberSummary?.balance ?? 0)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            )}
           </div>
         )}
       </div>
-
-      
 
       {/* Give/Edit Cash Advance Modal */}
       <GiveCashAdvanceModal
