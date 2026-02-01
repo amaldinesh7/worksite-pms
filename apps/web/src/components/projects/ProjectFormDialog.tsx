@@ -5,11 +5,11 @@
  * Includes image upload, date pickers, and member selection.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ImageIcon, X, Check } from 'lucide-react';
+import { ImageIcon, X, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -29,9 +29,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/custom/date-picker';
+import { MultiSelect, type MultiSelectOption } from '@/components/ui/multi-select';
 import { cn } from '@/lib/utils';
 import { useCategoryItems } from '@/lib/hooks/useCategories';
-import { useOrganizationMembers } from '@/lib/hooks/useOrganizations';
+import { useTeamMembers } from '@/lib/hooks/useTeam';
+import { useClients, useCreateClient } from '@/lib/hooks/useClients';
 import type { Project, CreateProjectInput, UpdateProjectInput } from '@/lib/api/projects';
 
 // ============================================
@@ -42,14 +44,24 @@ const projectFormSchema = z.object({
   name: z.string().min(1, 'Project name is required'),
   location: z.string().min(1, 'Location is required'),
   area: z.string().regex(/^\d*$/, 'Must be a number').optional(),
-  amount: z.coerce.number().positive('Amount must be positive').optional(),
+  amount: z.number().positive('Amount must be positive').optional(),
   startDate: z.date({ required_error: 'Start date is required' }),
   endDate: z.date().optional(),
   projectTypeItemId: z.string().min(1, 'Project type is required'),
   projectPicture: z.string().optional(),
+  clientId: z.string().optional(),
 });
 
 type ProjectFormData = z.infer<typeof projectFormSchema>;
+
+// Schema for inline client creation
+const newClientSchema = z.object({
+  name: z.string().min(1, 'Client name is required'),
+  phone: z.string().optional(),
+  location: z.string().min(1, 'Location is required'),
+});
+
+type NewClientFormData = z.infer<typeof newClientSchema>;
 
 // ============================================
 // Props
@@ -78,12 +90,27 @@ export function ProjectFormDialog({
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isCreatingClient, setIsCreatingClient] = useState(false);
+  const [newClientData, setNewClientData] = useState<NewClientFormData>({
+    name: '',
+    phone: '',
+    location: '',
+  });
+  const [newClientErrors, setNewClientErrors] = useState<Record<string, string>>({});
 
   // Fetch project types
   const { data: projectTypes = [], isLoading: isLoadingTypes } = useCategoryItems('project_type');
 
-  // Fetch organization members
-  const { data: orgMembers = [], isLoading: isLoadingMembers } = useOrganizationMembers();
+  // Fetch team members (fetch all with a high limit for selection)
+  const { data: teamMembersData, isLoading: isLoadingMembers } = useTeamMembers({ limit: 100 });
+  const teamMembers = teamMembersData?.items ?? [];
+
+  // Fetch clients for selection
+  const { data: clientsData, isLoading: isLoadingClients } = useClients({ limit: 100 });
+  const clients = clientsData?.items ?? [];
+
+  // Client creation mutation
+  const createClientMutation = useCreateClient();
 
   const {
     register,
@@ -91,6 +118,7 @@ export function ProjectFormDialog({
     control,
     reset,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<ProjectFormData>({
     resolver: zodResolver(projectFormSchema),
@@ -103,8 +131,11 @@ export function ProjectFormDialog({
       endDate: undefined,
       projectTypeItemId: '',
       projectPicture: '',
+      clientId: '',
     },
   });
+
+  const selectedClientId = watch('clientId');
 
   // Reset form when dialog opens/closes or project changes
   useEffect(() => {
@@ -119,6 +150,7 @@ export function ProjectFormDialog({
           endDate: project.endDate ? new Date(project.endDate) : undefined,
           projectTypeItemId: project.projectTypeItemId,
           projectPicture: project.projectPicture || '',
+          clientId: project.clientId || '',
         });
         setImagePreview(project.projectPicture || null);
         setSelectedMembers(project.projectAccess?.map((a) => a.memberId) || []);
@@ -132,10 +164,14 @@ export function ProjectFormDialog({
           endDate: undefined,
           projectTypeItemId: '',
           projectPicture: '',
+          clientId: '',
         });
         setImagePreview(null);
         setSelectedMembers([]);
       }
+      setIsCreatingClient(false);
+      setNewClientData({ name: '', phone: '', location: '' });
+      setNewClientErrors({});
     }
   }, [open, project, reset]);
 
@@ -149,9 +185,42 @@ export function ProjectFormDialog({
       endDate: data.endDate?.toISOString(),
       projectTypeItemId: data.projectTypeItemId,
       projectPicture: data.projectPicture || undefined,
+      memberIds: selectedMembers,
+      clientId: data.clientId || undefined,
     };
 
     onSubmit(submitData);
+  };
+
+  // Handle creating a new client inline
+  const handleCreateClient = async () => {
+    // Validate new client data
+    const result = newClientSchema.safeParse(newClientData);
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          fieldErrors[err.path[0] as string] = err.message;
+        }
+      });
+      setNewClientErrors(fieldErrors);
+      return;
+    }
+
+    try {
+      const newClient = await createClientMutation.mutateAsync({
+        name: newClientData.name,
+        phone: newClientData.phone || undefined,
+        location: newClientData.location,
+      });
+      // Select the newly created client
+      setValue('clientId', newClient.id);
+      setIsCreatingClient(false);
+      setNewClientData({ name: '', phone: '', location: '' });
+      setNewClientErrors({});
+    } catch {
+      // Error is handled by the mutation
+    }
   };
 
   const handleImageUpload = (file: File) => {
@@ -198,16 +267,16 @@ export function ProjectFormDialog({
     setValue('projectPicture', '');
   };
 
-  const toggleMember = (memberId: string) => {
-    setSelectedMembers((prev) =>
-      prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]
-    );
-  };
-
-  // Filter members to show only those who can be assigned (MANAGER, SUPERVISOR)
-  const assignableMembers = orgMembers.filter((m) =>
-    ['ADMIN', 'MANAGER', 'SUPERVISOR'].includes(m.role)
-  );
+  // Convert team members to multi-select options (filter to assignable roles - Manager & Supervisor only)
+  const assignableRoles = ['manager', 'supervisor'];
+  const teamMemberOptions: MultiSelectOption[] = useMemo(() => {
+    return teamMembers
+      .filter((m) => assignableRoles.includes(m.membership.role.name.toLowerCase()))
+      .map((member) => ({
+        value: member.membership.id,
+        label: `${member.name} (${member.membership.role.name})`,
+      }));
+  }, [teamMembers]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -222,54 +291,6 @@ export function ProjectFormDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit(handleFormSubmit)}>
           <div className="grid gap-4 py-4">
-            {/* Image Upload - Full Width, Compact */}
-            <div className="space-y-2">
-              <Label>Cover Image</Label>
-              {imagePreview ? (
-                <div className="relative w-full h-36 rounded-lg overflow-hidden border">
-                  <img
-                    src={imagePreview}
-                    alt="Project preview"
-                    className="h-full w-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRemoveImage}
-                    className="absolute top-2 right-2 h-6 w-6 rounded-full bg-destructive text-white flex items-center justify-center cursor-pointer hover:bg-destructive/90"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <label
-                  className={cn(
-                    'flex flex-col items-center justify-center w-full h-24 cursor-pointer rounded-lg border-2 border-dashed transition-colors bg-background',
-                    isDragging
-                      ? 'border-primary bg-primary/5'
-                      : 'border-muted-foreground/25 hover:border-muted-foreground/50'
-                  )}
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                >
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  <ImageIcon className="h-6 w-6 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    Drag and drop a cover image, or{' '}
-                    <span className="text-primary underline">Browse</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Minimum 1600px width recommended. Max file size of 10MB
-                  </p>
-                </label>
-              )}
-            </div>
-
             {/* Row 1: Project Name, Type */}
             <div className="grid grid-cols-2 gap-4">
               {/* Project Name */}
@@ -342,14 +363,12 @@ export function ProjectFormDialog({
 
               {/* Amount */}
               <div className="space-y-2">
-                <Label htmlFor="amount">
-                  Project Amount <span className="text-destructive">*</span>
-                </Label>
+                <Label htmlFor="amount">Project Amount</Label>
                 <Input
                   id="amount"
                   type="number"
                   placeholder="Enter Project Amount"
-                  {...register('amount')}
+                  {...register('amount', { valueAsNumber: true })}
                   aria-invalid={!!errors.amount}
                 />
                 {errors.amount && (
@@ -368,6 +387,120 @@ export function ProjectFormDialog({
                   aria-invalid={!!errors.area}
                 />
                 {errors.area && <p className="text-sm text-destructive">{errors.area.message}</p>}
+              </div>
+
+              {/* Client Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="clientId">Client</Label>
+                {isCreatingClient ? (
+                  <div className="space-y-3 p-3 border rounded-lg bg-muted/50">
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Client name *"
+                        value={newClientData.name}
+                        onChange={(e) =>
+                          setNewClientData({ ...newClientData, name: e.target.value })
+                        }
+                        aria-invalid={!!newClientErrors.name}
+                      />
+                      {newClientErrors.name && (
+                        <p className="text-xs text-destructive">{newClientErrors.name}</p>
+                      )}
+                    </div>
+                    <Input
+                      placeholder="Phone number"
+                      value={newClientData.phone}
+                      onChange={(e) =>
+                        setNewClientData({ ...newClientData, phone: e.target.value })
+                      }
+                    />
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Location *"
+                        value={newClientData.location}
+                        onChange={(e) =>
+                          setNewClientData({ ...newClientData, location: e.target.value })
+                        }
+                        aria-invalid={!!newClientErrors.location}
+                      />
+                      {newClientErrors.location && (
+                        <p className="text-xs text-destructive">{newClientErrors.location}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsCreatingClient(false);
+                          setNewClientData({ name: '', phone: '', location: '' });
+                          setNewClientErrors({});
+                        }}
+                        className="cursor-pointer"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleCreateClient}
+                        disabled={createClientMutation.isPending}
+                        className="cursor-pointer"
+                      >
+                        {createClientMutation.isPending ? 'Creating...' : 'Add Client'}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Controller
+                    name="clientId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        onValueChange={(value) => {
+                          if (value === '__new__') {
+                            setIsCreatingClient(true);
+                          } else {
+                            field.onChange(value === '__none__' ? '' : value);
+                          }
+                        }}
+                        value={field.value || '__none__'}
+                        disabled={isLoadingClients}
+                      >
+                        <SelectTrigger className="cursor-pointer">
+                          <SelectValue placeholder="Select Client (Optional)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__" className="cursor-pointer">
+                            No client
+                          </SelectItem>
+                          {clients.map((client) => (
+                            <SelectItem
+                              key={client.id}
+                              value={client.id}
+                              className="cursor-pointer"
+                            >
+                              {client.name}
+                            </SelectItem>
+                          ))}
+                          <div className="border-t my-1" />
+                          <SelectItem value="__new__" className="cursor-pointer text-primary">
+                            <span className="flex items-center gap-2">
+                              <Plus className="h-4 w-4" />
+                              Add New Client
+                            </span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                )}
+                {selectedClientId && clients.find((c) => c.id === selectedClientId) && (
+                  <p className="text-xs text-muted-foreground">
+                    {clients.find((c) => c.id === selectedClientId)?.location}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -411,45 +544,69 @@ export function ProjectFormDialog({
               </div>
             </div>
 
-            {/* Project Manager / Team Members */}
+            {/* Assign to */}
             <div className="space-y-2">
-              <Label>Project Manager</Label>
-              <div className="border rounded-lg p-3">
-                {isLoadingMembers ? (
-                  <p className="text-sm text-muted-foreground">Loading members...</p>
-                ) : assignableMembers.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No assignable members found</p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {assignableMembers.map((member) => {
-                      const isSelected = selectedMembers.includes(member.id);
-                      const memberName = member.user?.name || 'Unknown';
-                      return (
-                        <button
-                          key={member.id}
-                          type="button"
-                          onClick={() => toggleMember(member.id)}
-                          className={cn(
-                            'flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm transition-colors cursor-pointer',
-                            isSelected
-                              ? 'bg-primary text-primary-foreground border-primary'
-                              : 'bg-muted hover:bg-muted/80 border-transparent'
-                          )}
-                        >
-                          <div className="h-5 w-5 rounded-full bg-background/20 flex items-center justify-center text-xs">
-                            {memberName.charAt(0).toUpperCase()}
-                          </div>
-                          <span>{memberName}</span>
-                          {isSelected && <Check className="h-3 w-3" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              <Label>Assign to</Label>
+              <MultiSelect
+                options={teamMemberOptions}
+                selected={selectedMembers}
+                onChange={setSelectedMembers}
+                placeholder="Select team members..."
+                searchPlaceholder="Search members..."
+                emptyMessage="No team members found."
+                disabled={isLoadingMembers}
+              />
               <p className="text-xs text-muted-foreground">
                 Select team members to assign to this project
               </p>
+            </div>
+
+            {/* Cover Image - Compact with aspect ratio preserved */}
+            <div className="space-y-2">
+              <Label>Cover Image</Label>
+              {imagePreview ? (
+                <div className="relative block w-fit max-w-[200px] rounded-lg overflow-hidden border">
+                  <img
+                    src={imagePreview}
+                    alt="Project preview"
+                    className="max-h-36 w-auto object-contain"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 h-6 w-6 rounded-full bg-destructive text-white flex items-center justify-center cursor-pointer hover:bg-destructive/90"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <label
+                  className={cn(
+                    'flex flex-col items-center justify-center w-full h-24 cursor-pointer rounded-lg border-2 border-dashed transition-colors bg-background',
+                    isDragging
+                      ? 'border-primary bg-primary/5'
+                      : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+                  )}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <ImageIcon className="h-6 w-6 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    Drag and drop a cover image, or{' '}
+                    <span className="text-primary underline">Browse</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Minimum 1600px width recommended. Max file size of 10MB
+                  </p>
+                </label>
+              )}
             </div>
           </div>
 

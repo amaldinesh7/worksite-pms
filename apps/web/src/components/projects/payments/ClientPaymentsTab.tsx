@@ -240,7 +240,7 @@ export function ClientPaymentsTab({ projectId }: ClientPaymentsTabProps) {
             </div>
 
             {/* Progress bar with percentage labels */}
-            <div className="mb-4">
+            <div className="mb-2">
               <div className="flex items-center justify-between mb-1.5 text-xs">
                 <span className="text-muted-foreground">
                   {Math.round(receivedPercentage)}% Received
@@ -252,25 +252,22 @@ export function ClientPaymentsTab({ projectId }: ClientPaymentsTabProps) {
               <Progress value={receivedPercentage} className="h-2" />
             </div>
 
-            {/* Sub-cards: Payment received and Pending */}
-            <div className="flex gap-4">
-              {/* Payment Received */}
-              <div className="flex-1 rounded-md border bg-muted/30 p-3">
-                <p className="text-xs text-muted-foreground mb-1">Payment received</p>
-                <p className="text-lg font-semibold text-green-600">
+            {/* Payment values directly below progress bar */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                Payment received:{' '}
+                <span className="text-lg font-bold text-green-600">
                   {formatCurrency(summary?.totalReceived ?? 0)}
-                </p>
-              </div>
-
-              {/* Pending */}
-              <div className="flex-1 rounded-md border bg-muted/30 p-3">
-                <p className="text-xs text-muted-foreground mb-1">Pending</p>
-                <p
-                  className={`text-lg font-semibold ${(summary?.totalPending ?? 0) > 0 ? 'text-amber-600' : ''}`}
+                </span>
+              </span>
+              <span className="text-sm text-muted-foreground">
+                Pending:{' '}
+                <span
+                  className={`text-lg font-bold ${(summary?.totalPending ?? 0) > 0 ? 'text-amber-600' : ''}`}
                 >
                   {formatCurrency(summary?.totalPending ?? 0)}
-                </p>
-              </div>
+                </span>
+              </span>
             </div>
           </>
         )}

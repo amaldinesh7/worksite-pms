@@ -1,11 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import {
-  CaretLeft,
-  CaretRight,
-  DotsThreeVertical,
-  X,
-  Buildings,
-} from '@phosphor-icons/react';
+import { CaretLeft, CaretRight, DotsThreeVertical, X, Buildings } from '@phosphor-icons/react';
 
 import { cn } from '@/lib/utils';
 import { useSidebarStore } from '@/stores/sidebar';
@@ -80,13 +74,20 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 h-screen',
+          // Base styles
           'bg-white border-r border-neutral-200',
-          'flex flex-col relative overflow-visible',
+          'flex flex-col overflow-visible',
           'transition-all duration-300 ease-out',
-          isCollapsed ? 'w-16' : 'w-[232px]',
-          '-translate-x-full lg:translate-x-0',
-          isMobileOpen && 'translate-x-0 w-[232px]',
+
+          // Desktop (lg+): Static flex child in layout flow
+          'hidden lg:flex lg:relative lg:h-full lg:shrink-0',
+          isCollapsed ? 'lg:w-16' : 'lg:w-[232px]',
+
+          // Mobile (<lg): Fixed overlay when open
+          'max-lg:fixed max-lg:left-0 max-lg:top-0 max-lg:z-50 max-lg:h-screen',
+          'max-lg:w-[232px]',
+          isMobileOpen ? 'max-lg:flex max-lg:translate-x-0' : 'max-lg:-translate-x-full',
+
           className
         )}
         role="navigation"
@@ -168,12 +169,7 @@ function SidebarHeader({ isCollapsed, onCloseMobile }: SidebarHeaderProps) {
   const hasLogo = Boolean(organization?.logoUrl);
 
   return (
-    <div
-      className={cn(
-        'border-b border-neutral-200',
-        isCollapsed ? 'px-3 py-4' : 'px-4 py-4'
-      )}
-    >
+    <div className={cn('border-b border-neutral-200', isCollapsed ? 'px-3 py-4' : 'px-4 py-4')}>
       <div
         className={cn(
           'flex items-center gap-3',

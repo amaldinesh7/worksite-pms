@@ -88,32 +88,36 @@ export function MultiSelect({
             {selected.length === 0 ? (
               <span>{placeholder}</span>
             ) : (
-              selected.map((value) => {
-                const option = options.find((opt) => opt.value === value);
-                return (
-                  <Badge key={value} variant="secondary" className="mr-1 mb-1">
-                    {option?.label}
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      onClick={(e) => handleRemove(value, e)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
+              selected
+                .map((value) => {
+                  const option = options.find((opt) => opt.value === value);
+                  // Skip rendering if option is not found (invalid selection)
+                  if (!option) return null;
+                  return (
+                    <Badge key={value} variant="secondary" className="mr-1 mb-1">
+                      {option.label}
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
+                        onMouseDown={(e) => {
                           e.preventDefault();
-                          handleRemove(value, e);
-                        }
-                      }}
-                    >
-                      <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                    </span>
-                  </Badge>
-                );
-              })
+                          e.stopPropagation();
+                        }}
+                        onClick={(e) => handleRemove(value, e)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleRemove(value, e);
+                          }
+                        }}
+                      >
+                        <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                      </span>
+                    </Badge>
+                  );
+                })
+                .filter(Boolean)
             )}
           </div>
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />

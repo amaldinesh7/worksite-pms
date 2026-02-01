@@ -9,6 +9,7 @@ import {
   getBOQItems,
   getBOQByCategory,
   getBOQByStage,
+  getBOQBySection,
   getBOQStats,
   getBOQItem,
   createBOQItem,
@@ -16,17 +17,25 @@ import {
   deleteBOQItem,
   getBOQSections,
   createBOQSection,
+  updateBOQSection,
+  deleteBOQSection,
   parseBOQFile,
   confirmBOQImport,
   linkExpenseToBOQ,
   unlinkExpenseFromBOQ,
+  batchUpdateBOQ,
+  getBOQItemImages,
+  uploadBOQItemImage,
+  deleteBOQItemImage,
 } from '../api/boq';
 import type {
   BOQListParams,
   CreateBOQItemInput,
   UpdateBOQItemInput,
   CreateBOQSectionInput,
+  UpdateBOQSectionInput,
   ConfirmImportInput,
+  BatchBOQInput,
 } from '../api/boq';
 
 // ============================================
@@ -40,6 +49,7 @@ export const boqKeys = {
     [...boqKeys.lists(), projectId, params] as const,
   byCategory: (projectId: string) => [...boqKeys.all, 'by-category', projectId] as const,
   byStage: (projectId: string) => [...boqKeys.all, 'by-stage', projectId] as const,
+  bySection: (projectId: string) => [...boqKeys.all, 'by-section', projectId] as const,
   stats: (projectId: string) => [...boqKeys.all, 'stats', projectId] as const,
   detail: (projectId: string, id: string) => [...boqKeys.all, 'detail', projectId, id] as const,
   sections: (projectId: string) => [...boqKeys.all, 'sections', projectId] as const,
@@ -78,6 +88,18 @@ export function useBOQByStage(projectId: string) {
   return useQuery({
     queryKey: boqKeys.byStage(projectId),
     queryFn: () => getBOQByStage(projectId),
+    enabled: !!projectId,
+  });
+}
+
+/**
+ * Fetch BOQ items grouped by section
+ * This is the preferred way to view BOQ items
+ */
+export function useBOQBySection(projectId: string) {
+  return useQuery({
+    queryKey: boqKeys.bySection(projectId),
+    queryFn: () => getBOQBySection(projectId),
     enabled: !!projectId,
   });
 }
@@ -132,6 +154,7 @@ export function useCreateBOQItem(projectId: string) {
       queryClient.invalidateQueries({ queryKey: boqKeys.lists() });
       queryClient.invalidateQueries({ queryKey: boqKeys.byCategory(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.byStage(projectId) });
+      queryClient.invalidateQueries({ queryKey: boqKeys.bySection(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.stats(projectId) });
     },
   });
@@ -150,6 +173,7 @@ export function useUpdateBOQItem(projectId: string) {
       queryClient.invalidateQueries({ queryKey: boqKeys.lists() });
       queryClient.invalidateQueries({ queryKey: boqKeys.byCategory(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.byStage(projectId) });
+      queryClient.invalidateQueries({ queryKey: boqKeys.bySection(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.stats(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.detail(projectId, id) });
     },
@@ -168,6 +192,7 @@ export function useDeleteBOQItem(projectId: string) {
       queryClient.invalidateQueries({ queryKey: boqKeys.lists() });
       queryClient.invalidateQueries({ queryKey: boqKeys.byCategory(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.byStage(projectId) });
+      queryClient.invalidateQueries({ queryKey: boqKeys.bySection(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.stats(projectId) });
     },
   });
@@ -183,6 +208,39 @@ export function useCreateBOQSection(projectId: string) {
     mutationFn: (data: CreateBOQSectionInput) => createBOQSection(projectId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: boqKeys.sections(projectId) });
+    },
+  });
+}
+
+/**
+ * Update a BOQ section
+ */
+export function useUpdateBOQSection(projectId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateBOQSectionInput }) =>
+      updateBOQSection(projectId, id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: boqKeys.sections(projectId) });
+    },
+  });
+}
+
+/**
+ * Delete a BOQ section
+ */
+export function useDeleteBOQSection(projectId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => deleteBOQSection(projectId, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: boqKeys.sections(projectId) });
+      queryClient.invalidateQueries({ queryKey: boqKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: boqKeys.byCategory(projectId) });
+      queryClient.invalidateQueries({ queryKey: boqKeys.bySection(projectId) });
+      queryClient.invalidateQueries({ queryKey: boqKeys.stats(projectId) });
     },
   });
 }
@@ -208,6 +266,7 @@ export function useConfirmBOQImport(projectId: string) {
       queryClient.invalidateQueries({ queryKey: boqKeys.lists() });
       queryClient.invalidateQueries({ queryKey: boqKeys.byCategory(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.byStage(projectId) });
+      queryClient.invalidateQueries({ queryKey: boqKeys.bySection(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.stats(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.sections(projectId) });
     },
@@ -227,6 +286,7 @@ export function useLinkExpenseToBOQ(projectId: string) {
       queryClient.invalidateQueries({ queryKey: boqKeys.lists() });
       queryClient.invalidateQueries({ queryKey: boqKeys.byCategory(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.byStage(projectId) });
+      queryClient.invalidateQueries({ queryKey: boqKeys.bySection(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.stats(projectId) });
     },
   });
@@ -245,7 +305,82 @@ export function useUnlinkExpenseFromBOQ(projectId: string) {
       queryClient.invalidateQueries({ queryKey: boqKeys.lists() });
       queryClient.invalidateQueries({ queryKey: boqKeys.byCategory(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.byStage(projectId) });
+      queryClient.invalidateQueries({ queryKey: boqKeys.bySection(projectId) });
       queryClient.invalidateQueries({ queryKey: boqKeys.stats(projectId) });
+    },
+  });
+}
+
+// ============================================
+// Batch Operations
+// ============================================
+
+/**
+ * Batch update BOQ items and sections
+ * Single API call for all changes from edit mode
+ */
+export function useBatchUpdateBOQ(projectId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: BatchBOQInput) => batchUpdateBOQ(projectId, data),
+    onSuccess: () => {
+      // Invalidate all BOQ-related queries
+      queryClient.invalidateQueries({ queryKey: boqKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: boqKeys.byCategory(projectId) });
+      queryClient.invalidateQueries({ queryKey: boqKeys.byStage(projectId) });
+      queryClient.invalidateQueries({ queryKey: boqKeys.bySection(projectId) });
+      queryClient.invalidateQueries({ queryKey: boqKeys.stats(projectId) });
+      queryClient.invalidateQueries({ queryKey: boqKeys.sections(projectId) });
+    },
+  });
+}
+
+// ============================================
+// BOQ Item Image Hooks
+// ============================================
+
+/**
+ * Fetch images for a BOQ item
+ */
+export function useBOQItemImages(projectId: string, boqItemId: string | null) {
+  return useQuery({
+    queryKey: [...boqKeys.all, 'images', projectId, boqItemId] as const,
+    queryFn: () => getBOQItemImages(projectId, boqItemId!),
+    enabled: !!boqItemId,
+  });
+}
+
+/**
+ * Upload image for a BOQ item
+ */
+export function useUploadBOQItemImage(projectId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ boqItemId, file }: { boqItemId: string; file: File }) =>
+      uploadBOQItemImage(projectId, boqItemId, file),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [...boqKeys.all, 'images', projectId, variables.boqItemId],
+      });
+    },
+  });
+}
+
+/**
+ * Delete image from a BOQ item
+ */
+export function useDeleteBOQItemImage(projectId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ boqItemId, imageId }: { boqItemId: string; imageId: string }) =>
+      deleteBOQItemImage(projectId, boqItemId, imageId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: [...boqKeys.all, 'images', projectId, variables.boqItemId],
+      });
     },
   });
 }

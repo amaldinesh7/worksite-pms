@@ -13,6 +13,7 @@ export interface CreateProjectData {
   area?: string;
   projectPicture?: string;
   status?: ProjectStatus;
+  memberIds?: string[];
 }
 
 export interface UpdateProjectData {
@@ -26,6 +27,7 @@ export interface UpdateProjectData {
   area?: string | null;
   projectPicture?: string | null;
   status?: ProjectStatus;
+  memberIds?: string[];
 }
 
 export interface ProjectListOptions {
@@ -81,21 +83,42 @@ const projectListInclude = {
 export class ProjectRepository {
   async create(organizationId: string, data: CreateProjectData): Promise<Project> {
     try {
-      return await prisma.project.create({
-        data: {
-          organizationId,
-          name: data.name,
-          clientId: data.clientId,
-          location: data.location,
-          startDate: data.startDate,
-          endDate: data.endDate,
-          amount: data.amount,
-          projectTypeItemId: data.projectTypeItemId,
-          area: data.area,
-          projectPicture: data.projectPicture,
-          status: data.status || 'ACTIVE',
-        },
-        include: projectInclude,
+      const { memberIds, ...projectData } = data;
+
+      // Use transaction to create project and member assignments atomically
+      return await prisma.$transaction(async (tx) => {
+        // Create the project
+        const project = await tx.project.create({
+          data: {
+            organizationId,
+            name: projectData.name,
+            clientId: projectData.clientId,
+            location: projectData.location,
+            startDate: projectData.startDate,
+            endDate: projectData.endDate,
+            amount: projectData.amount,
+            projectTypeItemId: projectData.projectTypeItemId,
+            area: projectData.area,
+            projectPicture: projectData.projectPicture,
+            status: projectData.status || 'ACTIVE',
+          },
+        });
+
+        // Create member assignments if provided
+        if (memberIds && memberIds.length > 0) {
+          await tx.projectAccess.createMany({
+            data: memberIds.map((memberId) => ({
+              projectId: project.id,
+              memberId,
+            })),
+          });
+        }
+
+        // Return project with includes
+        return await tx.project.findUniqueOrThrow({
+          where: { id: project.id },
+          include: projectInclude,
+        });
       });
     } catch (error) {
       throw handlePrismaError(error);
@@ -169,19 +192,49 @@ export class ProjectRepository {
 
   async update(organizationId: string, id: string, data: UpdateProjectData): Promise<Project> {
     try {
-      // Atomic org-scoped update
-      const result = await prisma.project.updateMany({
+      const { memberIds, ...projectData } = data;
+
+      // Verify project exists in organization
+      const existingProject = await prisma.project.findFirst({
         where: { id, organizationId },
-        data,
       });
 
-      if (result.count === 0) {
+      if (!existingProject) {
         throw handlePrismaError({ code: 'P2025' });
       }
 
-      return await prisma.project.findUniqueOrThrow({
-        where: { id },
-        include: projectInclude,
+      // Use transaction to update project and member assignments atomically
+      return await prisma.$transaction(async (tx) => {
+        // Update member assignments if provided
+        if (memberIds !== undefined) {
+          // Delete existing assignments
+          await tx.projectAccess.deleteMany({
+            where: { projectId: id },
+          });
+          // Create new assignments
+          if (memberIds.length > 0) {
+            await tx.projectAccess.createMany({
+              data: memberIds.map((memberId) => ({
+                projectId: id,
+                memberId,
+              })),
+            });
+          }
+        }
+
+        // Update project fields (only if there are fields to update)
+        if (Object.keys(projectData).length > 0) {
+          await tx.project.update({
+            where: { id },
+            data: projectData,
+          });
+        }
+
+        // Return project with includes
+        return await tx.project.findUniqueOrThrow({
+          where: { id },
+          include: projectInclude,
+        });
       });
     } catch (error) {
       throw handlePrismaError(error);

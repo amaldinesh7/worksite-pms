@@ -1,4 +1,18 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+/**
+ * Storage Service
+ *
+ * Handles file uploads to S3-compatible storage (MinIO local, AWS S3/R2/Spaces in production)
+ * Uses AWS S3 SDK which works with any S3-compatible storage provider.
+ */
+
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+  HeadObjectCommand,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export interface UploadResult {
   path: string;
@@ -6,45 +20,47 @@ export interface UploadResult {
 }
 
 export interface StorageConfig {
-  url: string;
-  serviceKey: string;
+  endpoint: string;
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
   bucket: string;
+  publicUrl?: string; // Optional custom public URL (for CDN, etc.)
 }
 
 /**
  * Storage Service
- * Handles file uploads to Supabase Storage (or MinIO in local development)
+ * Works with any S3-compatible storage: MinIO, AWS S3, DigitalOcean Spaces, Cloudflare R2, etc.
  */
 export class StorageService {
-  private client: SupabaseClient;
+  private client: S3Client;
   private bucket: string;
+  private publicBaseUrl: string;
 
   constructor(config?: Partial<StorageConfig>) {
-    const url = config?.url || process.env.SUPABASE_URL || 'http://localhost:9000';
-    const serviceKey = config?.serviceKey || process.env.SUPABASE_SERVICE_KEY || 'minioadmin';
-    this.bucket = config?.bucket || process.env.SUPABASE_STORAGE_BUCKET || 'documents';
+    // Default to MinIO local development settings
+    const endpoint = config?.endpoint || process.env.S3_ENDPOINT || 'http://localhost:9000';
+    const region = config?.region || process.env.S3_REGION || 'us-east-1';
+    const accessKeyId = config?.accessKeyId || process.env.S3_ACCESS_KEY_ID || 'minioadmin';
+    const secretAccessKey =
+      config?.secretAccessKey || process.env.S3_SECRET_ACCESS_KEY || 'minioadmin';
+    this.bucket = config?.bucket || process.env.S3_BUCKET || 'documents';
 
-    // For MinIO (local development), we use the S3 protocol directly
-    // For Supabase (production), we use the Supabase client
-    const isMinIO = url.includes('localhost:9000') || url.includes('minio');
+    // Public URL for direct file access (bucket should have public read policy)
+    this.publicBaseUrl =
+      config?.publicUrl || process.env.S3_PUBLIC_URL || `${endpoint}/${this.bucket}`;
 
-    if (isMinIO) {
-      // MinIO configuration - use Supabase client with custom endpoint
-      this.client = createClient(url, serviceKey, {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-        },
-      });
-    } else {
-      // Supabase configuration
-      this.client = createClient(url, serviceKey, {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-        },
-      });
-    }
+    this.client = new S3Client({
+      endpoint,
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+      forcePathStyle: true, // Required for MinIO and most S3-compatible services
+    });
+
+    console.log(`[Storage] Initialized with endpoint: ${endpoint}, bucket: ${this.bucket}`);
   }
 
   /**
@@ -63,79 +79,117 @@ export class StorageService {
       ? `${folder}/${timestamp}-${sanitizedFilename}`
       : `${timestamp}-${sanitizedFilename}`;
 
-    const { data, error } = await this.client.storage.from(this.bucket).upload(path, buffer, {
-      contentType: mimeType,
-      upsert: false,
-    });
+    try {
+      await this.client.send(
+        new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: path,
+          Body: buffer,
+          ContentType: mimeType,
+        })
+      );
 
-    if (error) {
-      throw new Error(`Failed to upload file: ${error.message}`);
+      const publicUrl = `${this.publicBaseUrl}/${path}`;
+
+      console.log(`[Storage] Uploaded file: ${path}`);
+
+      return {
+        path,
+        publicUrl,
+      };
+    } catch (error) {
+      console.error('[Storage] Upload failed:', error);
+      throw new Error(`Failed to upload file: ${(error as Error).message}`);
     }
-
-    // Get public URL
-    const { data: urlData } = this.client.storage.from(this.bucket).getPublicUrl(data.path);
-
-    return {
-      path: data.path,
-      publicUrl: urlData.publicUrl,
-    };
   }
 
   /**
    * Delete a file from storage
    */
   async deleteFile(path: string): Promise<void> {
-    const { error } = await this.client.storage.from(this.bucket).remove([path]);
-
-    if (error) {
-      throw new Error(`Failed to delete file: ${error.message}`);
+    try {
+      await this.client.send(
+        new DeleteObjectCommand({
+          Bucket: this.bucket,
+          Key: path,
+        })
+      );
+      console.log(`[Storage] Deleted file: ${path}`);
+    } catch (error) {
+      console.error('[Storage] Delete failed:', error);
+      throw new Error(`Failed to delete file: ${(error as Error).message}`);
     }
   }
 
   /**
-   * Get a signed URL for temporary access
+   * Get a signed URL for temporary access (useful for private buckets)
    */
   async getSignedUrl(path: string, expiresIn: number = 3600): Promise<string> {
-    const { data, error } = await this.client.storage
-      .from(this.bucket)
-      .createSignedUrl(path, expiresIn);
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: path,
+      });
 
-    if (error) {
-      throw new Error(`Failed to create signed URL: ${error.message}`);
+      const url = await getSignedUrl(this.client, command, { expiresIn });
+      return url;
+    } catch (error) {
+      console.error('[Storage] Signed URL generation failed:', error);
+      throw new Error(`Failed to create signed URL: ${(error as Error).message}`);
     }
-
-    return data.signedUrl;
   }
 
   /**
    * Download a file from storage
    */
   async downloadFile(path: string): Promise<Buffer> {
-    const { data, error } = await this.client.storage.from(this.bucket).download(path);
+    try {
+      const response = await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: path,
+        })
+      );
 
-    if (error) {
-      throw new Error(`Failed to download file: ${error.message}`);
+      if (!response.Body) {
+        throw new Error('No body in response');
+      }
+
+      // Convert stream to buffer
+      const chunks: Uint8Array[] = [];
+      for await (const chunk of response.Body as AsyncIterable<Uint8Array>) {
+        chunks.push(chunk);
+      }
+
+      return Buffer.concat(chunks);
+    } catch (error) {
+      console.error('[Storage] Download failed:', error);
+      throw new Error(`Failed to download file: ${(error as Error).message}`);
     }
-
-    const arrayBuffer = await data.arrayBuffer();
-    return Buffer.from(arrayBuffer);
   }
 
   /**
    * Check if a file exists
    */
   async fileExists(path: string): Promise<boolean> {
-    const { data, error } = await this.client.storage
-      .from(this.bucket)
-      .list(path.split('/').slice(0, -1).join('/'), {
-        search: path.split('/').pop(),
-      });
-
-    if (error) {
+    try {
+      await this.client.send(
+        new HeadObjectCommand({
+          Bucket: this.bucket,
+          Key: path,
+        })
+      );
+      return true;
+    } catch {
       return false;
     }
+  }
 
-    return data.length > 0;
+  /**
+   * Get public URL for a file
+   */
+  getPublicUrl(path: string): string {
+    return `${this.publicBaseUrl}/${path}`;
   }
 
   /**

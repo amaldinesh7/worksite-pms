@@ -42,6 +42,8 @@ import {
   useCreateProject,
   useUpdateProject,
   useDeleteProject,
+  useAddProjectMember,
+  useRemoveProjectMember,
 } from '@/lib/hooks/useProjects';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import type {
@@ -57,8 +59,15 @@ import { Typography } from '@/components/ui/typography';
 // ============================================
 
 const PAGINATION_LIMIT = 12;
+const VIEW_MODE_STORAGE_KEY = 'projects-view-mode';
 
 type StatusFilter = 'ALL' | ProjectStatus;
+type ViewMode = 'grid' | 'list';
+
+function getStoredViewMode(): ViewMode {
+  const stored = localStorage.getItem(VIEW_MODE_STORAGE_KEY);
+  return stored === 'list' ? 'list' : 'grid';
+}
 
 // ============================================
 // Component
@@ -78,7 +87,7 @@ export default function ProjectsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatus);
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>(getStoredViewMode);
   const [sortBy, setSortBy] = useState<'updatedAt' | 'name' | 'startDate'>('updatedAt');
 
   // Debounced search value (300ms delay)
@@ -102,6 +111,11 @@ export default function ProjectsPage() {
     setPage(1);
   }, [debouncedSearch]);
 
+  // Persist view mode to localStorage
+  useEffect(() => {
+    localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode);
+  }, [viewMode]);
+
   // Data Fetching
   const { data: projectsData, isLoading } = useProjects({
     page,
@@ -114,6 +128,8 @@ export default function ProjectsPage() {
   const createMutation = useCreateProject();
   const updateMutation = useUpdateProject();
   const deleteMutation = useDeleteProject();
+  const addMemberMutation = useAddProjectMember();
+  const removeMemberMutation = useRemoveProjectMember();
 
   // Handlers
   const handleStatusChange = useCallback((value: string) => {
@@ -147,14 +163,50 @@ export default function ProjectsPage() {
   const handleFormSubmit = useCallback(
     async (data: CreateProjectInput | UpdateProjectInput) => {
       try {
+        // Extract memberIds from data (they're handled separately via API)
+        const { memberIds, ...projectData } = data;
+
         if (selectedProject) {
+          // Update project
           await updateMutation.mutateAsync({
             id: selectedProject.id,
-            data: data as UpdateProjectInput,
+            data: projectData as UpdateProjectInput,
           });
+
+          // Handle member changes for update
+          if (memberIds) {
+            const existingMemberIds = selectedProject.projectAccess?.map((a) => a.memberId) || [];
+            const membersToAdd = memberIds.filter((id) => !existingMemberIds.includes(id));
+            const membersToRemove = existingMemberIds.filter((id) => !memberIds.includes(id));
+
+            // Add new members using mutation hook
+            await Promise.all(
+              membersToAdd.map((memberId) =>
+                addMemberMutation.mutateAsync({ projectId: selectedProject.id, memberId })
+              )
+            );
+            // Remove old members using mutation hook
+            await Promise.all(
+              membersToRemove.map((memberId) =>
+                removeMemberMutation.mutateAsync({ projectId: selectedProject.id, memberId })
+              )
+            );
+          }
+
           toast.success('Project updated successfully');
         } else {
-          await createMutation.mutateAsync(data as CreateProjectInput);
+          // Create project
+          const newProject = await createMutation.mutateAsync(projectData as CreateProjectInput);
+
+          // Add members to the new project using mutation hook
+          if (memberIds && memberIds.length > 0) {
+            await Promise.all(
+              memberIds.map((memberId) =>
+                addMemberMutation.mutateAsync({ projectId: newProject.id, memberId })
+              )
+            );
+          }
+
           toast.success('Project created successfully');
         }
         setFormDialogOpen(false);
@@ -163,7 +215,7 @@ export default function ProjectsPage() {
         toast.error(selectedProject ? 'Failed to update project' : 'Failed to create project');
       }
     },
-    [selectedProject, createMutation, updateMutation]
+    [selectedProject, createMutation, updateMutation, addMemberMutation, removeMemberMutation]
   );
 
   const handleDeleteConfirm = useCallback(async () => {
@@ -276,19 +328,19 @@ export default function ProjectsPage() {
             <div className="flex items-center border rounded-md bg-card">
               <Button
                 variant={viewMode === 'grid' ? 'primary' : 'ghost'}
-                size="icon"
+                size="iconSm"
                 className="rounded-r-none cursor-pointer"
                 onClick={() => setViewMode('grid')}
               >
-                <LayoutGrid className="h-5 w-5" />
+                <LayoutGrid />
               </Button>
               <Button
                 variant={viewMode === 'list' ? 'primary' : 'ghost'}
-                size="icon"
+                size="iconSm"
                 className="rounded-l-none cursor-pointer"
                 onClick={() => setViewMode('list')}
               >
-                <List className="h-4 w-4" />
+                <List />
               </Button>
             </div>
 

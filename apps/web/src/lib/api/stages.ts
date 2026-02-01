@@ -6,7 +6,12 @@
 
 import { api } from './client';
 import type { AxiosResponse } from 'axios';
-import type { PaginationMeta, ApiPaginatedResponse, PaginatedResult, ApiSuccessResponse } from './types';
+import type {
+  PaginationMeta,
+  ApiPaginatedResponse,
+  PaginatedResult,
+  ApiSuccessResponse,
+} from './types';
 
 // ============================================
 // Types
@@ -68,6 +73,8 @@ export interface Stage {
     tasks: number;
     expenses: number;
   };
+  /** Number of completed tasks (returned from API for list views) */
+  completedTaskCount?: number;
 }
 
 export interface StageStats {

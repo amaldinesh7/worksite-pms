@@ -186,8 +186,8 @@ export function PartyTransactionsPanel({
                   <TableCell>{transaction.title}</TableCell>
                   <TableCell>{formatCurrency(transaction.amount)}</TableCell>
                   <TableCell className="text-center">
-                    <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer">
-                      <MoreVertical className="h-4 w-4" />
+                    <Button variant="ghost" size="iconSm" className="cursor-pointer">
+                      <MoreVertical />
                     </Button>
                   </TableCell>
                 </TableRow>

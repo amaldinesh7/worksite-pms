@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Sidebar } from './Sidebar';
+import { FloatingImportStatus } from '@/components/imports/FloatingImportStatus';
 
 /* ========================================
    TYPE DEFINITIONS
@@ -21,15 +22,11 @@ export function Layout({ children, className }: LayoutProps) {
       {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content Area */}
-      <div
-        className={cn(
-          'flex-1 flex flex-col overflow-hidden',
-          'transition-[margin] duration-300 ease-out'
-        )}
-      >
-        {children}
-      </div>
+      {/* Main Content Area - naturally fills remaining space */}
+      <div className="flex-1 flex flex-col overflow-hidden">{children}</div>
+
+      {/* Floating Import Status Bar */}
+      <FloatingImportStatus />
     </div>
   );
 }

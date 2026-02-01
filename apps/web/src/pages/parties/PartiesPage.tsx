@@ -208,9 +208,9 @@ export default function PartiesPage() {
       <Header title="Parties" />
 
       <main className="flex-1 overflow-hidden flex flex-col" role="main">
-        <div className="flex items-center justify-between border-b border-border px-5">
+        <div className="flex items-center justify-between border-b border-border px-5 bg-background">
           <SecondaryTabs value={activeTab} onValueChange={handleTabChange}>
-            <SecondaryTabsList className="border-b-0">
+            <SecondaryTabsList className="border-b-0 bg-background">
               <SecondaryTabsTrigger value="VENDOR" icon={Storefront}>
                 Vendors{(summary?.totalVendors ?? 0) > 0 && ` (${summary?.totalVendors})`}
               </SecondaryTabsTrigger>

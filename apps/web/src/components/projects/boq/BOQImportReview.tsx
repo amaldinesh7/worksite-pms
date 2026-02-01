@@ -2,6 +2,11 @@
  * BOQ Import Review
  *
  * Full-screen review of parsed BOQ items before importing.
+ * Features:
+ * - Section grouping with collapsible sections
+ * - Checksum validation banner
+ * - Inline editing
+ * - Bulk stage assignment
  */
 
 import { useState, useCallback, useMemo } from 'react';
@@ -29,15 +34,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useConfirmBOQImport } from '@/lib/hooks/useBOQ';
 import { useStagesByProject } from '@/lib/hooks/useStages';
 import type { ParseResult, ParsedBOQItem } from '@/lib/api/boq';
 import { cn } from '@/lib/utils';
+import { MarkdownPreview } from '@/components/ui/markdown-preview';
+import { ChecksumBanner } from './ChecksumBanner';
 
 // ============================================
 // Types
@@ -155,9 +158,7 @@ export function BOQImportReview({
 
   const toggleItemSelection = useCallback((id: string) => {
     setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, isSelected: !item.isSelected } : item
-      )
+      prev.map((item) => (item.id === id ? { ...item, isSelected: !item.isSelected } : item))
     );
   }, []);
 
@@ -182,15 +183,11 @@ export function BOQImportReview({
   }, []);
 
   const setItemEditing = useCallback((id: string, isEditing: boolean) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, isEditing } : item))
-    );
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, isEditing } : item)));
   }, []);
 
   const handleLinkAllToStage = useCallback((stageId: string) => {
-    setItems((prev) =>
-      prev.map((item) => (item.isSelected ? { ...item, stageId } : item))
-    );
+    setItems((prev) => prev.map((item) => (item.isSelected ? { ...item, stageId } : item)));
     toast.success('Linked selected items to stage');
   }, []);
 
@@ -220,12 +217,7 @@ export function BOQImportReview({
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onBack}
-                className="cursor-pointer"
-              >
+              <Button variant="ghost" size="icon" onClick={onBack} className="cursor-pointer">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
@@ -236,7 +228,7 @@ export function BOQImportReview({
                   </span>
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  AI has parsed the BOQ - Review and confirm before saving
+                  Review items and confirm before saving
                 </p>
               </div>
             </div>
@@ -259,6 +251,17 @@ export function BOQImportReview({
         </div>
       </div>
 
+      {/* Checksum Banner */}
+      {parseResult.documentTotal !== undefined && (
+        <div className="px-4 py-2 bg-muted/30 border-b">
+          <ChecksumBanner
+            checksumMatch={parseResult.checksumMatch}
+            documentTotal={parseResult.documentTotal}
+            calculatedTotal={parseResult.calculatedTotal}
+          />
+        </div>
+      )}
+
       {/* Stats Bar */}
       <div className="border-b bg-muted/30">
         <div className="px-4 py-3">
@@ -279,7 +282,7 @@ export function BOQImportReview({
               </div>
               <div className="text-sm">
                 <div className="font-medium">Sections</div>
-                <div className="text-muted-foreground">Categories found</div>
+                <div className="text-muted-foreground">Groups detected</div>
               </div>
             </div>
 
@@ -312,7 +315,7 @@ export function BOQImportReview({
               </div>
               <div className="text-sm">
                 <div className="font-medium">Total Amount</div>
-                <div className="text-muted-foreground">Total project value</div>
+                <div className="text-muted-foreground">Selected items</div>
               </div>
             </div>
           </div>
@@ -336,14 +339,23 @@ export function BOQImportReview({
               </div>
 
               {/* Filter */}
-              <Select value={showFilter} onValueChange={(v) => setShowFilter(v as typeof showFilter)}>
-                <SelectTrigger className="w-32 cursor-pointer">
+              <Select
+                value={showFilter}
+                onValueChange={(v) => setShowFilter(v as typeof showFilter)}
+              >
+                <SelectTrigger className="w-40 cursor-pointer">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="cursor-pointer">Show All</SelectItem>
-                  <SelectItem value="flagged" className="cursor-pointer">Flagged Only</SelectItem>
-                  <SelectItem value="selected" className="cursor-pointer">Selected Only</SelectItem>
+                  <SelectItem value="all" className="cursor-pointer">
+                    Show All
+                  </SelectItem>
+                  <SelectItem value="flagged" className="cursor-pointer">
+                    Flagged Only
+                  </SelectItem>
+                  <SelectItem value="selected" className="cursor-pointer">
+                    Selected Only
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -375,10 +387,7 @@ export function BOQImportReview({
           <div className="space-y-4">
             {Array.from(groupedItems.entries()).map(([section, sectionItems]) => {
               const isExpanded = expandedSections.has(section);
-              const sectionTotal = sectionItems.reduce(
-                (sum, i) => sum + i.quantity * i.rate,
-                0
-              );
+              const sectionTotal = sectionItems.reduce((sum, i) => sum + i.quantity * i.rate, 0);
               const selectedInSection = sectionItems.filter((i) => i.isSelected).length;
               const allSelected = selectedInSection === sectionItems.length;
 
@@ -405,7 +414,7 @@ export function BOQImportReview({
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="text-sm">
-                          Section Total: <span className="font-medium">{formatCurrency(sectionTotal)}</span>
+                          Total: <span className="font-medium">{formatCurrency(sectionTotal)}</span>
                         </span>
                         <Checkbox
                           checked={allSelected}
@@ -422,7 +431,7 @@ export function BOQImportReview({
                   <CollapsibleContent>
                     <div className="border-t">
                       {/* Table Header */}
-                      <div className="grid grid-cols-[40px_100px_1fr_80px_80px_100px_100px_60px] gap-2 px-4 py-2 bg-muted/50 text-xs font-medium text-muted-foreground uppercase">
+                      <div className="grid grid-cols-[40px_80px_1fr_80px_80px_100px_100px_60px] gap-2 px-4 py-2 bg-muted/50 text-xs font-medium text-muted-foreground uppercase">
                         <div></div>
                         <div>Code</div>
                         <div>Description</div>
@@ -465,7 +474,16 @@ export function BOQImportReview({
                 Items selected: {selectedCount} of {parseResult.totalItems}
               </span>
               <span className="text-muted-foreground">•</span>
-              <span className="font-medium">₹ Total: {formatCurrency(totalAmount)}</span>
+              <span className="font-medium">Total: {formatCurrency(totalAmount)}</span>
+              {!parseResult.checksumMatch && (
+                <>
+                  <span className="text-muted-foreground">•</span>
+                  <span className="text-amber-600 flex items-center gap-1">
+                    <Warning className="h-3 w-3" />
+                    Checksum mismatch
+                  </span>
+                </>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={onBack} className="cursor-pointer">
@@ -511,7 +529,7 @@ function ItemRow({ item, onToggleSelection, onEdit, onSave, onCancel }: ItemRowP
 
   if (item.isEditing) {
     return (
-      <div className="grid grid-cols-[40px_100px_1fr_80px_80px_100px_100px_60px] gap-2 px-4 py-2 items-center bg-muted/30">
+      <div className="grid grid-cols-[40px_80px_1fr_80px_80px_100px_100px_60px] gap-2 px-4 py-2 items-center bg-muted/30">
         <Checkbox checked={item.isSelected} disabled className="cursor-not-allowed" />
         <div className="text-sm text-muted-foreground">{item.code || '-'}</div>
         <Input
@@ -537,7 +555,9 @@ function ItemRow({ item, onToggleSelection, onEdit, onSave, onCancel }: ItemRowP
           className="h-8 text-right"
         />
         <div className="text-right text-sm font-medium">
-          {formatCurrency(parseFloat(editValues.quantity || '0') * parseFloat(editValues.rate || '0'))}
+          {formatCurrency(
+            parseFloat(editValues.quantity || '0') * parseFloat(editValues.rate || '0')
+          )}
         </div>
         <div className="flex items-center gap-1">
           <Button
@@ -555,12 +575,7 @@ function ItemRow({ item, onToggleSelection, onEdit, onSave, onCancel }: ItemRowP
           >
             <Check className="h-4 w-4 text-green-600" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 cursor-pointer"
-            onClick={onCancel}
-          >
+          <Button variant="ghost" size="icon" className="h-7 w-7 cursor-pointer" onClick={onCancel}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -571,7 +586,7 @@ function ItemRow({ item, onToggleSelection, onEdit, onSave, onCancel }: ItemRowP
   return (
     <div
       className={cn(
-        'grid grid-cols-[40px_100px_1fr_80px_80px_100px_100px_60px] gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors',
+        'grid grid-cols-[40px_80px_1fr_80px_80px_100px_100px_60px] gap-2 px-4 py-3 items-center hover:bg-muted/30 transition-colors',
         item.isReviewFlagged && 'bg-amber-50'
       )}
     >
@@ -582,7 +597,9 @@ function ItemRow({ item, onToggleSelection, onEdit, onSave, onCancel }: ItemRowP
       />
       <div className="text-sm text-muted-foreground">{item.code || '-'}</div>
       <div>
-        <div className="font-medium">{item.description}</div>
+        <div className="font-medium">
+          <MarkdownPreview source={item.description} isCompact />
+        </div>
         {item.isReviewFlagged && item.flagReason && (
           <div className="flex items-center gap-1 text-xs text-amber-600 mt-1">
             <Warning className="h-3 w-3" />
@@ -595,12 +612,7 @@ function ItemRow({ item, onToggleSelection, onEdit, onSave, onCancel }: ItemRowP
       <div className="text-right text-sm">₹{item.rate.toLocaleString()}</div>
       <div className="text-right text-sm font-medium">{formatCurrency(amount)}</div>
       <div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 cursor-pointer"
-          onClick={onEdit}
-        >
+        <Button variant="ghost" size="icon" className="h-7 w-7 cursor-pointer" onClick={onEdit}>
           {item.isReviewFlagged ? (
             <span className="text-xs text-amber-600">Edit</span>
           ) : (
