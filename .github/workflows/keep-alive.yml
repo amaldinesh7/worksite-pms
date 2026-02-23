@@ -1,12 +1,12 @@
 # Keep Render free tier service alive
-# Pings the health endpoint every 14 minutes to prevent spin-down
+# Pings the health endpoint every 12 hours
 
 name: Keep Backend Alive
 
 on:
   schedule:
-    # Run every 14 minutes (Render spins down after 15 min)
-    - cron: '*/14 * * * *'
+    # Run every 12 hours
+    - cron: '0 */12 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
